@@ -33,7 +33,7 @@ namespace PTSharp
             IShape shape = Shape;
             Vector position = r.Position(T);
             Vector normal = this.Shape.NormalAt(position);
-            Material material = Material.MaterialAt(this.Shape, normal);
+            Material material = Material.MaterialAt(this.Shape, position);
             Boolean inside = false;
             if (normal.Dot(r.Direction) > 0)
             {
