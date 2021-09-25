@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PTSharpCore": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}
