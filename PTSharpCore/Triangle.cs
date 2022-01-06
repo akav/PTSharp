@@ -9,20 +9,20 @@ namespace PTSharpCore
     class Triangle : IShape
     {
         internal Material Material;
-        public Vector V1, V2, V3;
-        public Vector N1, N2, N3;
-        public Vector T1, T2, T3;
+        public V V1, V2, V3;
+        public V N1, N2, N3;
+        public V T1, T2, T3;
 
         internal Triangle() { }
 
-        internal Triangle(Vector v1, Vector v2, Vector v3)
+        internal Triangle(V v1, V v2, V v3)
         {
             V1 = v1;
             V2 = v2;
             V3 = v3;
         }
 
-        internal Triangle (Vector v1, Vector v2, Vector v3, Material Material)
+        internal Triangle (V v1, V v2, V v3, Material Material)
         {
             V1 = v1;
             V2 = v2;
@@ -30,7 +30,7 @@ namespace PTSharpCore
             this.Material = Material;
         }
 
-        internal static Triangle NewTriangle(Vector v1, Vector v2, Vector v3, Vector t1, Vector t2, Vector t3, Material material)
+        internal static Triangle NewTriangle(V v1, V v2, V v3, V t1, V t2, V t3, Material material)
         {
             Triangle t = new Triangle();
             t.V1 = v1;
@@ -44,7 +44,7 @@ namespace PTSharpCore
             return t;
         }
 
-        (Vector, Vector, Vector) Vertices()
+        (V, V, V) Vertices()
         {
             return (V1, V2, V3);
         }
@@ -67,15 +67,15 @@ namespace PTSharpCore
 
         Hit IShape.Intersect(Ray r)
         {
-            var e1x = V2.x - V1.x;
-            var e1y = V2.y - V1.y;
-            var e1z = V2.z - V1.z;
-            var e2x = V3.x - V1.x;
-            var e2y = V3.y - V1.y;
-            var e2z = V3.z - V1.z;
-            var px = r.Direction.y * e2z - r.Direction.z * e2y;
-            var py = r.Direction.z * e2x - r.Direction.x * e2z;
-            var pz = r.Direction.x * e2y - r.Direction.y * e2x;
+            var e1x = V2.v.X - V1.v.X;
+            var e1y = V2.v.Y - V1.v.Y;
+            var e1z = V2.v.Z - V1.v.Z;
+            var e2x = V3.v.X - V1.v.X;
+            var e2y = V3.v.Y - V1.v.Y;
+            var e2z = V3.v.Z - V1.v.Z;
+            var px = r.Direction.v.Y * e2z - r.Direction.v.Z * e2y;
+            var py = r.Direction.v.Z * e2x - r.Direction.v.X * e2z;
+            var pz = r.Direction.v.X * e2y - r.Direction.v.Y * e2x;
             var det = e1x * px + e1y * py + e1z * pz;
 
             if (det > -Util.EPS && det < Util.EPS) 
@@ -84,9 +84,9 @@ namespace PTSharpCore
             }
 
             var inv = 1 / det;
-            var tx = r.Origin.x - V1.x;
-            var ty = r.Origin.y - V1.y;
-            var tz = r.Origin.z - V1.z;
+            var tx = r.Origin.v.X - V1.v.X;
+            var ty = r.Origin.v.Y - V1.v.Y;
+            var tz = r.Origin.v.Z - V1.v.Z;
             var u = (tx * px + ty * py + tz * pz) * inv;
 
             if(u < 0 || u > 1)
@@ -97,7 +97,7 @@ namespace PTSharpCore
             var qx = ty * e1z - tz * e1y;
             var qy = tz * e1x - tx * e1z;
             var qz = tx * e1y - ty * e1x;
-            var v = (r.Direction.x * qx + r.Direction.y * qy + r.Direction.z * qz) * inv;
+            var v = (r.Direction.v.X * qx + r.Direction.v.Y * qy + r.Direction.v.Z * qz) * inv;
 
             if((v < 0) || ((u + v) > 1))
             {
@@ -114,22 +114,22 @@ namespace PTSharpCore
             return new Hit(this, d, null);
         }
 
-        Vector IShape.UV(Vector p)
+        V IShape.UV(V p)
         {
             (var u, var v, var w) = Barycentric(p);
-            var n = new Vector();
+            var n = new V();
             n = n.Add(T1.MulScalar(u));
             n = n.Add(T2.MulScalar(v));
             n = n.Add(T3.MulScalar(w));
-            return new Vector(n.x, n.y, 0);
+            return new V(n.v.X, n.v.Y, 0);
         }
 
-        Material IShape.MaterialAt(Vector v) => Material;
+        Material IShape.MaterialAt(V v) => Material;
 
-        Vector IShape.NormalAt(Vector p)
+        V IShape.NormalAt(V p)
         {
             (var u, var v, var w) = Barycentric(p);
-            var n = new Vector();
+            var n = new V();
             n = n.Add(N1.MulScalar(u));
             n = n.Add(N2.MulScalar(v));
             n = n.Add(N3.MulScalar(w));
@@ -137,60 +137,60 @@ namespace PTSharpCore
 
             if(Material.NormalTexture != null)
             {
-                var b = new Vector();
+                var b = new V();
                 b = b.Add(T1.MulScalar(u));
                 b = b.Add(T2.MulScalar(v));
                 b = b.Add(T3.MulScalar(w));
-                var ns = Material.NormalTexture.NormalSample(b.x, b.y);
+                var ns = Material.NormalTexture.NormalSample(b.v.X, b.v.Y);
                 var dv1 = V2.Sub(V1);
                 var dv2 = V3.Sub(V1);
                 var dt1 = T2.Sub(T1);
                 var dt2 = T3.Sub(T1);
-                var T = dv1.MulScalar(dt2.y).Sub(dv2.MulScalar(dt1.y)).Normalize();
-                var B = dv2.MulScalar(dt1.x).Sub(dv1.MulScalar(dt2.x)).Normalize();
+                var T = dv1.MulScalar(dt2.v.Y).Sub(dv2.MulScalar(dt1.v.Y)).Normalize();
+                var B = dv2.MulScalar(dt1.v.X).Sub(dv1.MulScalar(dt2.v.X)).Normalize();
                 var N = T.Cross(B);
 
-                var matrix = new Matrix(T.x, B.x, N.x, 0,
-                                        T.y, B.y, N.y, 0,
-                                        T.z, B.z, N.z, 0,
+                var matrix = new Matrix(T.v.X, B.v.X, N.v.X, 0,
+                                        T.v.Y, B.v.Y, N.v.Y, 0,
+                                        T.v.Z, B.v.Z, N.v.Z, 0,
                                         0, 0, 0, 1);
                 n = matrix.MulDirection(ns);
             }
 
             if(Material.BumpTexture != null)
             {
-                var b = new Vector();
+                var b = new V();
                 b = b.Add(T1.MulScalar(u));
                 b = b.Add(T2.MulScalar(v));
                 b = b.Add(T3.MulScalar(w));
-                var bump = Material.BumpTexture.BumpSample(b.x, b.y);
+                var bump = Material.BumpTexture.BumpSample(b.v.X, b.v.Y);
                 var dv1 = V2.Sub(V1);
                 var dv2 = V3.Sub(V1);
                 var dt1 = T2.Sub(T1);
                 var dt2 = T3.Sub(T1);
-                var tangent = dv1.MulScalar(dt2.y).Sub(dv2.MulScalar(dt1.y)).Normalize();
-                var bitangent = dv2.MulScalar(dt1.x).Sub(dv1.MulScalar(dt2.x)).Normalize();
-                n = n.Add(tangent.MulScalar(bump.x * Material.BumpMultiplier));
-                n = n.Add(bitangent.MulScalar(bump.y * Material.BumpMultiplier));
+                var tangent = dv1.MulScalar(dt2.v.Y).Sub(dv2.MulScalar(dt1.v.Y)).Normalize();
+                var bitangent = dv2.MulScalar(dt1.v.X).Sub(dv1.MulScalar(dt2.v.X)).Normalize();
+                n = n.Add(tangent.MulScalar(bump.v.X * Material.BumpMultiplier));
+                n = n.Add(bitangent.MulScalar(bump.v.Y * Material.BumpMultiplier));
             }
             n = n.Normalize();
             return n;
         }
                 
-        double Area() {
+        float Area() {
             var e1 = V2.Sub(V1);
             var e2 = V3.Sub(V1);
             var n = e1.Cross(e2);
             return n.Length() / 2;
         }
         
-        Vector Normal()
+        V Normal()
         {
             var e1 = V2.Sub(V1);
             var e2 = V3.Sub(V1);
             return e1.Cross(e2).Normalize();
         }
-        (double, double, double) Barycentric(Vector p)
+        (float, float, float) Barycentric(V p)
         {
             var v0 = V2.Sub(V1);
             var v1 = V3.Sub(V1);
@@ -209,7 +209,7 @@ namespace PTSharpCore
         public void FixNormals()
         {
             var n = Normal();
-            var zero = new Vector();
+            var zero = new V();
             
             if (N1.Equals(zero))
                 N1 = n;

@@ -8,7 +8,7 @@ namespace PTSharpCore
 {
     interface Func : IShape
     {
-        double func(double x, double y);
+        float func(float x, float y);
     }
     
     class Function : Func
@@ -38,18 +38,18 @@ namespace PTSharpCore
             return this.Box;
         }
 
-        bool Contains(Vector v)
+        bool Contains(V v)
         {
-            return v.z < func(v.x, v.y);
+            return v.v.Z < func(v.v.X, v.v.Y);
         }
 
         Hit IShape.Intersect(Ray ray)
         {
-            double step = 1.0 / 32;
+            float step = 1.0F / 32F;
             bool sign = Contains(ray.Position(step));
-            for (double t = step; t < 12; t += step)
+            for (float t = step; t < 12; t += step)
             {
-                Vector v = ray.Position(t);
+                V v = ray.Position(t);
                 if (Contains(v) != sign && Box.Contains(v))
                 {
                     return new Hit(this, t - step, null);
@@ -58,33 +58,33 @@ namespace PTSharpCore
             return Hit.NoHit;
         }
 
-        Vector IShape.UV(Vector p)
+        V IShape.UV(V p)
         {
-            double x1 = Box.Min.x;
-            double x2 = Box.Max.x;
-            double y1 = Box.Min.y;
-            double y2 = Box.Max.y;
-            double u = p.x - x1 / x2 - x1;
-            double v = p.y - y1 / y2 - y1;
-            return new Vector(u, v, 0);
+            float x1 = Box.Min.v.X;
+            float x2 = Box.Max.v.X;
+            float y1 = Box.Min.v.Y;
+            float y2 = Box.Max.v.Y;
+            float u = p.v.X - x1 / x2 - x1;
+            float v = p.v.Y - y1 / y2 - y1;
+            return new V(u, v, 0);
         }
 
-        Material IShape.MaterialAt(Vector p)
+        Material IShape.MaterialAt(V p)
         {
             return this.Material;
         }
 
-        Vector IShape.NormalAt(Vector p)
+        V IShape.NormalAt(V p)
         {
-            double eps = 1e-3;
-            double x = func(p.x - eps, p.y) - func(p.x + eps, p.y);
-            double y = func(p.x, p.y - eps) - func(p.x, p.y + eps);
-            double z = 2 * eps;
-            Vector v = new Vector(x, y, z);
+            float eps = 1e-3F;
+            float x = func(p.v.X - eps, p.v.Y) - func(p.v.X + eps, p.v.Y);
+            float y = func(p.v.X, p.v.Y - eps) - func(p.v.X, p.v.Y + eps);
+            float z = 2 * eps;
+            V v = new V(x, y, z);
             return v.Normalize();
         }
 
-        public double func(double x, double y)
+        public float func(float x, float y)
         {
             return Funct.func(x, y);
         }

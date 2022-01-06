@@ -5,17 +5,17 @@ using System.Linq;
 namespace PTSharpCore
 {
     class MC 
-    {
-        internal static Mesh NewSDFMesh(SDF sdf, Box box, double step)
+    {   
+        internal static Mesh NewSDFMesh(SDF sdf, Box box, float step)
         {
             var min = box.Min;
             var size = box.Size();
-            var nx = (int)Math.Ceiling(size.x / step);
-            var ny = (int)Math.Ceiling(size.y / step);
-            var nz = (int)Math.Ceiling(size.z / step);
-            var sx = size.x / nx;
-            var sy = size.y / ny;
-            var sz = size.z / nz;
+            var nx = (int)MathF.Ceiling(size.v.X / step);
+            var ny = (int)MathF.Ceiling(size.v.Y / step);
+            var nz = (int)MathF.Ceiling(size.v.Z / step);
+            var sx = size.v.X / nx;
+            var sy = size.v.Y / ny;
+            var sz = size.v.Z / nz;
             List<Triangle> triangles = new List<Triangle>();
             for (int x = 0; x < nx - 1; x++)
             {
@@ -23,21 +23,21 @@ namespace PTSharpCore
                 {
                     for(int z = 0; z < nz - 1; z++)
                     {
-                        (var x0, var y0, var z0) = (x * sx + min.x, y * sy + min.y, z * sz + min.z);
+                        (var x0, var y0, var z0) = (x * sx + min.v.X, y * sy + min.v.Y, z * sz + min.v.Z);
                         (var x1, var y1, var z1) = (x0 + sx, y0 + sy, z0 + sz);
 
-                        var p = new Vector[8] {
-                                new Vector( x0, y0, z0),
-                                new Vector( x1, y0, z0),
-                                new Vector( x1, y1, z0),
-                                new Vector( x0, y1, z0),
-                                new Vector( x0, y0, z1),
-                                new Vector( x1, y0, z1),
-                                new Vector( x1, y1, z1),
-                                new Vector( x0, y1, z1)
+                        var p = new V[8] {
+                                new V( x0, y0, z0),
+                                new V( x1, y0, z0),
+                                new V( x1, y1, z0),
+                                new V( x0, y1, z0),
+                                new V( x0, y0, z1),
+                                new V( x1, y0, z1),
+                                new V( x1, y1, z1),
+                                new V( x0, y1, z1)
                         };
 
-                        double[] v = new double[8];
+                        float[] v = new float[8];
         
                         for(int i = 0; i < 8; i++)
                         {
@@ -66,7 +66,7 @@ namespace PTSharpCore
             return Mesh.NewMesh(triangles.ToArray());
         }
         
-        static Triangle[] mcPolygonize(Vector[] p, double[] v, double x)
+        static Triangle[] mcPolygonize(V[] p, float[] v, float x)
         {
             int index = 0;
             for (int i = 0; i < 8; i++)
@@ -80,7 +80,7 @@ namespace PTSharpCore
             {
                 return null;
             }
-            Vector[] points = new Vector[12];
+            V[] points = new V[12];
             for (int i = 0; i < 12; i++)
             {
                 int bit = 1 << Convert.ToUInt16(i);
@@ -108,20 +108,20 @@ namespace PTSharpCore
             return result;
         }
         
-        static Vector mcInterpolate(Vector p1, Vector p2, double v1, double v2, double x)
+        static V mcInterpolate(V p1, V p2, float v1, float v2, float x)
         {
-            if (Math.Abs(x - v1) < Util.EPS)
+            if (MathF.Abs(x - v1) < Util.EPS)
                 return p1;
             
-            if (Math.Abs(x - v2) < Util.EPS)
+            if (MathF.Abs(x - v2) < Util.EPS)
                 return p2;
             
-            if (Math.Abs(v1 - v2) < Util.EPS)
+            if (MathF.Abs(v1 - v2) < Util.EPS)
                 return p1;
             
             var t = (x - v1) / (v2 - v1);
             
-            return new Vector(p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y), p1.z + t * (p2.z - p1.z));
+            return new V(p1.v.X + t * (p2.v.X - p1.v.X), p1.v.Y + t * (p2.v.Y - p1.v.Y), p1.v.Z + t * (p2.v.Z - p1.v.Z));
         }
 
         static readonly int[][] pairTable =  {

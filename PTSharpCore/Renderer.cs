@@ -16,10 +16,10 @@ namespace PTSharpCore
         int SamplesPerPixel;
         public bool StratifiedSampling;
         public int AdaptiveSamples;
-        double AdaptiveThreshold;
-        double AdaptiveExponent;
+        float AdaptiveThreshold;
+        float AdaptiveExponent;
         public int FireflySamples;
-        double FireflyThreshold;
+        float FireflyThreshold;
         int NumCPU;
         int iterations;
         String pathTemplate;
@@ -62,11 +62,18 @@ namespace PTSharpCore
             Buffer buf = PBuffer;
             (int w, int h) = (buf.W, buf.H);
             int spp = SamplesPerPixel;
-            int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
+            int sppRoot = (int)(MathF.Sqrt(SamplesPerPixel));
             scene.Compile();
             scene.rays = 0;
             Random rand = new Random();
-            double fu, fv;
+            float fu, fv;
+
+            // Stop watch timer 
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            float invWidth = 1.0f / w;
+            float invHeight = 1.0f / h;
 
             for (int y = 0; y < h; y++)
             {
@@ -79,60 +86,69 @@ namespace PTSharpCore
                         {
                             for (int v = 0; v < sppRoot; v++)
                             {
-                                fu = (u + 0.5) / sppRoot;
-                                fv = (v + 0.5) / sppRoot;
-                                Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                                Colour sample = sampler.Sample(scene, ray, rand);
+                                fu = (u + 0.5F) / sppRoot;
+                                fv = (v + 0.5F) / sppRoot;
+                                Ray ray = camera.CastRay(x, y, w, h, fu, fv);
+                                Colour sample = sampler.Sample(scene, ray);
                                 buf.AddSample(x, y, sample);
                             }
                         }
+                        
                     }
                     else
                     {
                         // Random subsampling
-                        for (int ii = 0; ii < spp; ii++)
+                        for (int p = 0; p < spp; p++)
                         {
-                            fu = rand.NextDouble();
-                            fv = rand.NextDouble();
-                            Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                            Colour sample = sampler.Sample(scene, ray, rand);
+                            fu = (x+Random.Shared.NextSingle())*invWidth;
+                            fv = (y+Random.Shared.NextSingle())*invHeight;
+                            Ray ray = camera.CastRay(x, y, w, h, fu, fv);
+                            Colour sample = sampler.Sample(scene, ray);
+                            sample += sample;
                             buf.AddSample(x, y, sample);
                         }
+                        
                     }
                     // Adaptive Sampling
                     if (AdaptiveSamples > 0)
                     {
-                        double v = buf.StandardDeviation(x, y).MaxComponent();
+                        float v = buf.StandardDeviation(x, y).MaxComponent();
                         v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
-                        v = Math.Pow(v, AdaptiveExponent);
+                        v = MathF.Pow(v, AdaptiveExponent);
                         int samples = (int)(v * AdaptiveSamples);
                         for (int d = 0; d < samples; d++)
                         {
 
-                            fu = rand.NextDouble();
-                            fv = rand.NextDouble();
-                            Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                            Colour sample = sampler.Sample(scene, ray, rand);
+                            fu = Random.Shared.NextSingle();
+                            fv = Random.Shared.NextSingle();
+                            Ray ray = camera.CastRay(x, y, w, h, fu, fv);
+                            Colour sample = sampler.Sample(scene, ray);
                             buf.AddSample(x, y, sample);
                         }
+                        
                     }
 
                     if (FireflySamples > 0)
                     {
+                        
                         if (PBuffer.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
                         {
                             for (int e = 0; e < FireflySamples; e++)
                             {
-                                fu = rand.NextDouble();
-                                fv = rand.NextDouble();
-                                Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                                Colour sample = sampler.Sample(scene, ray, rand);
+                                Colour sample = new Colour(0, 0, 0);
+                                fu = (x + Random.Shared.NextSingle()) * invWidth;
+                                fv = (y + Random.Shared.NextSingle()) * invHeight;
+                                Ray ray = camera.CastRay(x, y, w, h, fu, fv);
+                                sample += sampler.Sample(scene, ray);
                                 PBuffer.AddSample(x, y, sample);
                             }
                         }
+                        
                     }
                 }
             }
+            Console.WriteLine("time elapsed:" + sw.Elapsed);
+            sw.Stop();
         }
 
         public void RenderParallel()
@@ -143,19 +159,21 @@ namespace PTSharpCore
             Buffer buf = PBuffer;
             (int w, int h) = (buf.W, buf.H);
             int spp = SamplesPerPixel;
-            int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
+            int sppRoot = (int)(MathF.Sqrt(SamplesPerPixel));
             scene.Compile();
             scene.rays = 0;
 
             // Stop watch timer 
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
+            //Stopwatch sw = new Stopwatch();
+            //sw.Start();
 
             // Random Number Generator from on Math.Numerics
-            System.Random rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
+            //System.Random rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
 
             // Frame resolution
             int totalPixels = h * w;
+            float invWidth = 1.0f / w;
+            float invHeight = 1.0f / h;
 
             // Create a cancellation token for Parallel.For loop control
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -167,7 +185,7 @@ namespace PTSharpCore
             // Set number of cores/threads
             po.MaxDegreeOfParallelism = Environment.ProcessorCount;
 
-            Console.WriteLine("{0} x {1} pixels, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
+            Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
 
             if (StratifiedSampling)
             {
@@ -178,15 +196,15 @@ namespace PTSharpCore
                       {
                           for (int v = 0; v < sppRoot; v++)
                           {
-                              var fu = (u + 0.5) / sppRoot;
-                              var fv = (v + 0.5) / sppRoot;
-                              Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                              Colour sample = sampler.Sample(scene, ray, rand);
+                              var fu = (u + 0.5F) / sppRoot;
+                              var fv = (v + 0.5F) / sppRoot;
+                              Ray ray = camera.CastRay(x, y, w, h, fu, fv);
+                              Colour sample = sampler.Sample(scene, ray);
                               buf.AddSample(x, y, sample);
                           }
                       }
                   });
-                Console.WriteLine("time elapsed:" + sw.Elapsed);
+                //Console.WriteLine("time elapsed:" + sw.Elapsed);
             }
             else
             {
@@ -198,15 +216,15 @@ namespace PTSharpCore
                           for (int s = 0; s < spp; s++)
                           {
                               int y = i / w, x = i % w;
-                              var fu = ThreadSafeRandom.NextDouble(rand);
-                              var fv = ThreadSafeRandom.NextDouble(rand);
-                              var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                              var sample = sampler.Sample(scene, ray, rand);
+                              var fu = (x + Random.Shared.NextSingle()) * invWidth;
+                              var fv = (y + Random.Shared.NextSingle()) * invHeight;
+                              var ray = camera.CastRay(x, y, w, h, fu, fv);
+                              var sample = sampler.Sample(scene, ray);
                               buf.AddSample(x, y, sample);
                           }
                       }
                   });
-                Console.WriteLine("time elapsed:" + sw.Elapsed);
+                //Console.WriteLine("time elapsed:" + sw.Elapsed);
             }
 
             if (AdaptiveSamples > 0)
@@ -214,17 +232,17 @@ namespace PTSharpCore
                 _ = Parallel.For(0, w * h, po, (i, loopState) =>
                   {
                       int y = i / w, x = i % w;
-                      double v = buf.StandardDeviation(x, y).MaxComponent();
+                      float v = buf.StandardDeviation(x, y).MaxComponent();
                       v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
-                      v = Math.Pow(v, AdaptiveExponent);
+                      v = MathF.Pow(v, AdaptiveExponent);
                       int samples = (int)(v * AdaptiveSamples);
                       for (int s = 0; s < samples; s++)
                       {
 
-                          var fu = rand.NextDouble();
-                          var fv = rand.NextDouble();
-                          Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                          Colour sample = sampler.Sample(scene, ray, rand);
+                          var fu = Random.Shared.NextSingle();
+                          var fv = Random.Shared.NextSingle();
+                          Ray ray = camera.CastRay(x, y, w, h, fu, fv);
+                          Colour sample = sampler.Sample(scene, ray);
                           buf.AddSample(x, y, sample);
                       }
                   });
@@ -237,23 +255,26 @@ namespace PTSharpCore
                       int y = i / w, x = i % w;
                       if (PBuffer.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
                       {
+
                           Parallel.For(0, FireflySamples, po, (e, loop) =>
                           {
-                              var fu = rand.NextDouble();
-                              var fv = rand.NextDouble();
-                              Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                              Colour sample = sampler.Sample(scene, ray, rand);
+                              Colour sample = new Colour(0, 0, 0);
+                              var fu = (x + Random.Shared.NextSingle()) * invWidth;
+                              var fv = (y + Random.Shared.NextSingle()) * invHeight;
+                              Ray ray = camera.CastRay(x, y, w, h, fu, fv);
+                              sample = sampler.Sample(scene, ray);
                               buf.AddSample(x, y, sample);
                           });
                       }
                   });
             }
-            sw.Stop();
+            //sw.Stop();
         }
 
         public System.Drawing.Bitmap IterativeRender(String pathTemplate, int iterations)
         {
             this.iterations = iterations;
+            System.Drawing.Bitmap finalrender = null;
             for (int iter = 1; iter < this.iterations; iter++)
             {
                 Console.WriteLine("[Iteration:" + iter + " of " + iterations + "]");
@@ -265,10 +286,11 @@ namespace PTSharpCore
                     RenderParallel();
                 }
                 this.pathTemplate = pathTemplate;
-                System.Drawing.Bitmap finalrender = PBuffer.Image(Channel.ColorChannel);
+                finalrender = PBuffer.Image(Channel.ColorChannel);
                 Console.WriteLine("Writing file...");
-                finalrender.Save(pathTemplate);
+                finalrender.Save(pathTemplate);                
             }
+            
             return PBuffer.Image(Channel.ColorChannel);
         }
 

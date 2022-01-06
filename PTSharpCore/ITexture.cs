@@ -2,11 +2,11 @@
 {
     interface ITexture
     {
-        Colour Sample(double u, double v);
-        Vector NormalSample(double u, double v);
-        Vector BumpSample(double u, double v);
-        ITexture Pow(double a);
-        ITexture MulScalar(double a);
+        Colour Sample(float u, float v);
+        V NormalSample(float u, float v);
+        V BumpSample(float u, float v);
+        ITexture Pow(float a);
+        ITexture MulScalar(float a);
     }
 }
 

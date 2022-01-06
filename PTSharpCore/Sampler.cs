@@ -5,7 +5,7 @@ namespace PTSharpCore
 {
     public interface Sampler
     {
-        Colour Sample(Scene scene, Ray ray, Random rand);
+        Colour Sample(Scene scene, Ray ray);
     }
 
     public enum LightMode
@@ -51,9 +51,9 @@ namespace PTSharpCore
             return new DefaultSampler(1, 0, true, false, LightMode.LightModeAll, SpecularMode.SpecularModeAll);
         }
 
-        public Colour Sample(Scene scene, Ray ray, Random rand)
+        public Colour Sample(Scene scene, Ray ray)
         {
-            return sample(scene, ray, true, FirstHitSamples, 0, rand);
+            return sample(scene, ray, true, FirstHitSamples, 0);
         }
 
         public void SetSpecularMode(SpecularMode s)
@@ -66,7 +66,7 @@ namespace PTSharpCore
             LightMode = l;
         }
 
-        Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand)
+        Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth)
         {
             if (depth > MaxBounces)
             {
@@ -93,7 +93,7 @@ namespace PTSharpCore
                 result = result.Add(material.Color.MulScalar(material.Emittance * samples));
             }
 
-            var n = (int)Math.Sqrt(samples);
+            var n = (int)MathF.Sqrt(samples);
             BounceType ma, mb;
 
             if (SpecularMode == SpecularMode.SpecularModeAll || depth == 0 && SpecularMode == SpecularMode.SpecularModeFirst)
@@ -115,9 +115,9 @@ namespace PTSharpCore
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
 
-                        var fu = (u + ThreadSafeRandom.NextDouble()) / n;
-                        var fv = (v + ThreadSafeRandom.NextDouble()) / n;
-                        (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode, rand);
+                        var fu = (u + Random.Shared.NextSingle()) / n;
+                        var fv = (v + Random.Shared.NextSingle()) / n;
+                        (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode);
 
                         if (mode == BounceType.BounceTypeAny)
                         {
@@ -127,7 +127,7 @@ namespace PTSharpCore
                         if (p > 0 && reflected)
                         {
                             // specular
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1);
                             var tinted = indirect.Mix(material.Color.Mul(indirect), material.Tint);
                             result = result.Add(tinted.MulScalar(p));
                         }
@@ -135,12 +135,12 @@ namespace PTSharpCore
                         if (p > 0 && !reflected)
                         {
                             // diffuse
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1);
                             var direct = Colour.Black;
 
                             if (DirectLighting)
                             {
-                                direct = sampleLights(scene, info.Ray, rand);
+                                direct = sampleLights(scene, info.Ray);
                             }
                             result = result.Add(material.Color.Mul(direct.Add(indirect)).MulScalar(p));
                         }
@@ -156,16 +156,16 @@ namespace PTSharpCore
             if (scene.Texture != null)
             {
                 var d = ray.Direction;
-                var u = Math.Atan2(d.z, d.x) + scene.TextureAngle;
-                var v = Math.Atan2(d.y, new Vector(d.x, 0, d.z).Length());
-                u = (u + Math.PI) / (2 * Math.PI);
-                v = (v + Math.PI / 2) / Math.PI;
+                var u = MathF.Atan2(d.v.Z, d.v.X) + scene.TextureAngle;
+                var v = MathF.Atan2(d.v.Y, new V(d.v.X, 0, d.v.Z).Length());
+                u = (u + MathF.PI) / (2 * MathF.PI);
+                v = (v + MathF.PI / 2) / MathF.PI;
                 return scene.Texture.Sample(u, v);
             }
             return scene.Color;
         }
 
-        Colour sampleLights(Scene scene, Ray n, Random rand)
+        Colour sampleLights(Scene scene, Ray n)
         {
             var nLights = scene.Lights.Length;
             if (nLights == 0)
@@ -178,7 +178,7 @@ namespace PTSharpCore
                 Colour result = new Colour();
                 foreach (var light in scene.Lights)
                 {
-                    result = result.Add(sampleLight(scene, n, rand, light));
+                    result = result.Add(sampleLight(scene, n, light));
                 }
                 return result;
 
@@ -186,15 +186,15 @@ namespace PTSharpCore
             else
             {
                 // pick a random light
-                var light = scene.Lights[rand.Next(nLights)];
-                return sampleLight(scene, n, rand, light).MulScalar((double)nLights);
+                var light = scene.Lights[Random.Shared.Next(nLights)];
+                return sampleLight(scene, n, light).MulScalar((float)nLights);
             }
         }
 
-        Colour sampleLight(Scene scene, Ray n, Random rand, IShape light)
+        Colour sampleLight(Scene scene, Ray n, IShape light)
         {
-            Vector center;
-            double radius;
+            V center;
+            float radius;
 
             switch (light)
             {
@@ -214,14 +214,14 @@ namespace PTSharpCore
             {
                 for (; ; )
                 {
-                    var x = rand.NextDouble() * 2 - 1;
-                    var y = rand.NextDouble() * 2 - 1;
+                    var x = Random.Shared.NextSingle() * 2 - 1;
+                    var y = Random.Shared.NextSingle() * 2 - 1;
                     if (x * x + y * y <= 1)
                     {
                         var l = center.Sub(n.Origin).Normalize();
-                        var u = l.Cross(Vector.RandomUnitVector(rand)).Normalize();
+                        var u = l.Cross(V.RandomUnitVector()).Normalize();
                         var v = l.Cross(u);
-                        point = new Vector();
+                        point = new V();
                         point = point.Add(u.MulScalar(x * radius));
                         point = point.Add(v.MulScalar(y * radius));
                         point = point.Add(center);
@@ -246,16 +246,16 @@ namespace PTSharpCore
             // compute solid angle (hemisphere coverage)
             var hyp = center.Sub(n.Origin).Length();
             var opp = radius;
-            var theta = Math.Asin(opp / hyp);
-            var adj = opp / Math.Tan(theta);
-            var d = Math.Cos(theta) * adj;
-            var r = Math.Sin(theta) * adj;
+            var theta = MathF.Asin(opp / hyp);
+            var adj = opp / MathF.Tan(theta);
+            var d = MathF.Cos(theta) * adj;
+            var r = MathF.Sin(theta) * adj;
             var coverage = (r * r) / (d * d);
             if (hyp < opp)
             {
                 coverage = 1;
             }
-            coverage = Math.Min(coverage, 1);
+            coverage = MathF.Min(coverage, 1);
             // get material properties from light
             Material material = Material.MaterialAt(light, point);
             // combine factors

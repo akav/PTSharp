@@ -92,8 +92,8 @@ namespace PTSharpCore
         {
             if (box is null)
             {
-                Vector min = Triangles[0].V1;
-                Vector max = Triangles[0].V1;
+                V min = Triangles[0].V1;
+                V max = Triangles[0].V1;
 
                 foreach (Triangle t in Triangles)
                 {
@@ -127,25 +127,25 @@ namespace PTSharpCore
             return tree.Intersect(r);
         }
 
-        Vector IShape.UV(Vector p)
+        V IShape.UV(V p)
         {
-            return new Vector();
+            return new V();
         }
 
-        Material IShape.MaterialAt(Vector p)
+        Material IShape.MaterialAt(V p)
         {
             return new Material();
         }
 
-        Vector IShape.NormalAt(Vector p)
+        V IShape.NormalAt(V p)
         {
-            return new Vector();
+            return new V();
         }
 
-        Vector smoothNormalsThreshold(Vector normal, Vector[] normals, double threshold)
+        V smoothNormalsThreshold(V normal, V[] normals, float threshold)
         {
-            Vector result = new Vector();
-            foreach (Vector x in normals)
+            V result = new V();
+            foreach (V x in normals)
             {
                 if (x.Dot(normal) >= threshold)
                 {
@@ -155,15 +155,15 @@ namespace PTSharpCore
             return result.Normalize();
         }
 
-        internal void SmoothNormalsThreshold(double radians)
+        internal void SmoothNormalsThreshold(float radians)
         {
-            double threshold = Math.Cos(radians);
+            float threshold = MathF.Cos(radians);
             
-            List<Vector> NL1 = new List<Vector>();
-            List<Vector> NL2 = new List<Vector>();
-            List<Vector> NL3 = new List<Vector>();
+            List<V> NL1 = new List<V>();
+            List<V> NL2 = new List<V>();
+            List<V> NL3 = new List<V>();
 
-            Dictionary<Vector, Vector[]> lookup = new Dictionary<Vector, Vector[]>();
+            Dictionary<V, V[]> lookup = new Dictionary<V, V[]>();
             
             foreach (Triangle t in Triangles)
             {
@@ -186,13 +186,13 @@ namespace PTSharpCore
 
         public void SmoothNormals()
         {
-            Dictionary<Vector, Vector> lookup = new Dictionary<Vector, Vector>();
+            Dictionary<V, V> lookup = new Dictionary<V, V>();
 
             foreach (var t in Triangles)
             {
-                lookup[t.V1] = new Vector();
-                lookup[t.V2] = new Vector();
-                lookup[t.V3] = new Vector();
+                lookup[t.V1] = new V();
+                lookup[t.V2] = new V();
+                lookup[t.V3] = new V();
             }
 
             foreach (var t in Triangles)
@@ -202,9 +202,9 @@ namespace PTSharpCore
                 lookup[t.V3] = lookup[t.V3].Add(t.N3);
             }
 
-            Dictionary<Vector, Vector> lookup2 = new Dictionary<Vector, Vector>();
+            Dictionary<V, V> lookup2 = new Dictionary<V, V>();
 
-            foreach (KeyValuePair<Vector, Vector> p in lookup)
+            foreach (KeyValuePair<V, V> p in lookup)
             {
                 lookup2[p.Key] = lookup[p.Key].Normalize();
             }
@@ -219,23 +219,23 @@ namespace PTSharpCore
 
         void UnitCube()
         {
-            FitInside(new Box(new Vector(0, 0, 0), new Vector(1, 1, 1)), new Vector(0, 0, 0));
-            MoveTo(new Vector(0, 0, 0), new Vector(0.5, 0.5, 0.5));
+            FitInside(new Box(new V(0, 0, 0), new V(1, 1, 1)), new V(0, 0, 0));
+            MoveTo(new V(0, 0, 0), new V(0.5F, 0.5F, 0.5F));
         }
 
-        public void MoveTo(Vector position, Vector anchor)
+        public void MoveTo(V position, V anchor)
         {
             Matrix matrix = new Matrix().Translate(position.Sub(BoundingBox().Anchor(anchor)));
             Transform(matrix);
         }
 
-        internal void FitInside(Box box, Vector anchor)
+        internal void FitInside(Box box, V anchor)
         {
             var scale = box.Size().Div(BoundingBox().Size()).MinComponent();
             var extra = box.Size().Sub(BoundingBox().Size().MulScalar(scale));
             var matrix = Matrix.Identity;
             matrix = matrix.Translate(BoundingBox().Min.Negate()).Mul(matrix);
-            matrix = matrix.Scale(new Vector(scale, scale, scale)).Mul(matrix);
+            matrix = matrix.Scale(new V(scale, scale, scale)).Mul(matrix);
             matrix = matrix.Translate(box.Min.Add(extra.Mul(anchor))).Mul(matrix);
             Transform(matrix);
         }

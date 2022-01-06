@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace PTSharpCore
 {
@@ -7,7 +8,7 @@ namespace PTSharpCore
     {
         internal Colour Color = new Colour();
         internal ITexture Texture = null;
-        internal double TextureAngle = 0;
+        internal float TextureAngle = 0;
         private Tree tree;
         internal int rays = 0;
 
@@ -24,7 +25,7 @@ namespace PTSharpCore
         {
             Array.Resize(ref Shapes, Shapes.GetLength(0) + 1);
             Shapes[Shapes.GetLength(0) - 1] = p;
-            if (p.MaterialAt(new Vector()).Emittance > 0)
+            if (p.MaterialAt(new V()).Emittance > 0)
             {
                 Array.Resize(ref Lights, Lights.GetLength(0) + 1);
                 Lights[Lights.GetLength(0) - 1] = p;
@@ -50,7 +51,7 @@ namespace PTSharpCore
         
         internal Hit Intersect(Ray r)
         {
-            rays++;
+            rays = Interlocked.Increment(ref rays);
             return tree.Intersect(r);
         }
     }

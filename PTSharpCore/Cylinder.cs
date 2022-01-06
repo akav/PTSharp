@@ -4,11 +4,11 @@ namespace PTSharpCore
 {
     public class Cylinder : IShape
     {
-        double Radius;
-        double Z0, Z1;
+        float Radius;
+        float Z0, Z1;
         Material CylinderMaterial;
 
-        Cylinder(double radius, double z0, double z1, Material material)
+        Cylinder(float radius, float z0, float z1, Material material)
         {
             Radius = radius;
             Z0 = z0;
@@ -16,14 +16,14 @@ namespace PTSharpCore
             CylinderMaterial = material;
         }
 
-        internal static Cylinder NewCylinder(double radius, double z0, double z1, Material material) => new Cylinder(radius, z0, z1, material);
+        internal static Cylinder NewCylinder(float radius, float z0, float z1, Material material) => new Cylinder(radius, z0, z1, material);
 
-        internal static IShape NewTransformedCylinder(Vector v0, Vector v1, double radius, Material material)
+        internal static IShape NewTransformedCylinder(V v0, V v1, float radius, Material material)
         {
-            var up = new Vector(0, 0, 1);
+            var up = new V(0, 0, 1);
             var d = v1.Sub(v0);
             var z = d.Length();
-            var a = Math.Acos(d.Normalize().Dot(up));
+            var a = MathF.Acos(d.Normalize().Dot(up));
             var m = new Matrix().Translate(v0);
             if (a != 0)
             {
@@ -36,8 +36,8 @@ namespace PTSharpCore
 
         Box IShape.BoundingBox()
         {
-            double r = Radius;
-            return new Box(new Vector(-r, -r, Z0), new Vector(r, r, Z1));
+            float r = Radius;
+            return new Box(new V(-r, -r, Z0), new V(r, r, Z1));
         }
 
         Hit IShape.Intersect(Ray ray)
@@ -45,23 +45,23 @@ namespace PTSharpCore
             var r = Radius;
             var o = ray.Origin;
             var d = ray.Direction;
-            var a = (d.x * d.x) + (d.y * d.y);
-            var b = (2 * o.x * d.x) + (2 * o.y * d.y);
-            var c = (o.x * o.x) + (o.y * o.y) - (r * r);
+            var a = (d.v.X * d.v.X) + (d.v.Y * d.v.Y);
+            var b = (2 * o.v.X * d.v.X) + (2 * o.v.Y * d.v.Y);
+            var c = (o.v.X * o.v.X) + (o.v.Y * o.v.Y) - (r * r);
             var q = (b * b) - (4 * a * c);
             if (q < Util.EPS)
             {
                 return Hit.NoHit;
             }
-            var s = Math.Sqrt(q);
+            var s = MathF.Sqrt(q);
             var t0 = (-b + s) / (2 * a);
             var t1 = (-b - s) / (2 * a);
             if (t0 > t1)
             {
                 (t0, t1) = (t1, t0);
             }
-            var z0 = o.z + t0 * d.z;
-            var z1 = o.z + t1 * d.z;
+            var z0 = o.v.Z + t0 * d.v.Z;
+            var z1 = o.v.Z + t1 * d.v.Z;
             if (t0 > Util.EPS && Z0 < z0 && z0 < Z1)
             {
                 return new Hit(this, t0, null);
@@ -73,13 +73,13 @@ namespace PTSharpCore
             return Hit.NoHit;
         }
 
-        Vector IShape.UV(Vector p) => new Vector();
+        V IShape.UV(V p) => new V();
 
-        Material IShape.MaterialAt(Vector p) => CylinderMaterial;
+        Material IShape.MaterialAt(V p) => CylinderMaterial;
 
-        Vector IShape.NormalAt(Vector p)
+        V IShape.NormalAt(V p)
         {
-            p.z = 0;
+            p.v.Z = 0.0F;
             return p.Normalize();
         }
 

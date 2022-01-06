@@ -6,42 +6,42 @@ namespace PTSharpCore
 {
     class Poisson
     {
-        double r, size;
-        Dictionary<Vector, Vector> cells;
+        float r, size;
+        Dictionary<V, V> cells;
         
-        Poisson(double r, double size, Dictionary<Vector, Vector> hmap)
+        Poisson(float r, float size, Dictionary<V, V> hmap)
         {
             this.r = r;
             this.size = size;
             cells = hmap;
         }
 
-        Poisson newPoissonGrid(double r)
+        Poisson newPoissonGrid(float r)
         {
-            double gridsize = r / Math.Sqrt(2);
-            return new Poisson(r, gridsize, new Dictionary<Vector, Vector>());
+            float gridsize = r / MathF.Sqrt(2);
+            return new Poisson(r, gridsize, new Dictionary<V, V>());
         }
         
-        Vector normalize(Vector v)
+        V normalize(V v)
         {
-            var i = Math.Floor(v.x / size);
-            var j = Math.Floor(v.y / size);
-            return new Vector(i, j, 0);
+            var i = MathF.Floor(v.v.X / size);
+            var j = MathF.Floor(v.v.Y / size);
+            return new V(i, j, 0);
         }
 
-        bool insert(Vector v)
+        bool insert(V v)
         {
-            Vector n = normalize(v);
+            V n = normalize(v);
 
-            for (double i = n.x - 2; i < n.x + 3; i++)
+            for (float i = n.v.X - 2; i < n.v.X + 3; i++)
             {
-                for (double j = n.y - 2; j < n.y + 3; j++)
+                for (float j = n.v.Y - 2; j < n.v.Y + 3; j++)
                 {
-                    if(cells.ContainsKey(new Vector(i, j, 0)))
+                    if(cells.ContainsKey(new V(i, j, 0)))
                     {
-                        Vector m = cells[new Vector(i, j, 0)];
+                        V m = cells[new V(i, j, 0)];
 
-                        if(Math.Sqrt(Math.Pow(m.x-v.x, 2) + Math.Pow(m.y-v.y, 2)) < r)
+                        if(MathF.Sqrt(MathF.Pow(m.v.X - v.v.X, 2) + MathF.Pow(m.v.Y - v.v.Y, 2)) < r)
                         {
                             return false;
                         }
@@ -52,36 +52,36 @@ namespace PTSharpCore
             return true;
         }
         
-        Vector[] PoissonDisc(double x1, double y1, double x2, double y2, double r, int n)
+        V[] PoissonDisc(float x1, float y1, float x2, float y2, float r, int n)
         {
-            Vector[] result;
+            V[] result;
             var x = x1 + (x2 - x1) / 2;
             var y = y1 + (y2 - y1) / 2;
-            var v = new Vector(x, y, 0);
-            var active = new Vector[] { v };
+            var v = new V(x, y, 0);
+            var active = new V[] { v };
             var grid = newPoissonGrid(r);
             grid.insert(v);
-            result = new Vector[]{v};
+            result = new V[]{v};
                         
             while (active.Length != 0)
             {
                 // Need non-negative random integers
                 // must be a non-negative pseudo-random number in [0,n).
-                int index = ThreadSafeRandom.Next(active.Length);
-                Vector point = active.ElementAt(index);
+                int index = Random.Shared.Next(active.Length);
+                V point = active.ElementAt(index);
                 bool ok = false;
 
                 for (int i = 0; i < n; i++)
                 {
-                    double a = ThreadSafeRandom.NextDouble() * 2 * Math.PI;
-                    double d = ThreadSafeRandom.NextDouble() * r + r;
-                    x = point.x + Math.Cos(a) * d;
-                    y = point.y + Math.Sin(a) * d;
+                    float a = Random.Shared.NextSingle() * 2 * MathF.PI;
+                    float d = Random.Shared.NextSingle() * r + r;
+                    x = point.v.X + MathF.Cos(a) * d;
+                    y = point.v.Y + MathF.Sin(a) * d;
                     if (x < x1 || y < y1 || x > x2 || y > y2)
                     {
                         continue;
                     }
-                    v = new Vector(x, y, 0);
+                    v = new V(x, y, 0);
                     if (!grid.insert(v))
                     {
                         continue;

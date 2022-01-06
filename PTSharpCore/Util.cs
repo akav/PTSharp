@@ -6,29 +6,29 @@ namespace PTSharpCore
 {
     class Util
     {
-        public static double INF = 1e9;
-        public static double EPS = 1e-9;
+        public static float INF = float.PositiveInfinity;
+        public static float EPS = float.Epsilon;
         
-        public static double Radians(double degrees) => degrees * Math.PI / 180;
+        public static float Radians(float degrees) => degrees * MathF.PI / 180;
         
-        public static double Degrees(double radians) => radians * 180 / Math.PI;
+        public static float Degrees(float radians) => radians * 180 / MathF.PI;
         
-        public static Vector Cone(Vector direction, double theta, double u, double v, Random rand)
+        public static V Cone(V direction, float theta, float u, float v)
         {
             if (theta < Util.EPS)
             {
                 return direction;
             }
-            theta = theta * (1 - (2 * Math.Cos(u) / Math.PI));
-            var m1 = Math.Sin(theta);
-            var m2 = Math.Cos(theta);
-            var a = v * 2 * Math.PI;
-            var q = Vector.RandomUnitVector(rand);
+            theta = theta * (1 - (2 * MathF.Cos(u) / MathF.PI));
+            var m1 = MathF.Sin(theta);
+            var m2 = MathF.Cos(theta);
+            var a = v * 2 * MathF.PI;
+            var q = V.RandomUnitVector();
             var s = direction.Cross(q);
             var t = direction.Cross(s);
-            var d = new Vector();
-            d = d.Add(s.MulScalar(m1 * Math.Cos(a)));
-            d = d.Add(t.MulScalar(m1 * Math.Sin(a)));
+            var d = new V();
+            d = d.Add(s.MulScalar(m1 * MathF.Cos(a)));
+            d = d.Add(t.MulScalar(m1 * MathF.Sin(a)));
             d = d.Add(direction.MulScalar(m2));
             d = d.Normalize();
             return d;
@@ -36,8 +36,8 @@ namespace PTSharpCore
         
         public static Mesh CreateMesh(Material material)
         {
-            var mesh = STL.Load("cylinder.stl", material);
-            mesh.FitInside(new Box(new Vector(-0.1, -0.1, 0), new Vector(1.1, 1.1, 100)), new Vector(0.5, 0.5, 0));
+            var mesh = STL.Load("models/cylinder.stl", material);
+            mesh.FitInside(new Box(new V(-0.1F, -0.1F, 0), new V(1.1F, 1.1F, 100)), new V(0.5F, 0.5F, 0));
             mesh.SmoothNormalsThreshold(Radians(10));
             return mesh;
         }
@@ -45,16 +45,16 @@ namespace PTSharpCore
         public static Mesh CreateCubeMesh(Material material)
         {
             var mesh = STL.LoadSTLB("models/cube.stl", material);
-            mesh.FitInside(new Box(new Vector(0, 0, 0), new Vector(1, 1, 1)), new Vector(0.5, 0.5, 0.5));
+            mesh.FitInside(new Box(new V(0, 0, 0), new V(1, 1, 1)), new V(0.5F, 0.5F, 0.5F));
             return mesh;
         }
 
         public static Mesh CreateBrick(int color)
         {
-            var material = Material.GlossyMaterial(Colour.HexColor(color), 1.3, Radians(20));
+            var material = Material.GlossyMaterial(Colour.HexColor(color), 1.3F, Radians(20));
             var mesh = STL.Load("models/toybrick.stl", material);
 	        mesh.SmoothNormalsThreshold(Radians(20));
-            mesh.FitInside(new Box(new Vector(), new Vector(2, 4, 10)), new Vector ( 0, 0, 0 ));
+            mesh.FitInside(new Box(new V(), new V(2, 4, 10)), new V ( 0, 0, 0 ));
 	        return mesh;
         }
         public static Bitmap LoadImage(String path)
@@ -86,7 +86,7 @@ namespace PTSharpCore
             }
         }
         
-        internal static double Median(double[] items)
+        internal static float Median(float[] items)
         {
             var n = items.Length;
             if (n == 0)
@@ -103,20 +103,20 @@ namespace PTSharpCore
             }
         }
 
-        internal static (int, double) Modf(double input)
+        internal static (int, float) Modf(float input)
         {
-            int dec = Convert.ToInt32(Math.Truncate(input));
-            var frac = input - Math.Truncate(input);
+            int dec = Convert.ToInt32(MathF.Truncate(input));
+            var frac = input - MathF.Truncate(input);
             return (dec, frac);
         }
 
-        internal static double Fract(double x)
+        internal static float Fract(float x)
         {
-            double ret = x - Math.Truncate(x);
+            float ret = x - MathF.Truncate(x);
             return x;
         }
         
-        internal static double Clamp(double x, double lo, double hi)
+        internal static float Clamp(float x, float lo, float hi)
         {
             if (x < lo)
                 return lo;
@@ -134,17 +134,17 @@ namespace PTSharpCore
             return x;
         }
 
-        internal static String NumberString(double x)
+        internal static String NumberString(float x)
         {
             return x.ToString();
         }
         
-        double[] ParseFloats(String[] items)
+        float[] ParseFloats(String[] items)
         {
-            List<double> result = new List<double>(items.Length);
+            List<float> result = new List<float>(items.Length);
             foreach(String item in items)
             {
-                double f = Double.Parse(item);
+                float f = float.Parse(item);
                 result.Add(f);
             }
             return result.ToArray();

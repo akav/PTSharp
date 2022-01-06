@@ -32,8 +32,10 @@ namespace PTSharpCore
 
         internal Hit Intersect(Ray r)
         {
+            float tmin;
+            float tmax;
             
-            (double tmin, double tmax) = Box.Intersect(r);
+            (tmin, tmax) = Box.Intersect(r);
             
             if (tmax < tmin || tmax <= 0) {
                 return Hit.NoHit;
@@ -43,15 +45,15 @@ namespace PTSharpCore
 
         public class Node {
             Axis Axis;
-            double Point;
+            float Point;
             IShape[] Shapes;
             Node Left;
             Node Right;
 
-            public double tsplit;
+            public float tsplit;
             public bool leftFirst;
 
-            internal Node(Axis axis, double point, IShape[] shapes, Node left, Node right) {
+            internal Node(Axis axis, float point, IShape[] shapes, Node left, Node right) {
                 Axis = axis;
                 Point = point;
                 Shapes = shapes;
@@ -64,23 +66,23 @@ namespace PTSharpCore
                 return new Node(Axis.AxisNone, 0, shapes, null, null);
             }
 
-            internal Hit Intersect(Ray r, double tmin, double tmax)
+            internal Hit Intersect(Ray r, float tmin, float tmax)
             {
                 switch (Axis)
                 {
                     case Axis.AxisNone:
                         return IntersectShapes(r);
                     case Axis.AxisX:
-                        tsplit = (Point - r.Origin.x) / r.Direction.x;
-                        leftFirst = (r.Origin.x < Point) || (r.Origin.x == Point && r.Direction.x <= 0);
+                        tsplit = (Point - r.Origin.v.X) / r.Direction.v.X;
+                        leftFirst = (r.Origin.v.X < Point) || (r.Origin.v.X == Point && r.Direction.v.X <= 0);
                         break;
                     case Axis.AxisY:
-                        tsplit = (Point - r.Origin.y) / r.Direction.y;
-                        leftFirst = (r.Origin.y < Point) || (r.Origin.y == Point && r.Direction.y <= 0);
+                        tsplit = (Point - r.Origin.v.Y) / r.Direction.v.Y;
+                        leftFirst = (r.Origin.v.Y < Point) || (r.Origin.v.Y == Point && r.Direction.v.Y <= 0);
                         break;
                     case Axis.AxisZ:
-                        tsplit = (Point - r.Origin.z) / r.Direction.z;
-                        leftFirst = (r.Origin.z < Point) || (r.Origin.z == Point && r.Direction.z <= 0);
+                        tsplit = (Point - r.Origin.v.Z) / r.Direction.v.Z;
+                        leftFirst = (r.Origin.v.Z < Point) || (r.Origin.v.Z == Point && r.Direction.v.Z <= 0);
                         break;
                 }
 
@@ -113,7 +115,7 @@ namespace PTSharpCore
                         return h1;
                     }
 
-                    var h2 = second.Intersect(r, tsplit, Math.Min(tmax, h1.T));
+                    var h2 = second.Intersect(r, tsplit, MathF.Min(tmax, h1.T));
           
                     if(h1.T <= h2.T)
                     {
@@ -141,7 +143,7 @@ namespace PTSharpCore
                 return hit;
             }
 
-            public double Median(List<Double> list)
+            public float Median(List<float> list)
             {
                 int middle = list.Count() / 2;
 
@@ -161,7 +163,7 @@ namespace PTSharpCore
                 }
             }
                         
-            public int PartitionScore(Axis axis, double point)
+            public int PartitionScore(Axis axis, float point)
             {
                 (int left, int right) = (0, 0);
                 foreach (var box in from shape in Shapes
@@ -188,7 +190,7 @@ namespace PTSharpCore
                 }
             }
 
-            (IShape[], IShape[]) Partition(int size, Axis axis, double point)
+            (IShape[], IShape[]) Partition(int size, Axis axis, float point)
             {
                 List<IShape> left = new List<IShape>();
                 List<IShape> right = new List<IShape>();
@@ -219,28 +221,28 @@ namespace PTSharpCore
                     return;
                 }
 
-                List<double> xs = new List<double>();
-                List<double> ys = new List<double>();
-                List<double> zs = new List<double>();
+                List<float> xs = new List<float>();
+                List<float> ys = new List<float>();
+                List<float> zs = new List<float>();
 
                 foreach (var shape in Shapes) {
                     Box box = shape.BoundingBox();
-                    xs.Add(box.Min.x); 
-                    xs.Add(box.Max.x); 
-                    ys.Add(box.Min.y); 
-                    ys.Add(box.Max.y); 
-                    zs.Add(box.Min.z); 
-                    zs.Add(box.Max.z); 
+                    xs.Add(box.Min.v.X); 
+                    xs.Add(box.Max.v.X); 
+                    ys.Add(box.Min.v.Y); 
+                    ys.Add(box.Max.v.Y); 
+                    zs.Add(box.Min.v.Z); 
+                    zs.Add(box.Max.v.Z); 
                 }
 
                 xs.Sort();
                 ys.Sort();
                 zs.Sort();
 
-                (double mx, double my, double mz) = (Median(xs), Median(ys), Median(zs));
+                (float mx, float my, float mz) = (Median(xs), Median(ys), Median(zs));
                 var best = (int)(Shapes.Length * 0.85);
                 var bestAxis = Axis.AxisNone;
-                var bestPoint = 0.0;
+                var bestPoint = 0.0F;
 
                 var sx = PartitionScore(Axis.AxisX, mx);
                 if (sx < best) {
