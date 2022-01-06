@@ -10,12 +10,12 @@ namespace PTSharpCore
         {
             var min = box.Min;
             var size = box.Size();
-            var nx = (int)Math.Ceiling(size.x / step);
-            var ny = (int)Math.Ceiling(size.y / step);
-            var nz = (int)Math.Ceiling(size.z / step);
-            var sx = size.x / nx;
-            var sy = size.y / ny;
-            var sz = size.z / nz;
+            var nx = (int)Math.Ceiling(size.dv[0] / step);
+            var ny = (int)Math.Ceiling(size.dv[1] / step);
+            var nz = (int)Math.Ceiling(size.dv[2] / step);
+            var sx = size.dv[0] / nx;
+            var sy = size.dv[1] / ny;
+            var sz = size.dv[2] / nz;
             List<Triangle> triangles = new List<Triangle>();
             for (int x = 0; x < nx - 1; x++)
             {
@@ -23,18 +23,18 @@ namespace PTSharpCore
                 {
                     for(int z = 0; z < nz - 1; z++)
                     {
-                        (var x0, var y0, var z0) = (x * sx + min.x, y * sy + min.y, z * sz + min.z);
+                        (var x0, var y0, var z0) = (x * sx + min.dv[0], y * sy + min.dv[1], z * sz + min.dv[2]);
                         (var x1, var y1, var z1) = (x0 + sx, y0 + sy, z0 + sz);
 
-                        var p = new Vector[8] {
-                                new Vector( x0, y0, z0),
-                                new Vector( x1, y0, z0),
-                                new Vector( x1, y1, z0),
-                                new Vector( x0, y1, z0),
-                                new Vector( x0, y0, z1),
-                                new Vector( x1, y0, z1),
-                                new Vector( x1, y1, z1),
-                                new Vector( x0, y1, z1)
+                        var p = new IVector<double>[8] {
+                                new IVector<double>(new double[] {  x0, y0, z0,0 }),
+                                new IVector<double>(new double[] {  x1, y0, z0,0 }),
+                                new IVector<double>(new double[] {  x1, y1, z0,0 }),
+                                new IVector<double>(new double[] {  x0, y1, z0,0 }),
+                                new IVector<double>(new double[] {  x0, y0, z1,0 }),
+                                new IVector<double>(new double[] {  x1, y0, z1,0 }),
+                                new IVector<double>(new double[] {  x1, y1, z1,0 }),
+                                new IVector<double>(new double[] {  x0, y1, z1,0 })
                         };
 
                         double[] v = new double[8];
@@ -66,7 +66,7 @@ namespace PTSharpCore
             return Mesh.NewMesh(triangles.ToArray());
         }
         
-        static Triangle[] mcPolygonize(Vector[] p, double[] v, double x)
+        static Triangle[] mcPolygonize(IVector<double>[] p, double[] v, double x)
         {
             int index = 0;
             for (int i = 0; i < 8; i++)
@@ -80,7 +80,7 @@ namespace PTSharpCore
             {
                 return null;
             }
-            Vector[] points = new Vector[12];
+            var points = new IVector<double>[12];
             for (int i = 0; i < 12; i++)
             {
                 int bit = 1 << Convert.ToUInt16(i);
@@ -108,7 +108,7 @@ namespace PTSharpCore
             return result;
         }
         
-        static Vector mcInterpolate(Vector p1, Vector p2, double v1, double v2, double x)
+        static IVector<double> mcInterpolate(IVector<double> p1, IVector<double> p2, double v1, double v2, double x)
         {
             if (Math.Abs(x - v1) < Util.EPS)
                 return p1;
@@ -121,7 +121,7 @@ namespace PTSharpCore
             
             var t = (x - v1) / (v2 - v1);
             
-            return new Vector(p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y), p1.z + t * (p2.z - p1.z));
+            return new IVector<double>(new double[] { p1.dv[0] + t * (p2.dv[0] - p1.dv[0]), p1.dv[1] + t * (p2.dv[1] - p1.dv[1]), p1.dv[2] + t * (p2.dv[2] - p1.dv[2]), 0 });
         }
 
         static readonly int[][] pairTable =  {

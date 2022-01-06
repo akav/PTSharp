@@ -5,8 +5,8 @@
         void Compile();
         Box BoundingBox();
         Hit Intersect(Ray ray);
-        Vector UV(Vector uv);
-        Vector NormalAt(Vector normal);
-        Material MaterialAt(Vector v);
+        IVector<double> UV(IVector<double> uv);
+        IVector<double> NormalAt(IVector<double> normal);
+        Material MaterialAt(IVector<double> v);
     }
 }

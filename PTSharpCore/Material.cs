@@ -68,17 +68,17 @@ namespace PTSharpCore
             return new Material(color, null, null, null, null, 1, emittance, 1, 0, 0, -1, false);
         }
 
-        internal static Material MaterialAt(IShape shape, Vector point)
+        internal static Material MaterialAt(IShape shape, IVector<double> point)
         {
             var material = shape.MaterialAt(point);
             var uv = shape.UV(point);
             if (material.Texture != null)
             {
-                material.Color = material.Texture.Sample(uv.x, uv.y);
+                material.Color = material.Texture.Sample(uv.dv[0], uv.dv[1]);
             }
             if (material.GlossTexture != null)
             {
-                var c = material.GlossTexture.Sample(uv.x, uv.y);
+                var c = material.GlossTexture.Sample(uv.dv[0], uv.dv[1]);
                 material.Gloss = (c.r + c.g + c.b) / 3;
              }
             return material;

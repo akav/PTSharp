@@ -79,7 +79,7 @@ namespace PTSharpCore
             {
                 return sampleEnvironment(scene, ray);
             }
-
+                        
             var info = hit.Info(ray);
             var material = info.material;
             var result = Colour.Black;
@@ -115,8 +115,8 @@ namespace PTSharpCore
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
 
-                        var fu = (u + ThreadSafeRandom.NextDouble()) / n;
-                        var fv = (v + ThreadSafeRandom.NextDouble()) / n;
+                        var fu = (u + Random.Shared.NextDouble()) / n;
+                        var fv = (v + Random.Shared.NextDouble()) / n;
                         (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode, rand);
 
                         if (mode == BounceType.BounceTypeAny)
@@ -156,8 +156,8 @@ namespace PTSharpCore
             if (scene.Texture != null)
             {
                 var d = ray.Direction;
-                var u = Math.Atan2(d.z, d.x) + scene.TextureAngle;
-                var v = Math.Atan2(d.y, new Vector(d.x, 0, d.z).Length());
+                var u = Math.Atan2(d.dv[2], d.dv[0]) + scene.TextureAngle;
+                var v = Math.Atan2(d.dv[1], new IVector<double>(new double[] { d.dv[0], 0, d.dv[2], 0 }).Length());
                 u = (u + Math.PI) / (2 * Math.PI);
                 v = (v + Math.PI / 2) / Math.PI;
                 return scene.Texture.Sample(u, v);
@@ -193,7 +193,7 @@ namespace PTSharpCore
 
         Colour sampleLight(Scene scene, Ray n, Random rand, IShape light)
         {
-            Vector center;
+            IVector<double> center;
             double radius;
 
             switch (light)
@@ -214,14 +214,14 @@ namespace PTSharpCore
             {
                 for (; ; )
                 {
-                    var x = rand.NextDouble() * 2 - 1;
-                    var y = rand.NextDouble() * 2 - 1;
+                    var x = Random.Shared.NextDouble() * 2 - 1;
+                    var y = Random.Shared.NextDouble() * 2 - 1;
                     if (x * x + y * y <= 1)
                     {
                         var l = center.Sub(n.Origin).Normalize();
-                        var u = l.Cross(Vector.RandomUnitVector(rand)).Normalize();
+                        var u = l.Cross(IVector<double>.RandomUnitVector()).Normalize();
                         var v = l.Cross(u);
-                        point = new Vector();
+                        point = new IVector<double>();
                         point = point.Add(u.MulScalar(x * radius));
                         point = point.Add(v.MulScalar(y * radius));
                         point = point.Add(center);

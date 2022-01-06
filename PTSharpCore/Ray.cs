@@ -5,16 +5,16 @@ namespace PTSharpCore
 {
     public class Ray
     {
-        internal Vector Origin, Direction;
+        internal IVector<double> Origin, Direction;
         internal bool reflect;
 
-        internal Ray(Vector Origin_, Vector Direction_)
+        internal Ray(IVector<double> Origin_, IVector<double> Direction_)
         {
             Origin = Origin_;
             Direction = Direction_;
         }
 
-        internal Vector Position(double t) => Origin.Add(Direction.MulScalar(t));
+        internal IVector<double> Position(double t) => Origin.Add(Direction.MulScalar(t));
 
         internal Ray Reflect(Ray i) => new Ray(Origin, Direction.Reflect(i.Direction));
 
@@ -26,9 +26,9 @@ namespace PTSharpCore
         {
             var radius = Math.Sqrt(u);
             var theta = 2 * Math.PI * v;
-            var s = Direction.Cross(Vector.RandomUnitVector(rand)).Normalize();
+            var s = Direction.Cross(IVector<double>.RandomUnitVector()).Normalize();
             var t = Direction.Cross(s);
-            var d = new Vector();
+            var d = new IVector<double>();
             d = d.Add(s.MulScalar(radius * Math.Cos(theta)));
             d = d.Add(t.MulScalar(radius * Math.Sin(theta)));
             d = d.Add(Direction.MulScalar(Math.Sqrt(1 - u)));
@@ -50,15 +50,15 @@ namespace PTSharpCore
             
             if (info.inside)
             {
-                Interlocked.Exchange(ref n1, n2);
+                (n1, n2) = (n2, n1);
             }
 
-            double p = material.Reflectivity >= 0 ? material.Reflectivity : n.Reflectance(this, n1, n2);
+            double p = material.Reflectivity >= 0.0D ? material.Reflectivity : n.Reflectance(this, n1, n2);
 
             switch (bounceType)
             {
                 case BounceType.BounceTypeAny:
-                    reflect = ThreadSafeRandom.NextDouble() < p;
+                    reflect = Random.Shared.NextDouble() < p;
                     break;
                 case BounceType.BounceTypeDiffuse:
                     reflect = false;

@@ -92,8 +92,8 @@ namespace PTSharpCore
                         // Random subsampling
                         for (int ii = 0; ii < spp; ii++)
                         {
-                            fu = rand.NextDouble();
-                            fv = rand.NextDouble();
+                            fu = Random.Shared.NextDouble();
+                            fv = Random.Shared.NextDouble();
                             Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
                             Colour sample = sampler.Sample(scene, ray, rand);
                             buf.AddSample(x, y, sample);
@@ -182,7 +182,9 @@ namespace PTSharpCore
                               var fv = (v + 0.5) / sppRoot;
                               Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
                               Colour sample = sampler.Sample(scene, ray, rand);
+                              Console.WriteLine("{0},{1}:{2},{3},{4}", u, v, sample.r, sample.g, sample.b);
                               buf.AddSample(x, y, sample);
+                              
                           }
                       }
                   });
@@ -198,10 +200,11 @@ namespace PTSharpCore
                           for (int s = 0; s < spp; s++)
                           {
                               int y = i / w, x = i % w;
-                              var fu = ThreadSafeRandom.NextDouble(rand);
-                              var fv = ThreadSafeRandom.NextDouble(rand);
+                              var fu = Random.Shared.NextDouble();
+                              var fv = Random.Shared.NextDouble();
                               var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
                               var sample = sampler.Sample(scene, ray, rand);
+                              //Console.WriteLine("{0},{1}:{2},{3},{4}", x, y, sample.r, sample.g, sample.b);
                               buf.AddSample(x, y, sample);
                           }
                       }
@@ -221,8 +224,8 @@ namespace PTSharpCore
                       for (int s = 0; s < samples; s++)
                       {
 
-                          var fu = rand.NextDouble();
-                          var fv = rand.NextDouble();
+                          var fu = Random.Shared.NextDouble();
+                          var fv = Random.Shared.NextDouble();
                           Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
                           Colour sample = sampler.Sample(scene, ray, rand);
                           buf.AddSample(x, y, sample);
@@ -239,8 +242,8 @@ namespace PTSharpCore
                       {
                           Parallel.For(0, FireflySamples, po, (e, loop) =>
                           {
-                              var fu = rand.NextDouble();
-                              var fv = rand.NextDouble();
+                              var fu = Random.Shared.NextDouble();
+                              var fv = Random.Shared.NextDouble();
                               Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
                               Colour sample = sampler.Sample(scene, ray, rand);
                               buf.AddSample(x, y, sample);

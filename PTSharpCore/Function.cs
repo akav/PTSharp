@@ -38,9 +38,9 @@ namespace PTSharpCore
             return this.Box;
         }
 
-        bool Contains(Vector v)
+        bool Contains(IVector<double> v)
         {
-            return v.z < func(v.x, v.y);
+            return v.dv[2] < func(v.dv[0], v.dv[1]);
         }
 
         Hit IShape.Intersect(Ray ray)
@@ -49,7 +49,7 @@ namespace PTSharpCore
             bool sign = Contains(ray.Position(step));
             for (double t = step; t < 12; t += step)
             {
-                Vector v = ray.Position(t);
+                IVector<double> v = ray.Position(t);
                 if (Contains(v) != sign && Box.Contains(v))
                 {
                     return new Hit(this, t - step, null);
@@ -58,29 +58,29 @@ namespace PTSharpCore
             return Hit.NoHit;
         }
 
-        Vector IShape.UV(Vector p)
+        IVector<double> IShape.UV(IVector<double> p)
         {
-            double x1 = Box.Min.x;
-            double x2 = Box.Max.x;
-            double y1 = Box.Min.y;
-            double y2 = Box.Max.y;
-            double u = p.x - x1 / x2 - x1;
-            double v = p.y - y1 / y2 - y1;
-            return new Vector(u, v, 0);
+            double x1 = Box.Min.dv[0];
+            double x2 = Box.Max.dv[0];
+            double y1 = Box.Min.dv[1];
+            double y2 = Box.Max.dv[1];
+            double u = p.dv[0] - x1 / x2 - x1;
+            double v = p.dv[1] - y1 / y2 - y1;
+            return new IVector<double>(new double[] { u, v, 0, 0 });
         }
 
-        Material IShape.MaterialAt(Vector p)
+        Material IShape.MaterialAt(IVector<double> p)
         {
             return this.Material;
         }
 
-        Vector IShape.NormalAt(Vector p)
+        IVector<double> IShape.NormalAt(IVector<double> p)
         {
             double eps = 1e-3;
-            double x = func(p.x - eps, p.y) - func(p.x + eps, p.y);
-            double y = func(p.x, p.y - eps) - func(p.x, p.y + eps);
+            double x = func(p.dv[0] - eps, p.dv[1]) - func(p.dv[0] + eps, p.dv[1]);
+            double y = func(p.dv[0], p.dv[1] - eps) - func(p.dv[0], p.dv[1] + eps);
             double z = 2 * eps;
-            Vector v = new Vector(x, y, z);
+            IVector<double> v = new IVector<double>(new double[] { x, y, z, 0 });
             return v.Normalize();
         }
 

@@ -10,13 +10,13 @@ namespace PTSharpCore
         public static void shrender(int l, int m)
         {
             Scene scene = new Scene();
-            var eye = new Vector(1, 1, 1);
-            var center = new Vector(0, 0, 0);
-            var up = new Vector(0, 0, 1);
+            var eye = new IVector<double>(new double[] { 1, 1, 1, 0 });
+            var center = new IVector<double>(new double[] { 0, 0, 0, 0 });
+            var up = new IVector<double>(new double[] { 0, 0, 1, 0 });
             var light = Material.LightMaterial(Colour.White, 150);
-            scene.Add(Sphere.NewSphere(new Vector(0, 0, 5), 0.5, light));
-            scene.Add(Sphere.NewSphere(new Vector(5, 0, 2), 0.5, light));
-            scene.Add(Sphere.NewSphere(new Vector(0, 5, 2), 0.5, light));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 0, 5, 0 }), 0.5, light));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 5, 0, 2, 0 }), 0.5, light));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 5, 2, 0 }), 0.5, light));
             var pm = Material.GlossyMaterial(Colour.HexColor(0x105B63), 1.3, Util.Radians(30));
             var nm = Material.GlossyMaterial(Colour.HexColor(0xBD4932), 1.3, Util.Radians(30));
             var sh = SphericalHarmonic.NewSphericalHarmonic(l, m, pm, nm);
@@ -46,16 +46,16 @@ namespace PTSharpCore
            var scene = new Scene();
            var material = Material.GlossyMaterial(Colour.HexColor(0xB7CA79), 1.5, Util.Radians(20));
            var mesh = OBJ.Load("models/dragon.obj", material);
-           mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5, 0, 0.5));
+           mesh.FitInside(new Box(new IVector<double>(new double[] { -1, 0, -1, 0 }), new IVector<double>(new double[] { 1, 2, 1, 0 })), new IVector<double>(new double[] { 0.5, 0, 0.5, 0 }));
            scene.Add(mesh);
            var floor = Material.GlossyMaterial(Colour.HexColor(0xD8CAA8), 1.2, Util.Radians(5));
-           scene.Add(Cube.NewCube(new Vector(-50, -50, -50), new Vector(50, 0, 50), floor));
+           scene.Add(Cube.NewCube(new IVector<double>(new double[] { -50, -50, -50, 0 }), new IVector<double>(new double[] { 50, 0, 50, 0 }), floor));
            var light = Material.LightMaterial(Colour.White, 75);
-           scene.Add(Sphere.NewSphere(new Vector(-1, 10, 4), 1, light));
+           scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -1, 10, 4, 0 }), 1, light));
            var mouth = Material.LightMaterial(Colour.HexColor(0xFFFAD5), 500);
-           scene.Add(Sphere.NewSphere(new Vector(-0.05, 1, -0.5), 0.03, mouth));
-           var camera = Camera.LookAt(new Vector(-3, 2, -1), new Vector(0, 0.6, -0.1), new Vector(0, 1, 0), 35);
-           camera.SetFocus(new Vector(0, 1, -0.5), 0.03);
+           scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -0.05, 1, -0.5, 0 }), 0.03, mouth));
+           var camera = Camera.LookAt(new IVector<double>(new double[] { -3, 2, -1, 0 }), new IVector<double>(new double[] { 0, 0.6, -0.1, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 35);
+           camera.SetFocus(new IVector<double>(new double[] { 0, 1, -0.5, 0 }), 0.03);
            var sampler = DefaultSampler.NewSampler(8, 8);
            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
            renderer.IterativeRender("dragon.png", 10);
@@ -79,15 +79,15 @@ namespace PTSharpCore
                 for (int z = -12; z <= 12; z++)
                 {
                     var fx = (double)x;
-                    var fy = ThreadSafeRandom.NextDouble() * 2;
+                    var fy = Random.Shared.NextDouble() * 2;
                     var fz = (double)z;
-                    scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new Vector(fx, fy, fz))));
-                    scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new Vector(fx, fy - 1, fz))));
+                    scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new IVector<double>(new double[] { fx, fy, fz, 0 }))));
+                    scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new IVector<double>(new double[] { fx, fy - 1, fz, 0 }))));
                 }
             }
 
-            scene.Add(Sphere.NewSphere(new Vector(8, 10, 0), 3, Material.LightMaterial(Colour.White, 30)));
-            var camera = Camera.LookAt(new Vector(-10, 10, 0), new Vector(-2, 0, 0), new Vector(0, 1, 0), 45);
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 8, 10, 0, 0 }), 3, Material.LightMaterial(Colour.White, 30)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { -10, 10, 0, 0 }), new IVector<double>(new double[] { -2, 0, 0, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
             renderer.IterativeRender("cube.png", 100);
@@ -100,34 +100,34 @@ namespace PTSharpCore
             const int emission = 3;
             Scene scene = new Scene();
             var white = Material.DiffuseMaterial(Colour.White);
-            var floor = Cube.NewCube(new Vector(-250, -1500, -1), new Vector(250, 6200, 0), white);
+            var floor = Cube.NewCube(new IVector<double>(new double[] { -250, -1500, -1, 0 }), new IVector<double>(new double[] { 250, 6200, 0, 0 }), white);
             scene.Add(floor);
             var light = Material.LightMaterial(Colour.Kelvin(2700), emission);
             for (int y = 0; y <= 6000; y += 40)
             {
-                scene.Add(Sphere.NewSphere(new Vector(-100, (double)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new Vector(0, (double)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new Vector(100, (double)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -100, (double)y, height, 0 }), radius, light));
+                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, (double)y, height, 0 }), radius, light));
+                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 100, (double)y, height, 0 }), radius, light));
 
             }
             for (int y = -40; y >= -750; y -= 20)
             {
-                scene.Add(Sphere.NewSphere(new Vector(-10, (double)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new Vector(0, (double)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new Vector(10, (double)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -10, (double)y, height, 0 }), radius, light));
+                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, (double)y, height, 0 }), radius, light));
+                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 10, (double)y, height, 0 }), radius, light));
             }
             var green = Material.LightMaterial(Colour.HexColor(0x0BDB46), emission);
             var red = Material.LightMaterial(Colour.HexColor(0xDC4522), emission);
 
             for (int x = -160; x <= 160; x += 10)
             {
-                scene.Add(Sphere.NewSphere(new Vector((double)x, -20, height), radius, green));
-                scene.Add(Sphere.NewSphere(new Vector((double)x, 6100, height), radius, red));
+                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { (double)x, -20, height, 0 }), radius, green));
+                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { (double)x, 6100, height, 0 }), radius, red));
             }
-            scene.Add(Sphere.NewSphere(new Vector(-160, 250, height), radius, red));
-            scene.Add(Sphere.NewSphere(new Vector(-180, 250, height), radius, red));
-            scene.Add(Sphere.NewSphere(new Vector(-200, 250, height), radius, light));
-            scene.Add(Sphere.NewSphere(new Vector(-220, 250, height), radius, light));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -160, 250, height, 0 }), radius, red));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -180, 250, height, 0 }), radius, red));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -200, 250, height, 0 }), radius, light));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -220, 250, height, 0 }), radius, light));
             for (int i = 0; i < 5; i++)
             {
                 var y = (double)((i + 1) * -120);
@@ -135,14 +135,14 @@ namespace PTSharpCore
                 for (int j = 1; j <= 4; j++)
                 {
                     var x = (double)(j + 4) * 7.5;
-                    scene.Add(Sphere.NewSphere(new Vector(x, y, height), radius, red));
-                    scene.Add(Sphere.NewSphere(new Vector(-x, y, height), radius, red));
-                    scene.Add(Sphere.NewSphere(new Vector(x, -y, height), radius, light));
-                    scene.Add(Sphere.NewSphere(new Vector(-x, -y, height), radius, light));
+                    scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { x, y, height, 0 }), radius, red));
+                    scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -x, y, height, 0 }), radius, red));
+                    scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { x, -y, height, 0 }), radius, light));
+                    scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -x, -y, height, 0 }), radius, light));
                 }
             }
-            var camera = Camera.LookAt(new Vector(0, -1500, 200), new Vector(0, -100, 0), new Vector(0, 0, 1), 20);
-            camera.SetFocus(new Vector(0, 20000, 0), 1);
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 0, -1500, 200, 0 }), new IVector<double>(new double[] { 0, -100, 0, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 20);
+            camera.SetFocus(new IVector<double>(new double[] { 0, 20000, 0, 0 }), 1);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
             renderer.IterativeRender("runway.png", 1000);
@@ -154,13 +154,13 @@ namespace PTSharpCore
             var material = Material.GlossyMaterial(Colour.HexColor(0xF2EBC7), 1.5, Util.Radians(0));
             var mesh = OBJ.Load("models/bunny.obj", material);
             mesh.SmoothNormals();
-            mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5, 0, 0.5));
+            mesh.FitInside(new Box(new IVector<double>(new double[] { -1, 0, -1, 0 }), new IVector<double>(new double[] { 1, 2, 1, 0 })), new IVector<double>(new double[] { 0.5, 0, 0.5, 0 }));
             scene.Add(mesh);
             var floor = Material.GlossyMaterial(Colour.HexColor(0x33332D), 1.2, Util.Radians(20));
-            scene.Add(Cube.NewCube(new Vector(-10000, -10000, -10000), new Vector(10000, 0, 10000), floor));
-            scene.Add(Sphere.NewSphere(new Vector(0, 5, 0), 1, Material.LightMaterial(Colour.White, 10)));
-            scene.Add(Sphere.NewSphere(new Vector(4, 5, 4), 1, Material.LightMaterial(Colour.White, 10)));
-            var camera = Camera.LookAt(new Vector(-1, 2, 3), new Vector(0, 0.75, 0), new Vector(0, 1, 0), 50);
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -10000, -10000, -10000, 0 }), new IVector<double>(new double[] { 10000, 0, 10000, 0 }), floor));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 5, 0, 0 }), 1, Material.LightMaterial(Colour.White, 10)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 4, 5, 4, 0 }), 1, Material.LightMaterial(Colour.White, 10)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { -1, 2, 3, 0 }), new IVector<double>(new double[] { 0, 0.75, 0, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 50);
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SetSpecularMode(SpecularMode.SpecularModeFirst);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
@@ -172,22 +172,22 @@ namespace PTSharpCore
         {
             var scene = new Scene();
             var wall = Material.GlossyMaterial(Colour.HexColor(0xFCFAE1), 1.333, Util.Radians(30));
-            scene.Add(Sphere.NewSphere(new Vector(10, 10, 10), 2, Material.LightMaterial(Colour.White, 50)));
-            scene.Add(Cube.NewCube(new Vector(-100, -100, -100), new Vector(-12, 100, 100), wall));
-            scene.Add(Cube.NewCube(new Vector(-100, -100, -100), new Vector(100, -1, 100), wall));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 10, 10, 10, 0 }), 2, Material.LightMaterial(Colour.White, 50)));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -100, -100, -100, 0 }), new IVector<double>(new double[] { -12, 100, 100, 0 }), wall));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -100, -100, -100, 0 }), new IVector<double>(new double[] { 100, -1, 100, 0 }), wall));
             var material = Material.GlossyMaterial(Colour.HexColor(0x167F39), 1.333, Util.Radians(30));
-            var sphere = Sphere.NewSphere(new Vector(), 1, material);
+            var sphere = Sphere.NewSphere(new IVector<double>(), 1, material);
             for (int i = 0; i < 180; i += 30)
             {
                 var m = Matrix.Identity;
-                m = m.Scale(new Vector(0.3, 1, 5)).Mul(m);
-                m = m.Rotate(new Vector(0, 1, 0), Util.Radians((double)i)).Mul(m);
+                m = m.Scale(new IVector<double>(new double[] { 0.3, 1, 5, 0 })).Mul(m);
+                m = m.Rotate(new IVector<double>(new double[] { 0, 1, 0, 0 }), Util.Radians((double)i)).Mul(m);
                 var shape = TransformedShape.NewTransformedShape(sphere, m);
                 scene.Add(shape);
             }
-            var camera = Camera.LookAt(new Vector(8, 8, 0), new Vector(1, 0, 0), new Vector(0, 1, 0), 45);
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 8, 8, 0, 0 }), new IVector<double>(new double[] { 1, 0, 0, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
             renderer.IterativeRender("ellipsoid.png", 1000);
         }
 
@@ -196,29 +196,29 @@ namespace PTSharpCore
             var scene = new Scene();
             var glass = Material.ClearMaterial(1.5, 0);
             // add a sphere primitive
-            scene.Add(Sphere.NewSphere(new Vector(-1.5, 0, 0.5), 1, glass));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -1.5, 0, 0.5, 0 }), 1, glass));
             // add a mesh sphere
             var mesh = STL.Load("models/sphere.stl", glass);
             mesh.SmoothNormals();
-            mesh.Transform(new Matrix().Translate(new Vector(1.5, 0, 0.5)));
+            mesh.Transform(new Matrix().Translate(new IVector<double>(new double[] { 1.5, 0, 0.5, 0 })));
             scene.Add(mesh);
             // add the floor
-            scene.Add(Plane.NewPlane(new Vector(0, 0, -1), new Vector(0, 0, 1), Material.DiffuseMaterial(Colour.White)));
+            scene.Add(Plane.NewPlane(new IVector<double>(new double[] { 0, 0, -1, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), Material.DiffuseMaterial(Colour.White)));
             // add the light
-            scene.Add(Sphere.NewSphere(new Vector(0, 0, 5), 1, Material.LightMaterial(Colour.White, 15)));
-            var camera = Camera.LookAt(new Vector(0, -5, 5), new Vector(0, 0, 0), new Vector(0, 0, 1), 50);
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 0, 5, 0 }), 1, Material.LightMaterial(Colour.White, 15)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 0, -5, 5, 0 }), new IVector<double>(new double[] { 0, 0, 0, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 50);
             var sampler = DefaultSampler.NewSampler(16, 8);
             sampler.SetSpecularMode(SpecularMode.SpecularModeAll);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("refraction.png", 100);
         }
 
         public void qbert()
         {
             var scene = new Scene();
-            var floor = Material.GlossyMaterial(Colour.HexColor(0xFCFFF5), 1.2, Util.Radians(30));
-            var cube = Material.GlossyMaterial(Colour.HexColor(0xFF8C00), 1.3, Util.Radians(20));
-            var ball = Material.GlossyMaterial(Colour.HexColor(0xD90000), 1.4, Util.Radians(10));
+            var floor = Material.GlossyMaterial(Colour.HexColor(0xFCFFF5), 1.2d, Util.Radians(30));
+            var cube = Material.GlossyMaterial(Colour.HexColor(0xFF8C00), 1.3d, Util.Radians(20));
+            var ball = Material.GlossyMaterial(Colour.HexColor(0xD90000), 1.4d, Util.Radians(10));
             int n = 7;
             var fn = (double)n;
             for (int z = 0; z < n; z++)
@@ -228,23 +228,23 @@ namespace PTSharpCore
                     for (int y = 0; y < n - z - x; y++)
                     {
                         (var fx, var fy, var fz) = ((double)x, (double)y, (double)z);
-                        scene.Add(Cube.NewCube(new Vector(fx, fy, fz), new Vector(fx + 1, fy + 1, fz + 1), cube));
+                        scene.Add(Cube.NewCube(new IVector<double>(new double[] { fx, fy, fz, 0 }), new IVector<double>(new double[] { fx + 1, fy + 1, fz + 1, 0 }), cube));
         
                         if(x + y == n - z - 1)
                         {
-                            if (new Random().NextDouble() > 0.75) 
+                            if (Random.Shared.NextDouble() > 0.75d) 
                             {
-                                scene.Add(Sphere.NewSphere(new Vector(fx + 0.5, fy + 0.5, fz + 1.5), 0.35, ball));
+                                scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { fx + 0.5, fy + 0.5, fz + 1.5, 0 }), 0.35, ball));
                             }   
                         }
                     }
                 }
             }
-            scene.Add(Cube.NewCube(new Vector(-1000, -1000, -1), new Vector(1000, 1000, 0), floor));
-            scene.Add(Sphere.NewSphere(new Vector(fn, fn / 3, fn * 2), 1, Material.LightMaterial(Colour.White, 100)));
-            var camera = Camera.LookAt(new Vector(fn * 2, fn * 2, fn * 2), new Vector(0, 0, fn / 4), new Vector(0, 0, 1), 35);
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -1000, -1000, -1, 0 }), new IVector<double>(new double[] { 1000, 1000, 0, 0 }), floor));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { fn, fn / 3, fn * 2, 0 }), 1, Material.LightMaterial(Colour.White, 100)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { fn * 2, fn * 2, fn * 2, 0 }), new IVector<double>(new double[] { 0, 0, fn / 4, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
             renderer.FireflySamples = 64;
             renderer.IterativeRender("qbert.png", 100); 
         }
@@ -253,15 +253,15 @@ namespace PTSharpCore
         {
             var scene = new Scene();
             var material = Material.GlossyMaterial(Colour.HexColor(0xF2F2F2), 1.5, Util.Radians(20));
-            scene.Add(Cube.NewCube(new Vector(-100, -1, -100), new Vector(100, 0, 100), material));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -100, -1, -100, 0 }), new IVector<double>(new double[] { 100, 0, 100, 0 }), material));
             var heart = Material.GlossyMaterial(Colour.HexColor(0xF60A20), 1.5, Util.Radians(20));
             var mesh = STL.Load("love.stl", heart);
-            mesh.FitInside(new Box(new Vector(-0.5, 0, -0.5), new Vector(0.5, 1, 0.5)), new Vector(0.5, 0, 0.5));
+            mesh.FitInside(new Box(new IVector<double>(new double[] { -0.5, 0, -0.5, 0 }), new IVector<double>(new double[] { 0.5, 1, 0.5, 0 })), new IVector<double>(new double[] { 0.5, 0, 0.5, 0 }));
             scene.Add(mesh);
-            scene.Add(Sphere.NewSphere(new Vector(-2, 10, 2), 1, Material.LightMaterial(Colour.White, 30)));
-            scene.Add(Sphere.NewSphere(new Vector(0, 10, 2), 1, Material.LightMaterial(Colour.White, 30)));
-            scene.Add(Sphere.NewSphere(new Vector(2, 10, 2), 1, Material.LightMaterial(Colour.White, 30)));
-            var camera = Camera.LookAt(new Vector(0, 1.5, 2), new Vector(0, 0.5, 0), new Vector(0, 1, 0), 35);
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -2, 10, 2, 0 }), 1, Material.LightMaterial(Colour.White, 30)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 10, 2, 0 }), 1, Material.LightMaterial(Colour.White, 30)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 2, 10, 2, 0 }), 1, Material.LightMaterial(Colour.White, 30)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 0, 1.5, 2, 0 }), new IVector<double>(new double[] { 0, 0.5, 0, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("love.png", 1000); 
@@ -273,20 +273,20 @@ namespace PTSharpCore
             var r = 0.4;
             Material material;
             material = Material.DiffuseMaterial(Colour.HexColor(0x334D5C));
-            scene.Add(Sphere.NewSphere(new Vector(-2, r, 0), r, material));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -2, r, 0, 0 }), r, material));
             material = Material.SpecularMaterial(Colour.HexColor(0x334D5C), 2);
-            scene.Add(Sphere.NewSphere(new Vector(-1, r, 0), r, material));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -1, r, 0, 0 }), r, material));
             material = Material.GlossyMaterial(Colour.HexColor(0x334D5C), 2, Util.Radians(50));
-            scene.Add(Sphere.NewSphere(new Vector(0, r, 0), r, material));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, r, 0, 0 }), r, material));
             material = Material.TransparentMaterial(Colour.HexColor(0x334D5C), 2, Util.Radians(20), 1);
-            scene.Add(Sphere.NewSphere(new Vector(1, r, 0), r, material));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 1, r, 0, 0 }), r, material));
             material = Material.ClearMaterial(2, 0);
-            scene.Add(Sphere.NewSphere(new Vector(2, r, 0), r, material));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 2, r, 0, 0 }), r, material));
             material = Material.MetallicMaterial(Colour.HexColor(0xFFFFFF), 0, 1);
-            scene.Add(Sphere.NewSphere(new Vector(0, 1.5, -4), 1.5, material));
-            scene.Add(Cube.NewCube(new Vector(-1000, -1, -1000), new Vector(1000, 0, 1000), Material.GlossyMaterial(Colour.HexColor(0xFFFFFF), 1.4, Util.Radians(20))));
-            scene.Add(Sphere.NewSphere(new Vector(0, 5, 0), 1, Material.LightMaterial(Colour.White, 25)));
-            var camera = Camera.LookAt(new Vector(0, 3, 6), new Vector(0, 1, 0), new Vector(0, 1, 0), 30);
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 1.5, -4, 0 }), 1.5, material));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -1000, -1, -1000, 0 }), new IVector<double>(new double[] { 1000, 0, 1000, 0 }), Material.GlossyMaterial(Colour.HexColor(0xFFFFFF), 1.4, Util.Radians(20))));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 5, 0, 0 }), 1, Material.LightMaterial(Colour.White, 25)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 0, 3, 6, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 30);
             var sampler = DefaultSampler.NewSampler(16, 16);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
             renderer.FireflySamples = 32;
@@ -324,12 +324,12 @@ namespace PTSharpCore
                         var z = i * H;
                         var mnum = new Random().Next(meshes.Length);
                         var mesh = meshes[mnum];
-                        var m = new Matrix().Translate(new Vector((double)x,(double)(y + dy), (double)z));
+                        var m = new Matrix().Translate(new IVector<double>(new double[] { (double)x, (double)(y + dy), (double)z, 0 }));
                         scene.Add(TransformedShape.NewTransformedShape(mesh, m));
                     }
                 }
             }
-            var camera = Camera.LookAt(new Vector(-23, 13, 20), new Vector(0, 0, 0), new Vector(0, 0, 1), 45);
+            var camera = Camera.LookAt(new IVector<double>(new double[] { -23, 13, 20, 0 }), new IVector<double>(new double[] { 0, 0, 0, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("toybrick.png", 1000);
@@ -356,13 +356,13 @@ namespace PTSharpCore
                     var fy = (double)y;
                     var fz = (double)x / 2;
 
-                    scene.Add(TransformedShape.NewTransformedShape(mesh, new Matrix().Translate(new Vector(fx, fy, fz))));
+                    scene.Add(TransformedShape.NewTransformedShape(mesh, new Matrix().Translate(new IVector<double>(new double[] { fx, fy, fz, 0 }))));
                 }
             }
-            scene.Add(Sphere.NewSphere(new Vector(1, 0, 10), 3, Material.LightMaterial(Colour.White, 20)));
-            var camera = Camera.LookAt(new Vector(-5, 0, 5), new Vector(1, 0, 0), new Vector(0, 0, 1), 45);
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 1, 0, 10, 0 }), 3, Material.LightMaterial(Colour.White, 20)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { -5, 0, 5, 0 }), new IVector<double>(new double[] { 1, 0, 0, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
             renderer.IterativeRender("cylinder.png", 1000);
         }
 
@@ -371,31 +371,31 @@ namespace PTSharpCore
             int width = 1920;
             int height = 1080;
             Scene scene = new Scene();
-            scene.Add(Sphere.NewSphere(new Vector(1.5, 1.25, 0), 1.25, Material.SpecularMaterial(Colour.HexColor(0x004358), 1.3)));
-            scene.Add(Sphere.NewSphere(new Vector(-1, 1, 2), 1, Material.SpecularMaterial(Colour.HexColor(0xFFE11A), 1.3)));
-            scene.Add(Sphere.NewSphere(new Vector(-2.5, 0.75, 0), 0.75, Material.SpecularMaterial(Colour.HexColor(0xFD7400), 1.3)));
-            scene.Add(Sphere.NewSphere(new Vector(-0.75, 0.5, -1), 0.5, Material.ClearMaterial(1.5, 0)));
-            scene.Add(Cube.NewCube(new Vector(-10, -1, -10), new Vector(10, 0, 10), Material.GlossyMaterial(Colour.White, 1.1, Util.Radians(10))));
-            scene.Add(Sphere.NewSphere(new Vector(-1.5, 4, 0), 0.5, Material.LightMaterial(Colour.White, 30)));
-            Camera camera = Camera.LookAt(new Vector(0, 2, -5), new Vector(0, 0.25, 3), new Vector(0, 1, 0), 45);
-            camera.SetFocus(new Vector(-0.75, 1, -1), 0.1);
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 1.5, 1.25, 0, 0 }), 1.25, Material.SpecularMaterial(Colour.HexColor(0x004358), 1.3)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -1, 1, 2, 0 }), 1, Material.SpecularMaterial(Colour.HexColor(0xFFE11A), 1.3)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -2.5, 0.75, 0, 0 }), 0.75, Material.SpecularMaterial(Colour.HexColor(0xFD7400), 1.3)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -0.75, 0.5, -1, 0 }), 0.5, Material.ClearMaterial(1.5, 0)));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -10, -1, -10, 0 }), new IVector<double>(new double[] { 10, 0, 10, 0 }), Material.GlossyMaterial(Colour.White, 1.1, Util.Radians(10))));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -1.5, 4, 0, 0 }), 0.5, Material.LightMaterial(Colour.White, 30)));
+            Camera camera = Camera.LookAt(new IVector<double>(new double[] { 0, 2, -5, 0 }), new IVector<double>(new double[] { 0, 0.25, 3, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 45);
+            camera.SetFocus(new IVector<double>(new double[] { -0.75, 1, -1, 0 }), 0.1);
             DefaultSampler sampler = DefaultSampler.NewSampler(4, 8);
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
             Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, false);
-            renderer.FireflySamples = 64;
+            //renderer.FireflySamples = 64;
             renderer.IterativeRender("sphere.png", 500);
         }
 
         public void teapot()
         {
             var scene = new Scene();
-            scene.Add(Sphere.NewSphere(new Vector(-2, 5, -3), 0.5, Material.LightMaterial(Colour.White, 50)));
-            scene.Add(Sphere.NewSphere(new Vector(5, 5, -3), 0.5, Material.LightMaterial(Colour.White, 50)));
-            scene.Add(Cube.NewCube(new Vector(-30, -1, -30), new Vector(30, 0, 30), Material.SpecularMaterial(Colour.HexColor(0xFCFAE1), 2)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -2, 5, -3, 0 }), 0.5, Material.LightMaterial(Colour.White, 50)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 5, 5, -3, 0 }), 0.5, Material.LightMaterial(Colour.White, 50)));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -30, -1, -30, 0 }), new IVector<double>(new double[] { 30, 0, 30, 0 }), Material.SpecularMaterial(Colour.HexColor(0xFCFAE1), 2)));
             var mesh = OBJ.Load("teapot.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
             mesh.SmoothNormals();
             scene.Add(mesh);
-            var camera = Camera.LookAt(new Vector(2, 5, -6), new Vector(0.5, 1, 0), new Vector(0, 1, 0), 45);
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 2, 5, -6, 0 }), new IVector<double>(new double[] { 0.5, 1, 0, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, false);
@@ -408,29 +408,57 @@ namespace PTSharpCore
             var scene = new Scene();
             var material = Material.DiffuseMaterial(new Colour(0.95, 0.95, 1));
             var light = Material.LightMaterial(Colour.White, 300);
-            scene.Add(Sphere.NewSphere(new Vector(-0.75, -0.75, 5), 0.25, light));
-            scene.Add(Cube.NewCube(new Vector(-1000, -1000, -1000), new Vector(1000, 1000, 0), material));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -0.75, -0.75, 5, 0 }), 0.25, light));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -1000, -1000, -1000, 0 }), new IVector<double>(new double[] { 1000, 1000, 0, 0 }), material));
             var mesh = STL.Load("models/hits.stl", material);
             mesh.SmoothNormalsThreshold(Util.Radians(10));
-            mesh.FitInside(new Box(new Vector(-1, -1, 0), new Vector(1, 1, 2)), new Vector(0.5, 0.5, 0));
+            mesh.FitInside(new Box(new IVector<double>(new double[] { -1, -1, 0, 0 }), new IVector<double>(new double[] { 1, 1, 2, 0 })), new IVector<double>(new double[] { .5, 0.5, 0, 0 }));
             scene.Add(mesh);
-            var camera = Camera.LookAt(new Vector(1.6, -3, 2), new Vector(-0.25, 0.5, 0.5), new Vector(0, 0, 1), 50);
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 1.6, -3, 2, 0 }), new IVector<double>(new double[] { -0.25, 0.5, 0.5, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 50);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.FireflySamples = 128;
             renderer.IterativeRender("hits.png", 1000);
         }
 
+        public void simplesphere()
+        {
+            var scene = new Scene();
+            // create a material
+            var material = Material.DiffuseMaterial(Colour.White);
+
+            // add the floor (a plane)
+            var plane = Plane.NewPlane(new IVector<double>(new double[] { 0, 0, 0, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), material);
+            scene.Add(plane);
+
+            // add the ball (a sphere)
+            var sphere = Sphere.NewSphere(new IVector<double>(new double[] { 0, 0, 1, 0 }), 1.0D, material);
+            scene.Add(sphere);
+
+            // add a spherical light source
+            var light = Sphere.NewSphere(new IVector<double>(new double[] { 0, 0, 5, 0 }), 0.1, Material.LightMaterial(Colour.White, 8));
+            scene.Add(light);
+
+            // position the camera
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 3, 3, 3, 0 }), new IVector<double>(new double[] { 0, 0, 0.5, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 50);
+
+            // render the scene with progressive refinement
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
+            renderer.AdaptiveSamples = 128;
+            renderer.IterativeRender("simplesphere.png", 1000);
+        }
+
         public void suzanne()
         {
             var scene = new Scene();
             var material = Material.DiffuseMaterial(Colour.HexColor(0x334D5C));
-            scene.Add(Sphere.NewSphere(new Vector(0.5, 1, 3), 1, Material.LightMaterial(Colour.White, 4)));
-            scene.Add(Sphere.NewSphere(new Vector(1.5, 1, 3), 1, Material.LightMaterial(Colour.White, 4)));
-            scene.Add(Cube.NewCube(new Vector(-5, -5, -2), new Vector(5, 5, -1), material));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0.5, 1, 3, 0 }), 1, Material.LightMaterial(Colour.White, 4)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 1.5, 1, 3, 0 }), 1, Material.LightMaterial(Colour.White, 4)));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -5, -5, -2, 0 }), new IVector<double>(new double[] { 5, 5, -1, 0 }), material));
             var mesh = OBJ.Load("models/suzanne.obj", Material.SpecularMaterial(Colour.HexColor(0xEFC94C), 1.3));
             scene.Add(mesh);
-            var camera = Camera.LookAt(new Vector(1, -0.45, 4), new Vector(1, -0.6, 0.4), new Vector(0, 1, 0), 40);
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 1, -0.45, 4, 0 }), new IVector<double>(new double[] { 1, -0.6, 0.4, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 40);
             var sampler = DefaultSampler.NewSampler(16, 8);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("suzanne.png", 1000);
@@ -441,22 +469,22 @@ namespace PTSharpCore
             var scene = new Scene();
             var light = Material.LightMaterial(Colour.White, 180);
             double d = 4.0;
-            scene.Add(Sphere.NewSphere(new Vector(-1, -1, 0.5).Normalize().MulScalar(d), 0.25, light));
-            scene.Add(Sphere.NewSphere(new Vector(0, -1, 0.25).Normalize().MulScalar(d), 0.25, light));
-            scene.Add(Sphere.NewSphere(new Vector(-1, 1, 0).Normalize().MulScalar(d), 0.25, light));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -1, -1, 0.5, 0 }).Normalize().MulScalar(d), 0.25, light));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, -1, 0.25, 0 }).Normalize().MulScalar(d), 0.25, light));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -1, 1, 0, 0 }).Normalize().MulScalar(d), 0.25, light));
             var material = Material.GlossyMaterial(Colour.HexColor(0x468966), 1.2, Util.Radians(20));
             var sphere = SphereSDF.NewSphereSDF(0.65);
-            var cube = CubeSDF.NewCubeSDF(new Vector(1, 1, 1));
+            var cube = CubeSDF.NewCubeSDF(new IVector<double>(new double[] { 1, 1, 1, 0 }));
             var roundedCube = IntersectionSDF.NewIntersectionSDF(new List<SDF> { sphere, cube });
             var a = CylinderSDF.NewCylinderSDF(0.25, 1.1);
-            var b = TransformSDF.NewTransformSDF(a, new Matrix().Rotate(new Vector(1, 0, 0), Util.Radians(90)));
-            var c = TransformSDF.NewTransformSDF(a, new Matrix().Rotate(new Vector(0, 0, 1), Util.Radians(90)));
+            var b = TransformSDF.NewTransformSDF(a, new Matrix().Rotate(new IVector<double>(new double[] { 1, 0, 0, 0 }), Util.Radians(90)));
+            var c = TransformSDF.NewTransformSDF(a, new Matrix().Rotate(new IVector<double>(new double[] { 0, 0, 1, 0 }), Util.Radians(90)));
             var difference = DifferenceSDF.NewDifferenceSDF(new List<SDF> { roundedCube, a, b, c });
-            var sdf = TransformSDF.NewTransformSDF(difference, new Matrix().Rotate(new Vector(0, 0, 1), Util.Radians(30)));
+            var sdf = TransformSDF.NewTransformSDF(difference, new Matrix().Rotate(new IVector<double>(new double[] { 0, 0, 1, 0 }), Util.Radians(30)));
             scene.Add(SDFShape.NewSDFShape(sdf, material));
             var floor = Material.GlossyMaterial(Colour.HexColor(0xFFF0A5), 1.2, Util.Radians(20));
-            scene.Add(Plane.NewPlane(new Vector(0, 0, -0.5), new Vector(0, 0, 1), floor));
-            var camera = Camera.LookAt(new Vector(-3, 0, 1), new Vector(0, 0, 0), new Vector(0, 0, 1), 35);
+            scene.Add(Plane.NewPlane(new IVector<double>(new double[] { 0, 0, -0.5, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), floor));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { -3, 0, 1, 0 }), new IVector<double>(new double[] { 0, 0, 0, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.LightMode = LightMode.LightModeAll;
             sampler.SpecularMode = SpecularMode.SpecularModeAll;
@@ -496,10 +524,10 @@ namespace PTSharpCore
                 var w = new Volume.VolumeWindow(lo, hi, material);
                 windows.Add(w);
             }
-            var box = new Box(new Vector(-1, -1, -0.2), new Vector(1, 1, 1));
+            var box = new Box(new IVector<double>(new double[] { -1, -1, -0.2, 0 }), new IVector<double>(new double[] { 1, 1, 1, 0 }));
             var volume = Volume.NewVolume(box, bmplist.ToArray(), 3.4 / 0.9765625, windows.ToArray());
             scene.Add(volume);
-            var camera = Camera.LookAt(new Vector(0, -3, -3), new Vector(0, 0, 0), new Vector(0, 0, -1), 35);
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 0, -3, -3, 0 }), new IVector<double>(new double[] { 0, 0, 0, 0 }), new IVector<double>(new double[] { 0, 0, -1, 0 }), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 512, 512, false);
             renderer.IterativeRender("volume.png", 1000);
@@ -527,12 +555,12 @@ namespace PTSharpCore
             scene.Add(mesh);
             material = Material.MetallicMaterial(Colour.White, Util.Radians(0), 0);
             mesh = OBJ.Load("veach_scene/bar4.obj", material);
-            scene.Add(Sphere.NewSphere(new Vector(3.75, 4.281, 0), 1.8 / 2, Material.LightMaterial(Colour.White, 3)));
-            scene.Add(Sphere.NewSphere(new Vector(1.25, 4.281, 0), 0.6 / 2, Material.LightMaterial(Colour.White, 9)));
-            scene.Add(Sphere.NewSphere(new Vector(-1.25, 4.281, 0), 0.2 / 2, Material.LightMaterial(Colour.White, 27)));
-            scene.Add(Sphere.NewSphere(new Vector(-3.75, 4.281, 0), 0.066 / 2, Material.LightMaterial(Colour.White, 81.803)));
-            scene.Add(Sphere.NewSphere(new Vector(0, 10, 4), 1, Material.LightMaterial(Colour.White, 50)));
-            var camera = Camera.LookAt(new Vector(0, 5, 12), new Vector(0, 1, 0), new Vector(0, 1, 0), 50);
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 3.75, 4.281, 0, 0 }), 1.8 / 2, Material.LightMaterial(Colour.White, 3)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 1.25, 4.281, 0, 0 }), 0.6 / 2, Material.LightMaterial(Colour.White, 9)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -1.25, 4.281, 0, 0 }), 0.2 / 2, Material.LightMaterial(Colour.White, 27)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { -3.75, 4.281, 0, 0 }), 0.066 / 2, Material.LightMaterial(Colour.White, 81.803)));
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 10, 4, 0 }), 1, Material.LightMaterial(Colour.White, 50)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 0, 5, 12, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), new IVector<double>(new double[] { 0, 1, 0, 0 }), 50);
             var sampler = DefaultSampler.NewSampler(4, 8);
             sampler.SpecularMode = SpecularMode.SpecularModeAll;
             sampler.LightMode = LightMode.LightModeAll;
@@ -545,24 +573,24 @@ namespace PTSharpCore
             var scene = new Scene();
             var floor = Material.GlossyMaterial(Colour.HexColor(0x7E827A), 1.1, Util.Radians(30));
             var material = Material.GlossyMaterial(Colour.HexColor(0xE3CDA4), 1.1, Util.Radians(30));
-            scene.Add(Cube.NewCube(new Vector(-10000, -10000, -10000), new Vector(10000, 10000, 0), floor));
+            scene.Add(Cube.NewCube(new IVector<double>(new double[] { -10000, -10000, -10000, 0 }), new IVector<double>(new double[] { 10000, 10000, 0, 0 }), floor));
             var n = 24;
 
             for (int x = -n; x <= n; x++) 
             {
                 for (int y = -n; y <= n; y++)
                 {
-                    if (ThreadSafeRandom.NextDouble() > 0.8) 
+                    if (Random.Shared.NextDouble() > 0.8D) 
                     {
-                        var min = new Vector((double)x - 0.5, (double)y - 0.5, 0);
-                        var max = new Vector((double)x + 0.5, (double)y + 0.5, 1);
+                        var min = new IVector<double>(new double[] { (double)x - 0.5D, (double)y - 0.5D, 0, 0 });
+                        var max = new IVector<double>(new double[] { (double)x + 0.5D, (double)y + 0.5D, 1, 0 });
                         var cube = Cube.NewCube(min, max, material);
                         scene.Add(cube);        
                     }
                 }
             }
-            scene.Add(Sphere.NewSphere(new Vector(0, 0, 2.25), 0.25, Material.LightMaterial(Colour.White, 500)));
-            var camera = Camera.LookAt(new Vector(1, 0, 30), new Vector(0, 0, 0), new Vector(0, 0, 1), 35);
+            scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { 0, 0, 2.25D, 0 }), 0.25, Material.LightMaterial(Colour.White, 500)));
+            var camera = Camera.LookAt(new IVector<double>(new double[] { 1, 0, 30D, 0 }), new IVector<double>(new double[] { 0, 0, 0, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 3840, 2160, true);
             renderer.FireflySamples = 128;

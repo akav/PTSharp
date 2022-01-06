@@ -27,53 +27,13 @@ namespace PTSharpCore
 
         public Colour() { }
 
-        public static Colour operator +(Colour c1, Colour c2)
-        {
-            return new Colour(c1.r + c2.r, c1.g + c2.g, c1.b + c2.b);
-        }
-
-        public static Colour operator -(Colour c1, Colour c2)
-        {
-            return new Colour(c1.r - c2.r, c1.g - c2.g, c1.b - c2.b);
-        }
-
-        public static Colour operator *(Colour c1, Colour c2)
-        {
-            return new Colour(c1.r * c2.r, c1.g * c2.g, c1.b * c2.b);
-        }
-
-        public static Colour operator *(double c, Colour c2)
-        {
-            return new Colour(c * c2.r, c * c2.g, c * c2.b);
-        }
-
-        public static Colour operator *(Colour c1, double c)
-        {
-            return new Colour(c * c1.r, c * c1.g, c * c1.b);
-        }
-
-        public static Colour operator /(Colour c1, double c)
-        {
-            return new Colour(c1.r / c, c1.g / c, c1.b / c);
-        }
-
-        public static Colour operator -(Colour c1)
-        { 
-            return new Colour(-c1.r, -c1.g, -c1.b);
-        }
-
-        public static Colour operator +(Colour c1)
-        { 
-            return new Colour(c1.r, c1.g, c1.b);
-        }
-
         public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
         public static Colour HexColor(int x)
         {
             var red = Convert.ToDouble((x >> 16) & 0xff) / 255;
             var green = Convert.ToDouble((x >> 8) & 0xff) / 255;
-            var blue = Convert.ToDouble(x & 0xff)/ 255;
+            var blue = Convert.ToDouble(x & 0xff) / 255;
             Colour color = new Colour(red, green, blue);
             return color.Pow(2.2);
         }
@@ -83,15 +43,18 @@ namespace PTSharpCore
         public int getIntFromColor(double red, double green, double blue)
         {
             if (double.IsNaN(red))
-                red = 0.0;
+                red = 0.0D;
+            
             if (double.IsNaN(green))
-                green = 0.0;
+                green = 0.0D;
+            
             if (double.IsNaN(blue))
-                blue = 0.0;
+                blue = 0.0D;
 
             var r = (int)(256 * Math.Clamp(red, 0.0, 0.999)); 
             var g = (int)(256 * Math.Clamp(green, 0.0, 0.999));
             var b = (int)(256 * Math.Clamp(blue, 0.0, 0.999));
+            
             return 255 << 24 | r << 16 | g << 8 | b;
         }
 
@@ -102,20 +65,20 @@ namespace PTSharpCore
             var b = (byte)Convert.ToUInt16(Math.Max(0, Math.Min(65535, blue * 65535)));
             return 65535 << 24 | r << 16 | g << 8 | b;
         }
-        
-       public static Colour Kelvin(double K)
-       {
+
+        public static Colour Kelvin(double K)
+        {
             double red, green, blue;
             double a, b, c, x;
             // red
             if (K >= 6600)
             {
-                a = 351.97690566805693;  
-                b = 0.114206453784165;   
-                c = -40.25366309332127;  
-                x = K / 100 - 55;        
+                a = 351.97690566805693;
+                b = 0.114206453784165;
+                c = -40.25366309332127;
+                x = K / 100 - 55;
 
-                red = a + b * x + c * Math.Log(x); 
+                red = a + b * x + c * Math.Log(x);
             }
             else
             {
@@ -123,9 +86,9 @@ namespace PTSharpCore
             }
             if (K >= 6600)
             {
-                a = 325.4494125711974;   
-                b = 0.07943456536662342; 
-                c = -28.0852963507957;   
+                a = 325.4494125711974;
+                b = 0.07943456536662342;
+                c = -28.0852963507957;
                 x = K / 100 - 50;
                 green = a + b * x + c * Math.Log(x);
             }

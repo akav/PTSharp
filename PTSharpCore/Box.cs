@@ -5,14 +5,14 @@ namespace PTSharpCore
 {
     class Box
     {
-        public Vector Min;
-        public Vector Max;
+        public IVector<double> Min;
+        public IVector<double> Max;
         internal bool left;
         internal bool right;
 
         internal Box() { }
 
-        public Box(Vector min, Vector max)
+        public Box(IVector<double> min, IVector<double> max)
         {
             Min = min;
             Max = max;
@@ -46,33 +46,42 @@ namespace PTSharpCore
             return box;
         }
 
-        public Vector Anchor(Vector anchor) => Min.Add(Size().Mul(anchor));
+        public IVector<double> Anchor(IVector<double> anchor) => Min.Add(Size().Mul(anchor));
 
-        public Vector Center() => Anchor(new Vector(0.5, 0.5, 0.5));
+        public IVector<double> Center() => Anchor(new IVector<double>(new double[] { 0.5D, 0.5D, 0.5D, 0.0}));
 
         public double OuterRadius() => Min.Sub(Center()).Length();
 
         public double InnerRadius() => Center().Sub(Min).MaxComponent();
 
-        public Vector Size() => Max.Sub(Min);
+        public IVector<double> Size() => Max.Sub(Min);
 
         public Box Extend(Box b) => new Box(Min.Min(b.Min), Max.Max(b.Max));
 
-        public bool Contains(Vector b) => Min.x <= b.x && Max.x >= b.x &&
-                                          Min.y <= b.y && Max.y >= b.y &&
-                                          Min.z <= b.z && Max.z >= b.z;
+        public bool Contains(IVector<double> b) => Min.dv[0] <= b.dv[0] && Max.dv[0] >= b.dv[0] &&
+                                                   Min.dv[1] <= b.dv[1] && Max.dv[1] >= b.dv[1] &&
+                                                   Min.dv[2] <= b.dv[2] && Max.dv[2] >= b.dv[2];
 
-        public bool Intersects(Box b) => !(Min.x > b.Max.x || Max.x < b.Min.x || Min.y > b.Max.y ||
-        Max.y < b.Min.y || Min.z > b.Max.z || Max.z < b.Min.z);
+
+        public bool Intersects(Box b)
+        {
+            return !(Min.dv[0] > b.Max.dv[0] || 
+                    Max.dv[0] < b.Min.dv[0] || 
+                    Min.dv[1] > b.Max.dv[1] ||
+                    Max.dv[1] < b.Min.dv[1] || 
+                    Min.dv[2] > b.Max.dv[2] || 
+                    Max.dv[2] < b.Min.dv[2]);
+        }
+        
 
         public (double, double) Intersect(Ray r)
         {
-            var x1 = (Min.x - r.Origin.x) / r.Direction.x;
-            var y1 = (Min.y - r.Origin.y) / r.Direction.y;
-            var z1 = (Min.z - r.Origin.z) / r.Direction.z;
-            var x2 = (Max.x - r.Origin.x) / r.Direction.x;
-            var y2 = (Max.y - r.Origin.y) / r.Direction.y;
-            var z2 = (Max.z - r.Origin.z) / r.Direction.z;
+            var x1 = (Min.dv[0] - r.Origin.dv[0]) / r.Direction.dv[0];
+            var y1 = (Min.dv[1] - r.Origin.dv[1]) / r.Direction.dv[1];
+            var z1 = (Min.dv[2] - r.Origin.dv[2]) / r.Direction.dv[2];
+            var x2 = (Max.dv[0] - r.Origin.dv[0]) / r.Direction.dv[0];
+            var y2 = (Max.dv[1] - r.Origin.dv[1]) / r.Direction.dv[1];
+            var z2 = (Max.dv[2] - r.Origin.dv[2]) / r.Direction.dv[2];
 
             if (x1 > x2)
             {
@@ -88,7 +97,7 @@ namespace PTSharpCore
             }
             var t1 = Math.Max(Math.Max(x1, y1), z1);
             var t2 = Math.Min(Math.Min(x2, y2), z2);
-            return (t1, t2);
+            return (t1, t2); 
         }
 
         public (bool, bool) Partition(Axis axis, double point)
@@ -96,16 +105,16 @@ namespace PTSharpCore
             switch (axis)
             {
                 case Axis.AxisX:
-                    left = Min.x <= point;
-                    right = Max.x >= point;
+                    left = Min.dv[0] <= point;
+                    right = Max.dv[0] >= point;
                     break;
                 case Axis.AxisY:
-                    left = Min.y <= point;
-                    right = Max.y >= point;
+                    left = Min.dv[1] <= point;
+                    right = Max.dv[1] >= point;
                     break;
                 case Axis.AxisZ:
-                    left = Min.z <= point;
-                    right = Max.z >= point;
+                    left = Min.dv[2] <= point;
+                    right = Max.dv[2] >= point;
                     break;
             }
             return (left, right);

@@ -127,7 +127,7 @@ namespace PTSharpCore
                             pixelColor = Pixels[y * W + x].StandardDeviation();
                             break;
                         case Channel.SamplesChannel:
-                            float p = (float)(Pixels[y * W + x].Samples / maxSamples);
+                            double p = (Pixels[y * W + x].Samples / maxSamples);
                             pixelColor = new Colour(p, p, p);
                             break;
                     }

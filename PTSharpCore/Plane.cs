@@ -4,22 +4,22 @@ namespace PTSharpCore
 {
     class Plane : IShape
     {
-        Vector Point;
-        Vector Normal;
+        IVector<double> Point;
+        IVector<double> Normal;
         Material Material;
         Box box;
 
         Plane() { }
 
-        Plane(Vector point, Vector normal, Material mat)
+        Plane(IVector<double> point, IVector<double> normal, Material mat)
         {
             Point = point;
             Normal = normal;
             Material = mat;
-            box = new Box(new Vector(-Util.INF, -Util.INF, -Util.INF), new Vector(Util.INF, Util.INF, Util.INF));
+            box = new Box(new IVector<double>(new double[] { -Util.INF, -Util.INF, -Util.INF, 0 }), new IVector<double>(new double[] { Util.INF, Util.INF, Util.INF, 0 }));
         }
 
-        internal static Plane NewPlane(Vector point, Vector normal, Material material)
+        internal static Plane NewPlane(IVector<double> point, IVector<double> normal, Material material)
         {
             return new Plane(point, normal.Normalize(), material);
         }
@@ -28,35 +28,39 @@ namespace PTSharpCore
 
         Box IShape.BoundingBox()
         {
-            return new Box(new Vector(-Util.INF, -Util.INF, -Util.INF), new Vector(Util.INF, Util.INF, Util.INF));
+            return new Box(new IVector<double>(new double[] { -Util.INF, -Util.INF, -Util.INF, 0 } ), new IVector<double>(new double[] { Util.INF, Util.INF, Util.INF, 0 }));
         }
 
         Hit IShape.Intersect(Ray ray)
         {
             double d = Normal.Dot(ray.Direction);
+            
             if (Math.Abs(d) < Util.EPS)
             {
                 return Hit.NoHit;
             }
-            Vector a = Point.Sub(ray.Origin);
+            
+            IVector<double> a = Point.Sub(ray.Origin);
             double t = a.Dot(Normal) / d;
+            
             if (t < Util.EPS)
             {
                 return Hit.NoHit;
             }
+            
             return new Hit(this, t, null);
         }
 
-        Vector IShape.UV(Vector a)
+        IVector<double> IShape.UV(IVector<double> a)
         {
-            return new Vector();
+            return new IVector<double>();
         }
 
-        public Material MaterialAt(Vector v)
+        public Material MaterialAt(IVector<double> v)
         {
             return Material;
         }
-        Vector IShape.NormalAt(Vector a)
+        IVector<double> IShape.NormalAt(IVector<double> a)
         {
             return Normal;
         }

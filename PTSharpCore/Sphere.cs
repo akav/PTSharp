@@ -8,12 +8,12 @@ namespace PTSharpCore
 {
     public class Sphere : IShape
     {   
-        internal Vector Center;
+        internal IVector<double> Center;
         internal double Radius;
         internal Material Material;
         internal Box Box;
 
-        Sphere(Vector center_, double radius_, Material material_, Box box_)
+        Sphere(IVector<double> center_, double radius_, Material material_, Box box_)
         {
             Center = center_;
             Radius = radius_;
@@ -21,10 +21,10 @@ namespace PTSharpCore
             Box = box_;
         }
         
-        internal static Sphere NewSphere(Vector center, double radius, Material material) 
+        internal static Sphere NewSphere(IVector<double> center, double radius, Material material) 
         {
-            var min = new Vector(center.x - radius, center.y - radius, center.z - radius);
-            var max = new Vector(center.x + radius, center.y + radius, center.z + radius);
+            var min = new IVector<double>(new double[] { center.dv[0] - radius, center.dv[1] - radius, center.dv[2] - radius, 0 });
+            var max = new IVector<double>(new double[] { center.dv[0] + radius, center.dv[1] + radius, center.dv[2] + radius, 0 });
             var box = new Box(min, max);
             return new Sphere(center, radius, material, box);
         }
@@ -35,19 +35,19 @@ namespace PTSharpCore
         }
 
         Hit IShape.Intersect(Ray r) {
-            Vector to = r.Origin.Sub(Center);
-            double b = to.Dot(r.Direction);
-            double c = to.Dot(to) - Radius * Radius;
-            double d = b * b - c;
+            IVector<double> to = r.Origin.Sub(Center);
+            var b = to.Dot(r.Direction);
+            var c = to.Dot(to) - Radius * Radius;
+            var d = b * b - c;
             if (d > 0)
             {
                 d = Math.Sqrt(d);
-                double t1 = -b - d;
+                var t1 = -b - d;
                 if (t1 > Util.EPS)
                 {
                     return new Hit(this, t1, null);
                 }
-                double t2 = -b + d;
+                var t2 = -b + d;
                 if (t2 > Util.EPS)
                 {
                     return new Hit(this, t2, null);
@@ -56,23 +56,23 @@ namespace PTSharpCore
             return Hit.NoHit;
         }
 
-        Vector IShape.UV(Vector p) {
+        IVector<double> IShape.UV(IVector<double> p) {
             p = p.Sub(Center);
-            var u = Math.Atan2(p.z, p.x);
-            var v = Math.Atan2(p.y, new Vector(p.x, 0, p.z).Length());
+            var u = Math.Atan2(p.dv[2], p.dv[0]);
+            var v = Math.Atan2(p.dv[1], new IVector<double>(new double[] { p.dv[0], 0, p.dv[2], 0 }).Length());
             u = 1 - (u + Math.PI) / (2 * Math.PI);
             v = (v + Math.PI / 2) / Math.PI;
-            return new Vector(u, v, 0);            
+            return new IVector<double>(new double[] { u, v, 0, 0 });            
         }
        
         void IShape.Compile() { }
         
-        Material IShape.MaterialAt(Vector v)
+        Material IShape.MaterialAt(IVector<double> v)
         {
             return Material;
         }
         
-        Vector IShape.NormalAt(Vector p)
+        IVector<double> IShape.NormalAt(IVector<double> p)
         {
             return p.Sub(Center).Normalize();
         }

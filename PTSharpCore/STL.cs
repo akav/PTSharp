@@ -121,10 +121,10 @@ namespace PTSharpCore
             int counter = 0;
 
             // Creating storage structures for storing facets, vertex and normals
-            List<Vector> facetnormal = new List<Vector>();
-            List<Vector> vertexes = new List<Vector>();
+            List<IVector<double>> facetnormal = new List<IVector<double>>();
+            List<IVector<double>> vertexes = new List<IVector<double>>();
             List<Triangle> triangles = new List<Triangle>();
-            Vector[] varray;
+            IVector<double>[] varray;
             Match match = null;
 
             const string regex = @"\s*(facet normal|vertex)\s+(?<X>[^\s]+)\s+(?<Y>[^\s]+)\s+(?<Z>[^\s]+)";
@@ -151,7 +151,7 @@ namespace PTSharpCore
                             double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
                             double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
-                            Vector f = new Vector(x, y, z);
+                            var f = new IVector<double>(new double[] { x, y, z, 0 });
                             //Console.WriteLine("Added facet (x,y,z)"+ " "+x+" "+y+" "+z);
                             facetnormal.Add(f);
                         }
@@ -175,7 +175,7 @@ namespace PTSharpCore
                             double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
                             double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
-                            Vector v = new Vector(x, y, z);
+                            var v = new IVector<double>(new double[] { x, y, z, 0 });
                             //Console.WriteLine("Added vertex 1 (x,y,z)" + " " + x + " " + y + " " + z);
                             vertexes.Add(v);
                         }
@@ -191,7 +191,7 @@ namespace PTSharpCore
                             double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
                             double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
-                            Vector v = new Vector(x, y, z);
+                            var v = new IVector<double>(new double[] { x, y, z, 0 });
                             //Console.WriteLine("Added vertex 2 (x,y,z)" + " " + x + " " + y + " " + z);
                             vertexes.Add(v);
                             line = file.ReadLine();
@@ -206,7 +206,7 @@ namespace PTSharpCore
                             double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
                             double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
-                            Vector v = new Vector(x, y, z);
+                            var v = new IVector<double>(new double[] { x, y, z, 0 });
                             //Console.WriteLine("Added vertex 3 (x,y,z)" + " " + x + " " + y + " " + z);
                             vertexes.Add(v);
                             line = file.ReadLine();
@@ -267,7 +267,7 @@ namespace PTSharpCore
 
             foreach (STLTriangle m in mesh)
             {
-                Triangle t = new Triangle(new Vector(m.A.X, m.A.Y, m.A.Z), new Vector(m.B.X, m.B.Y, m.B.Z), new Vector(m.C.X, m.C.Y, m.C.Z), material);
+                Triangle t = new Triangle(new IVector<double>(new double[] { m.A.X, m.A.Y, m.A.Z, 0 }), new IVector<double>(new double[] { m.B.X, m.B.Y, m.B.Z, 0 }), new IVector<double>(new double[] { m.C.X, m.C.Y, m.C.Z, 0 }), material);
                 t.FixNormals();
                 tlist.Add(t);
             }

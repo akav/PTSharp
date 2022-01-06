@@ -1,22 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 
 namespace PTSharpCore
 {
-
-    // OBJ loader modified using source from:
-    // Mathematical tools in Computer Graphics with C# implementations 
-    // by Alexandre Hardy and Will-Hans Steeb
-    // on Nov 2020
     class OBJ
     {
         static Dictionary<string, Material> matList = new Dictionary<string, Material>();
 
         internal static Mesh Load(string file, Material parent)
         {
-            Vector[] v;
-            Vector[] n;
+            IVector<double>[] v;
+            IVector<double>[] n;
             int nv, nn, nt;
             nv = nn = nt = 0;
             List<Triangle> triangles = new List<Triangle>();
@@ -53,9 +49,9 @@ namespace PTSharpCore
                 }
                 //Create an extra normal for each triangle
                 // for per triangle information
-                n = new Vector[nn + nt];
+                n = new IVector<double>[nn + nt];
                 int basen = nn;
-                v = new Vector[nv];
+                v = new IVector<double>[nv];
                 nn = nv = nt = 0;
                 char[] sep = new char[1];
                 char[] subsep = new char[1];
@@ -87,7 +83,7 @@ namespace PTSharpCore
                                         if (parts[i].Length > 0)
                                             d[c++] = Double.Parse(parts[i]);
                                     }
-                                    n[nn] = new Vector(d[0], d[1], d[2], 0.0);
+                                    n[nn] = new IVector<double>(new double[] { d[0], d[1], d[2], 0.0 });
                                     nn++;
                                 }
                                 else
@@ -100,7 +96,7 @@ namespace PTSharpCore
                                         if (parts[i].Length > 0)
                                             d[c++] = Double.Parse(parts[i]);
                                     }
-                                    v[nv] = new Vector(d[0], d[1], d[2], 1.0);
+                                    v[nv] = new IVector<double>(new double[] { d[0], d[1], d[2], 1.0 });
                                     nv++;
                                 }
                             }
@@ -125,7 +121,7 @@ namespace PTSharpCore
                                 var t = new Triangle();
                                 t.Material = parent;
 
-                                n[basen + nt] = (v[vnum[1]] - v[vnum[0]]) ^ (v[vnum[2]] - v[vnum[0]]);
+                                n[basen + nt] = new IVector<double>((v[vnum[1]].dv - v[vnum[0]].dv) ^ (v[vnum[2]].dv - v[vnum[0]].dv));
                                 t.V1 = v[vnum[0]];
                                 t.V2 = v[vnum[1]];
                                 t.V3 = v[vnum[2]];

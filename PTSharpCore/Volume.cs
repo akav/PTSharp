@@ -118,9 +118,9 @@ namespace PTSharpCore
 
         void IShape.Compile() { }
         
-        internal int Sign(Vector a)
+        internal int Sign(IVector<double> a)
         {
-            double s = Sample(a.x, a.y, a.z);
+            double s = Sample(a.dv[0], a.dv[1], a.dv[2]);
             int i = 0;
             foreach (VolumeWindow window in Windows)
             {
@@ -138,25 +138,26 @@ namespace PTSharpCore
             return Windows.Length + 1;
         }
 
-        Vector IShape.UV(Vector p)
+        IVector<double> IShape.UV(IVector<double> p)
         {
-            return new Vector();
+            return new IVector<double>();
         }
 
-        Vector IShape.NormalAt(Vector p)
+        IVector<double> IShape.NormalAt(IVector<double> p)
         {
             double eps = 0.001;
-            Vector n = new Vector(Sample(p.x - eps, p.y, p.z) - Sample(p.x + eps, p.y, p.z),
-                                  Sample(p.x, p.y - eps, p.z) - Sample(p.x, p.y + eps, p.z),
-                                  Sample(p.x, p.y, p.z - eps) - Sample(p.x, p.y, p.z + eps));
+            IVector<double> n = new IVector<double>( new double[] {
+                Sample(p.dv[0] - eps, p.dv[1], p.dv[2]) - Sample(p.dv[0] + eps, p.dv[1], p.dv[2]),
+                Sample(p.dv[0], p.dv[1] - eps, p.dv[2]) - Sample(p.dv[0], p.dv[1] + eps, p.dv[2]),
+                Sample(p.dv[0], p.dv[1], p.dv[2] - eps) - Sample(p.dv[0], p.dv[1], p.dv[2] + eps), 0});
             return n.Normalize();
         }
 
-        Material IShape.MaterialAt(Vector p)
+        Material IShape.MaterialAt(IVector<double> p)
         {
             double be = 1e9;
             Material bm = new Material();
-            double s = Sample(p.x, p.y, p.z);
+            double s = Sample(p.dv[0], p.dv[1], p.dv[2]);
 
             foreach(var window in Windows)
             {
@@ -182,7 +183,7 @@ namespace PTSharpCore
             int sign = -1;
             for (double t = start; t <= tmax; t += step)
             {
-                Vector p = ray.Position(t);
+                IVector<double> p = ray.Position(t);
                 int s = Sign(p);
 
                 if (s == 0 || (sign >= 0 && s != sign))

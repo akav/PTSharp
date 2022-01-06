@@ -28,34 +28,34 @@ namespace PTSharpCore
                                                      0, 0, 0, 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix Translate(Vector v) => new Matrix(1, 0, 0, v.x,
-                                                          0, 1, 0, v.y,
-                                                          0, 0, 1, v.z,
-                                                          0, 0, 0, 1);
+        internal Matrix Translate(IVector<double> v) => new Matrix(1, 0, 0, v.dv[0],
+                                                                   0, 1, 0, v.dv[1],
+                                                                   0, 0, 1, v.dv[2],
+                                                                   0, 0, 0, 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix Scale(Vector v) => new Matrix(v.x, 0, 0, 0,
-                                                      0, v.y, 0, 0,
-                                                      0, 0, v.z, 0,
-                                                      0, 0, 0, 1);
+        internal Matrix Scale(IVector<double> v) => new Matrix(v.dv[0], 0, 0, 0,
+                                                               0, v.dv[1], 0, 0,
+                                                               0, 0, v.dv[2], 0,
+                                                               0, 0, 0, 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix Rotate(Vector v, double a)
+        internal Matrix Rotate(IVector<double> v, double a)
         {
             v = v.Normalize();
             var s = Math.Sin(a);
             var c = Math.Cos(a);
             var m = 1 - c;
-            return new Matrix(m * v.x * v.x + c, m * v.x * v.y + v.z * s, m * v.z * v.x - v.y * s, 0,
-                              m * v.x * v.y - v.z * s, m * v.y * v.y + c, m * v.y * v.z + v.x * s, 0,
-                              m * v.z * v.x + v.y * s, m * v.y * v.z - v.x * s, m * v.z * v.z + c, 0,
+            return new Matrix(m * v.dv[0] * v.dv[0] + c, m * v.dv[0] * v.dv[1] + v.dv[2] * s, m * v.dv[2] * v.dv[0] - v.dv[1] * s, 0,
+                              m * v.dv[0] * v.dv[1] - v.dv[2] * s, m * v.dv[1] * v.dv[1] + c, m * v.dv[1] * v.dv[2] + v.dv[0] * s, 0,
+                              m * v.dv[2] * v.dv[0] + v.dv[1] * s, m * v.dv[1] * v.dv[2] - v.dv[0] * s, m * v.dv[2] * v.dv[2] + c, 0,
                               0, 0, 0, 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Matrix Frustum(double l, double r, double b, double t, double n, double f)
         {
-            double t1 = 2 * n;
+            double t1 = 2.0D * n;
             double t2 = r - l;
             double t3 = t - b;
             double t4 = f - n;
@@ -83,29 +83,29 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix LookAtMatrix(Vector eye, Vector center, Vector up)
+        internal Matrix LookAtMatrix(IVector<double> eye, IVector<double> center, IVector<double> up)
         {
             up = up.Normalize();
             var f = center.Sub(eye).Normalize();
             var s = f.Cross(up).Normalize();
             var u = s.Cross(f);
 
-            var m = new Matrix(s.x, u.x, f.x, 0,
-                               s.y, u.y, f.y, 0,
-                               s.z, u.z, f.z, 0,
+            var m = new Matrix(s.dv[0], u.dv[0], f.dv[0], 0,
+                               s.dv[1], u.dv[1], f.dv[1], 0,
+                               s.dv[2], u.dv[2], f.dv[2], 0,
                                0, 0, 0, 1);
 
             return m.Transpose().Inverse().Translate(m, eye);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix Translate(Matrix m, Vector v) => new Matrix().Translate(v).Mul(m);
+        internal Matrix Translate(Matrix m, IVector<double> v) => new Matrix().Translate(v).Mul(m);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Matrix Scale(Matrix m, Vector v) => Scale(v).Mul(m);
+        public Matrix Scale(Matrix m, IVector<double> v) => Scale(v).Mul(m);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Matrix Rotate(Matrix m, Vector v, double a) => Rotate(v, a).Mul(m);
+        public Matrix Rotate(Matrix m, IVector<double> v, double a) => Rotate(v, a).Mul(m);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix Mul(Matrix b)
@@ -131,22 +131,22 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector MulPosition(Vector b)
+        public IVector<double> MulPosition(IVector<double> b)
         {
-            var x = x00 * b.x + x01 * b.y + x02 * b.z + x03;
-            var y = x10 * b.x + x11 * b.y + x12 * b.z + x13;
-            var z = x20 * b.x + x21 * b.y + x22 * b.z + x23;
+            var x = x00 * b.dv[0] + x01 * b.dv[1] + x02 * b.dv[2] + x03;
+            var y = x10 * b.dv[0] + x11 * b.dv[1] + x12 * b.dv[2] + x13;
+            var z = x20 * b.dv[0] + x21 * b.dv[1] + x22 * b.dv[2] + x23;
 
-            return new Vector(x, y, z);
+            return new IVector<double>(new double[] { x, y, z, 0 });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector MulDirection(Vector b)
+        public IVector<double> MulDirection(IVector<double> b)
         {
-            var x = x00 * b.x + x01 * b.y + x02 * b.z;
-            var y = x10 * b.x + x11 * b.y + x12 * b.z;
-            var z = x20 * b.x + x21 * b.y + x22 * b.z;
-            return new Vector(x, y, z).Normalize();
+            var x = x00 * b.dv[0] + x01 * b.dv[1] + x02 * b.dv[2];
+            var y = x10 * b.dv[0] + x11 * b.dv[1] + x12 * b.dv[2];
+            var z = x20 * b.dv[0] + x21 * b.dv[1] + x22 * b.dv[2];
+            return new IVector<double>(new double[] { x, y, z, 0 }).Normalize();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -155,16 +155,16 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Box MulBox(Box box)
         {
-            var r = new Vector(x00, x10, x20);
-            var u = new Vector(x01, x11, x21);
-            var b = new Vector(x02, x12, x22);
-            var t = new Vector(x03, x13, x23);
-            var xa = r.MulScalar(box.Min.x);
-            var xb = r.MulScalar(box.Max.x);
-            var ya = u.MulScalar(box.Min.y);
-            var yb = u.MulScalar(box.Max.y);
-            var za = b.MulScalar(box.Min.z);
-            var zb = b.MulScalar(box.Max.z);
+            var r = new IVector<double>(new double[] { x00, x10, x20, 0 });
+            var u = new IVector<double>(new double[] { x01, x11, x21, 0 });
+            var b = new IVector<double>(new double[] { x02, x12, x22, 0 });
+            var t = new IVector<double>(new double[] { x03, x13, x23, 0 });
+            var xa = r.MulScalar(box.Min.dv[0]);
+            var xb = r.MulScalar(box.Max.dv[0]);
+            var ya = u.MulScalar(box.Min.dv[1]);
+            var yb = u.MulScalar(box.Max.dv[1]);
+            var za = b.MulScalar(box.Min.dv[2]);
+            var zb = b.MulScalar(box.Max.dv[2]);
             (xa, xb) = (xa.Min(xb), xa.Max(xb));
             (ya, yb) = (ya.Min(yb), ya.Max(yb));
             (za, zb) = (za.Min(zb), za.Max(zb));
