@@ -19,7 +19,7 @@ namespace PTSharpCore
             {
                 return direction;
             }
-            theta = theta * (1 - (2 * MathF.Cos(u) / MathF.PI));
+            theta = theta * (1 - (2 * MathF.Acos(u) / MathF.PI));
             var m1 = MathF.Sin(theta);
             var m2 = MathF.Cos(theta);
             var a = v * 2 * MathF.PI;
