@@ -1,5 +1,5 @@
 using System;
-using System.Numerics;
+using System.DoubleNumerics;
 using System.Runtime.CompilerServices;
 
 
@@ -9,10 +9,10 @@ namespace PTSharpCore
     {
         Matrix4x4 m;
 
-        public Matrix(float m11, float m12, float m13, float m14,
-                      float m21, float m22, float m23, float m24,
-                      float m31, float m32, float m33, float m34,
-                      float m41, float m42, float m43, float m44)
+        public Matrix(double m11, double m12, double m13, double m14,
+                      double m21, double m22, double m23, double m24,
+                      double m31, double m32, double m33, double m34,
+                      double m41, double m42, double m43, double m44)
         {
             m = new Matrix4x4(m11, m12, m13, m14, 
                               m21, m22, m23, m24, 
@@ -37,11 +37,11 @@ namespace PTSharpCore
         internal Matrix Scale(V v) => new Matrix(v.v.X, 0, 0, 0, 0, v.v.Y, 0, 0, 0, 0, v.v.Z, 0, 0, 0, 0, 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix Rotate(V v, float a)
+        internal Matrix Rotate(V v, double a)
         {
             v = v.Normalize();
-            var s = MathF.Sin(a);
-            var c = MathF.Cos(a);
+            var s = Math.Sin(a);
+            var c = Math.Cos(a);
             var m = 1 - c;
             return new Matrix(m * v.v.X * v.v.X + c, m * v.v.X * v.v.Y + v.v.Z * s, m * v.v.Z * v.v.X - v.v.Y * s, 0,
                               m * v.v.X * v.v.Y - v.v.Z * s, m * v.v.Y * v.v.Y + c, m * v.v.Y * v.v.Z + v.v.X * s, 0,
@@ -50,12 +50,12 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix Frustum(float l, float r, float b, float t, float n, float f)
+        internal Matrix Frustum(double l, double r, double b, double t, double n, double f)
         {
-            float t1 = 2 * n;
-            float t2 = r - l;
-            float t3 = t - b;
-            float t4 = f - n;
+            double t1 = 2 * n;
+            double t2 = r - l;
+            double t3 = t - b;
+            double t4 = f - n;
             return new Matrix(t1 / t2, 0, (r + l) / t2, 0,
                               0, t1 / t3, (t + b) / t3, 0,
                               0, 0, (-f - n) / t4, (-t1 * f) / t4,
@@ -63,7 +63,7 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix Orthographic(float l, float r, float b, float t, float n, float f)
+        internal Matrix Orthographic(double l, double r, double b, double t, double n, double f)
         {
             return new Matrix(2 / (r - l), 0, 0, -(r + l) / (r - l),
                               0, 2 / (t - b), 0, -(t + b) / (t - b),
@@ -72,10 +72,10 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Matrix Perspective(float fovy, float aspect, float near, float far)
+        internal Matrix Perspective(double fovy, double aspect, double near, double far)
         {
-            float ymax = near * MathF.Tan(fovy * MathF.PI / 360);
-            float xmax = ymax * aspect;
+            double ymax = near * Math.Tan(fovy * Math.PI / 360);
+            double xmax = ymax * aspect;
             return Frustum(-xmax, xmax, -ymax, ymax, near, far);
         }
 
@@ -93,7 +93,7 @@ namespace PTSharpCore
         public Matrix Scale(Matrix m, V v) => Scale(v).Mul(m);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Matrix Rotate(Matrix m, V v, float a) => Rotate(v, a).Mul(m);
+        public Matrix Rotate(Matrix m, V v, double a) => Rotate(v, a).Mul(m);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix Mul(Matrix b)

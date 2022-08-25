@@ -1,5 +1,5 @@
 using System;
-using System.Numerics;
+using System.DoubleNumerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -9,25 +9,22 @@ namespace PTSharpCore
     public struct V
     {
         public static Vector3 ORIGIN = new Vector3(0, 0, 0);
-        internal Vector3 v;
-        float w;
+        internal Vector4 v;
+        double w;
                 
-        public V(float X, float Y, float Z)
+        public V(double X, double Y, double Z)
         {
-            v = new Vector3(X, Y, Z);
-            w = 1;        
+            v = new Vector4(X, Y, Z, 1);        
         }
 
-        public V(float X, float Y, float Z, float W)
+        public V(double X, double Y, double Z, double W)
         {
-            v = new Vector3(X,Y,Z);
-            w = W;        
+            v = new Vector4(X,Y,Z,W);        
         }
 
-        public V(Vector3 vec)
+        public V(Vector4 vec)
         {
             v = vec;
-            w = 1;
         
         }
 
@@ -44,12 +41,12 @@ namespace PTSharpCore
             return new V(a.v - v.v);
         }
 
-        public static float operator *(V a, V v)
+        public static double operator *(V a, V v)
         {
             return (a.v.X * v.v.X) + (a.v.Y * v.v.Y) + (a.v.Z * v.v.Z);
         }
 
-        public static V operator *(float c, V v)
+        public static V operator *(double c, V v)
         {
             return new V(c * v.v.X, c * v.v.Y, c * v.v.Z);
         }
@@ -64,12 +61,12 @@ namespace PTSharpCore
             return new V(a.v.X * v.v.X, a.v.Y * v.v.Y, a.v.Z * v.v.Z);
         }
 
-        public static V operator *(V a, float c)
+        public static V operator *(V a, double c)
         {
             return new V(c * a.v.X, c * a.v.Y, c * a.v.Z);
         }
 
-        public static V operator /(V a, float c)
+        public static V operator /(V a, double c)
         {
             return new V(a.v.X / c, a.v.Y / c, a.v.Z / c);
         }
@@ -87,30 +84,30 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V RandomUnitVector()
         {
-            float z = Random.Shared.NextSingle() * 2.0f - 1.0f;
-            float a = Random.Shared.NextSingle() * 2.0f * MathF.PI;
-            float r = MathF.Sqrt(1.0f - z * z);
-            float x = MathF.Sin(a);
-            float y = MathF.Cos(a);
+            double z = Random.Shared.NextSingle() * 2.0f - 1.0f;
+            double a = Random.Shared.NextSingle() * 2.0f * Math.PI;
+            double r = Math.Sqrt(1.0f - z * z);
+            double x = Math.Sin(a);
+            double y = Math.Cos(a);
             return new V(r * x, r * y, z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float Length() => MathF.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
+        public double Length() => Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float LengthN(float n)
+        public double LengthN(double n)
         {
             if (n == 2)
             {
                 return Length();
             }
             var a = Abs();
-            return MathF.Pow(MathF.Pow(a.v.X, n) + MathF.Pow(a.v.Y, n) + MathF.Pow(a.v.Z, n), 1 / n);
+            return Math.Pow(Math.Pow(a.v.X, n) + Math.Pow(a.v.Y, n) + Math.Pow(a.v.Z, n), 1 / n);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float Dot(V b)
+        public double Dot(V b)
         {
             return v.X * b.v.X + v.Y * b.v.Y + v.Z * b.v.Z;
         }
@@ -140,53 +137,53 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         V Abs()
         {
-            return new V(Vector3.Abs(v));
+            return new V(Vector4.Abs(v));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V Add(V b)
         {
-            return new V(Vector3.Add(v, b.v));
+            return new V(Vector4.Add(v, b.v));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V Sub(V b)
         {
-            return new V(Vector3.Subtract(v, b.v));
+            return new V(Vector4.Subtract(v, b.v));
         }
  
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V Mul(V b)
         {
-            return new V(Vector3.Multiply(v, b.v));
+            return new V(Vector4.Multiply(v, b.v));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V Div(V b)
         {
-            return new V(Vector3.Divide(v, b.v));
+            return new V(Vector4.Divide(v, b.v));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V Mod(V b)
         {
-            var x = v.X - b.v.X * MathF.Floor(v.X / b.v.X);
-            var y = v.Y - b.v.Y * MathF.Floor(v.Y / b.v.Y);
-            var z = v.Z - b.v.Z * MathF.Floor(v.Z / b.v.Z);
+            var x = v.X - b.v.X * Math.Floor(v.X / b.v.X);
+            var y = v.Y - b.v.Y * Math.Floor(v.Y / b.v.Y);
+            var z = v.Z - b.v.Z * Math.Floor(v.Z / b.v.Z);
             return new V(x, y, z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public V AddScalar(float b) => new V(v.X + b, v.Y + b, v.Z + b);
+        public V AddScalar(double b) => new V(v.X + b, v.Y + b, v.Z + b);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public V SubScalar(float b) => new V(v.X - b, v.Y - b, v.Z - b);
+        public V SubScalar(double b) => new V(v.X - b, v.Y - b, v.Z - b);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public V MulScalar(float b) => new V(v.X * b, v.Y * b, v.Z * b);
+        public V MulScalar(double b) => new V(v.X * b, v.Y * b, v.Z * b);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public V DivScalar(float b)
+        public V DivScalar(double b)
         {
             return new V(v.X / b, v.Y / b, v.Z / b);
         }
@@ -194,19 +191,19 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V Min(V b)
         {
-            return new V(Vector3.Min(v, b.v));
+            return new V(Vector4.Min(v, b.v));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V Max(V b)
         {
-            return new V(Vector3.Max(v, b.v));
+            return new V(Vector4.Max(v, b.v));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V MinAxis()
         {
-            (var x, var y, var z) = (MathF.Abs(v.X), MathF.Abs(v.Y), MathF.Abs(v.Z));
+            (var x, var y, var z) = (Math.Abs(v.X), Math.Abs(v.Y), Math.Abs(v.Z));
             if (x <= y && x <= z)
             {
                 return new V(1, 0, 0);
@@ -219,16 +216,16 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float MinComponent() => MathF.Min(MathF.Min(v.X, v.Y), v.Z);
+        public double MinComponent() => Math.Min(Math.Min(v.X, v.Y), v.Z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float MaxComponent() => MathF.Max(MathF.Max(v.X, v.Y), v.Z);
+        public double MaxComponent() => Math.Max(Math.Max(v.X, v.Y), v.Z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V Reflect(V i) => i.Sub(MulScalar(2 * Dot(i)));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public V Refract(V i, float n1, float n2)
+        public V Refract(V i, double n1, double n2)
         {
             var nr = n1 / n2;
             var cosI = -Dot(i);
@@ -239,13 +236,13 @@ namespace PTSharpCore
                 return new V();
             }
             
-            var cosT = MathF.Sqrt(1 - sinT2);
+            var cosT = Math.Sqrt(1 - sinT2);
 
             return i.MulScalar(nr).Add(MulScalar(nr * cosI - cosT));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float Reflectance(V i, float n1, float n2)
+        public double Reflectance(V i, double n1, double n2)
         {
             var nr = n1 / n2;
             var cosI = -Dot(i);
@@ -256,7 +253,7 @@ namespace PTSharpCore
                 return 1;
             }
             
-            var cosT = MathF.Sqrt(1 - sinT2);
+            var cosT = Math.Sqrt(1 - sinT2);
             var rOrth = (n1 * cosI - n2 * cosT) / (n1 * cosI + n2 * cosT);
             var rPar = (n2 * cosI - n1 * cosT) / (n2 * cosI + n1 * cosT);
             return (rOrth * rOrth + rPar * rPar) / 2;

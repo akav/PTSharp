@@ -6,29 +6,29 @@ namespace PTSharpCore
 {
     class Util
     {
-        public static float INF = float.PositiveInfinity;
-        public static float EPS = float.Epsilon;
+        public static double INF = double.PositiveInfinity;
+        public static double EPS = double.Epsilon;
         
-        public static float Radians(float degrees) => degrees * MathF.PI / 180;
+        public static double Radians(double degrees) => degrees * Math.PI / 180;
         
-        public static float Degrees(float radians) => radians * 180 / MathF.PI;
+        public static double Degrees(double radians) => radians * 180 / Math.PI;
         
-        public static V Cone(V direction, float theta, float u, float v)
+        public static V Cone(V direction, double theta, double u, double v)
         {
             if (theta < Util.EPS)
             {
                 return direction;
             }
-            theta = theta * (1 - (2 * MathF.Acos(u) / MathF.PI));
-            var m1 = MathF.Sin(theta);
-            var m2 = MathF.Cos(theta);
-            var a = v * 2 * MathF.PI;
+            theta = theta * (1 - (2 * Math.Acos(u) / Math.PI));
+            var m1 = Math.Sin(theta);
+            var m2 = Math.Cos(theta);
+            var a = v * 2 * Math.PI;
             var q = V.RandomUnitVector();
             var s = direction.Cross(q);
             var t = direction.Cross(s);
             var d = new V();
-            d = d.Add(s.MulScalar(m1 * MathF.Cos(a)));
-            d = d.Add(t.MulScalar(m1 * MathF.Sin(a)));
+            d = d.Add(s.MulScalar(m1 * Math.Cos(a)));
+            d = d.Add(t.MulScalar(m1 * Math.Sin(a)));
             d = d.Add(direction.MulScalar(m2));
             d = d.Normalize();
             return d;
@@ -86,7 +86,7 @@ namespace PTSharpCore
             }
         }
         
-        internal static float Median(float[] items)
+        internal static double Median(double[] items)
         {
             var n = items.Length;
             if (n == 0)
@@ -103,20 +103,20 @@ namespace PTSharpCore
             }
         }
 
-        internal static (int, float) Modf(float input)
+        internal static (int, double) Modf(double input)
         {
-            int dec = Convert.ToInt32(MathF.Truncate(input));
-            var frac = input - MathF.Truncate(input);
+            int dec = Convert.ToInt32(Math.Truncate(input));
+            var frac = input - Math.Truncate(input);
             return (dec, frac);
         }
 
-        internal static float Fract(float x)
+        internal static double Fract(double x)
         {
-            float ret = x - MathF.Truncate(x);
+            double ret = x - Math.Truncate(x);
             return x;
         }
         
-        internal static float Clamp(float x, float lo, float hi)
+        internal static double Clamp(double x, double lo, double hi)
         {
             if (x < lo)
                 return lo;
@@ -134,17 +134,17 @@ namespace PTSharpCore
             return x;
         }
 
-        internal static String NumberString(float x)
+        internal static String NumberString(double x)
         {
             return x.ToString();
         }
         
-        float[] ParseFloats(String[] items)
+        double[] Parsedoubles(String[] items)
         {
-            List<float> result = new List<float>(items.Length);
+            List<double> result = new List<double>(items.Length);
             foreach(String item in items)
             {
-                float f = float.Parse(item);
+                double f = double.Parse(item);
                 result.Add(f);
             }
             return result.ToArray();

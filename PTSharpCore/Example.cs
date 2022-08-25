@@ -31,9 +31,9 @@ namespace PTSharpCore
 
             // render the scene with progressive refinement
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 3840, 2160, true);
-            renderer.AdaptiveSamples = 128;
-            renderer.FireflySamples = 128;
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
+            renderer.AdaptiveSamples = 64;
+            renderer.FireflySamples = 64;
             renderer.IterativeRender("simplesphere.png", 1000);
         }
 
@@ -111,9 +111,9 @@ namespace PTSharpCore
             {
                 for (int z = -12; z <= 12; z++)
                 {
-                    var fx = (float)x;
+                    var fx = (double)x;
                     var fy = Random.Shared.NextSingle() * 2;
-                    var fz = (float)z;
+                    var fz = (double)z;
                     scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new V(fx, fy, fz))));
                     scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new V(fx, fy - 1, fz))));
                 }
@@ -138,24 +138,24 @@ namespace PTSharpCore
             var light = Material.LightMaterial(Colour.Kelvin(2700), emission);
             for (int y = 0; y <= 6000; y += 40)
             {
-                scene.Add(Sphere.NewSphere(new V(-100, (float)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new V(0, (float)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new V(100, (float)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(-100, (double)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(0, (double)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(100, (double)y, height), radius, light));
 
             }
             for (int y = -40; y >= -750; y -= 20)
             {
-                scene.Add(Sphere.NewSphere(new V(-10, (float)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new V(0, (float)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new V(10, (float)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(-10, (double)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(0, (double)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(10, (double)y, height), radius, light));
             }
             var green = Material.LightMaterial(Colour.HexColor(0x0BDB46), emission);
             var red = Material.LightMaterial(Colour.HexColor(0xDC4522), emission);
 
             for (int x = -160; x <= 160; x += 10)
             {
-                scene.Add(Sphere.NewSphere(new V((float)x, -20, height), radius, green));
-                scene.Add(Sphere.NewSphere(new V((float)x, 6100, height), radius, red));
+                scene.Add(Sphere.NewSphere(new V((double)x, -20, height), radius, green));
+                scene.Add(Sphere.NewSphere(new V((double)x, 6100, height), radius, red));
             }
             scene.Add(Sphere.NewSphere(new V(-160, 250, height), radius, red));
             scene.Add(Sphere.NewSphere(new V(-180, 250, height), radius, red));
@@ -163,11 +163,11 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new V(-220, 250, height), radius, light));
             for (int i = 0; i < 5; i++)
             {
-                var y = (float)((i + 1) * -120);
+                var y = (double)((i + 1) * -120);
 
                 for (int j = 1; j <= 4; j++)
                 {
-                    var x = (float)(j + 4) * 7.5F;
+                    var x = (double)(j + 4) * 7.5F;
                     scene.Add(Sphere.NewSphere(new V(x, y, height), radius, red));
                     scene.Add(Sphere.NewSphere(new V(-x, y, height), radius, red));
                     scene.Add(Sphere.NewSphere(new V(x, -y, height), radius, light));
@@ -214,7 +214,7 @@ namespace PTSharpCore
             {
                 var m = Matrix.Identity;
                 m = m.Scale(new V(0.3F, 1, 5)).Mul(m);
-                m = m.Rotate(new V(0, 1, 0), Util.Radians((float)i)).Mul(m);
+                m = m.Rotate(new V(0, 1, 0), Util.Radians((double)i)).Mul(m);
                 var shape = TransformedShape.NewTransformedShape(sphere, m);
                 scene.Add(shape);
             }
@@ -253,14 +253,14 @@ namespace PTSharpCore
             var cube = Material.GlossyMaterial(Colour.HexColor(0xFF8C00), 1.3F, Util.Radians(20));
             var ball = Material.GlossyMaterial(Colour.HexColor(0xD90000), 1.4F, Util.Radians(10));
             int n = 7;
-            var fn = (float)n;
+            var fn = (double)n;
             for (int z = 0; z < n; z++)
             {
                 for (int x = 0; x < n - z; x++)
                 {
                     for (int y = 0; y < n - z - x; y++)
                     {
-                        (var fx, var fy, var fz) = ((float)x, (float)y, (float)z);
+                        (var fx, var fy, var fz) = ((double)x, (double)y, (double)z);
                         scene.Add(Cube.NewCube(new V(fx, fy, fz), new V(fx + 1, fy + 1, fz + 1), cube));
         
                         if(x + y == n - z - 1)
@@ -328,7 +328,7 @@ namespace PTSharpCore
 
         public void toybrick()
         {
-            const float H = 1.46875F;
+            const double H = 1.46875F;
             var scene = new Scene();
             scene.Color = Colour.White;
             var meshes = new Mesh[]
@@ -357,7 +357,7 @@ namespace PTSharpCore
                         var z = i * H;
                         var mnum = new Random().Next(meshes.Length);
                         var mesh = meshes[mnum];
-                        var m = new Matrix().Translate(new V((float)x,(float)(y + dy), (float)z));
+                        var m = new Matrix().Translate(new V((double)x,(double)(y + dy), (double)z));
                         scene.Add(TransformedShape.NewTransformedShape(mesh, m));
                     }
                 }
@@ -385,9 +385,9 @@ namespace PTSharpCore
                 var mesh = meshes[(x + 6) % meshes.Length];
                 for (int y = -5; y <= 4; y++)
                 {
-                    var fx = (float)x / 2;
-                    var fy = (float)y;
-                    var fz = (float)x / 2;
+                    var fx = (double)x / 2;
+                    var fy = (double)y;
+                    var fz = (double)x / 2;
 
                     scene.Add(TransformedShape.NewTransformedShape(mesh, new Matrix().Translate(new V(fx, fy, fz))));
                 }
@@ -473,7 +473,7 @@ namespace PTSharpCore
         {
             var scene = new Scene();
             var light = Material.LightMaterial(Colour.White, 180);
-            float d = 4.0F;
+            double d = 4.0F;
             scene.Add(Sphere.NewSphere(new V(-1, -1, 0.5F).Normalize().MulScalar(d), 0.25F, light));
             scene.Add(Sphere.NewSphere(new V(0, -1, 0.25F).Normalize().MulScalar(d), 0.25F, light));
             scene.Add(Sphere.NewSphere(new V(-1, 1, 0).Normalize().MulScalar(d), 0.25F, light));
@@ -517,13 +517,13 @@ namespace PTSharpCore
                 Colour.HexColor(0xFFE11A),
                 Colour.HexColor(0xFD7400),
             };
-            const float start = 0.2F;
-            const float size = 0.01F;
-            const float step = 0.1F;
+            const double start = 0.2F;
+            const double size = 0.01F;
+            const double step = 0.1F;
             List<Volume.VolumeWindow> windows = new List<Volume.VolumeWindow>();
             for (int i = 0; i < colors.Length; i++)
             {
-                var lo = start + step * (float)i;
+                var lo = start + step * (double)i;
                 var hi = lo + size;
                 var material = Material.GlossyMaterial(colors[i], 1.3F, Util.Radians(0));
                 var w = new Volume.VolumeWindow(lo, hi, material);
@@ -587,8 +587,8 @@ namespace PTSharpCore
                 {
                     if (Random.Shared.NextSingle() > 0.8) 
                     {
-                        var min = new V((float)x - 0.5F, (float)y - 0.5F, 0);
-                        var max = new V((float)x + 0.5F, (float)y + 0.5F, 1);
+                        var min = new V((double)x - 0.5F, (double)y - 0.5F, 0);
+                        var max = new V((double)x + 0.5F, (double)y + 0.5F, 1);
                         var cube = Cube.NewCube(min, max, material);
                         scene.Add(cube);        
                     }

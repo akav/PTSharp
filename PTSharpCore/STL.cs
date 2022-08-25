@@ -20,11 +20,11 @@ namespace PTSharpCore
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         struct STLVector
         {
-            public float X;
-            public float Y;
-            public float Z;
+            public double X;
+            public double Y;
+            public double Z;
 
-            public STLVector(float x, float y, float z)
+            public STLVector(double x, double y, double z)
             {
                 X = x;
                 Y = y;
@@ -147,9 +147,9 @@ namespace PTSharpCore
                             match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
                             //Reading facet
                             //Console.WriteLine("Read facet on line " + counter);
-                            float.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out float x);
-                            float.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out float y);
-                            float.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out float z);
+                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
+                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
+                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
                             V f = new V(x, y, z);
                             //Console.WriteLine("Added facet (x,y,z)"+ " "+x+" "+y+" "+z);
@@ -171,9 +171,9 @@ namespace PTSharpCore
                         {
                             match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
                             //Console.WriteLine("Read vertex on line " + counter);
-                            float.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out float x);
-                            float.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out float y);
-                            float.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out float z);
+                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
+                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
+                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
                             V v = new V(x, y, z);
                             //Console.WriteLine("Added vertex 1 (x,y,z)" + " " + x + " " + y + " " + z);
@@ -187,9 +187,9 @@ namespace PTSharpCore
                         {
                             match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
                             //Console.WriteLine("Read vertex on line " + counter);
-                            float.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out float x);
-                            float.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out float y);
-                            float.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out float z);
+                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
+                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
+                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
                             V v = new V(x, y, z);
                             //Console.WriteLine("Added vertex 2 (x,y,z)" + " " + x + " " + y + " " + z);
@@ -202,9 +202,9 @@ namespace PTSharpCore
                         {
                             match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
                             //Console.WriteLine("Read vertex on line " + counter);
-                            float.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out float x);
-                            float.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out float y);
-                            float.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out float z);
+                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
+                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
+                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
                             V v = new V(x, y, z);
                             //Console.WriteLine("Added vertex 3 (x,y,z)" + " " + x + " " + y + " " + z);

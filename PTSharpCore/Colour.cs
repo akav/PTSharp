@@ -4,9 +4,9 @@ namespace PTSharpCore
 {
     public class Colour
     {
-        internal float r;
-        internal float g;
-        internal float b;
+        internal double r;
+        internal double g;
+        internal double b;
 
         public Colour(Colour c)
         {
@@ -15,7 +15,7 @@ namespace PTSharpCore
             b = c.b;
         }
 
-        public Colour(float R, float G, float B)
+        public Colour(double R, double G, double B)
         {
             r = R;
             g = G;
@@ -42,17 +42,17 @@ namespace PTSharpCore
             return new Colour(c1.r * c2.r, c1.g * c2.g, c1.b * c2.b);
         }
 
-        public static Colour operator *(float c, Colour c2)
+        public static Colour operator *(double c, Colour c2)
         {
             return new Colour(c * c2.r, c * c2.g, c * c2.b);
         }
 
-        public static Colour operator *(Colour c1, float c)
+        public static Colour operator *(Colour c1, double c)
         {
             return new Colour(c * c1.r, c * c1.g, c * c1.b);
         }
 
-        public static Colour operator /(Colour c1, float c)
+        public static Colour operator /(Colour c1, double c)
         {
             return new Colour(c1.r / c, c1.g / c, c1.b / c);
         }
@@ -67,7 +67,7 @@ namespace PTSharpCore
             return new Colour(c1.r, c1.g, c1.b);
         }
 
-        public static Colour NewColor(int r, int g, int b) => new Colour((float)r / 65535, (float)g / 65535, (float)b / 65535);
+        public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
         public static Colour HexColor(int x)
         {
@@ -78,15 +78,15 @@ namespace PTSharpCore
             return color.Pow(2.2f);
         }
 
-        public Colour Pow(float b) => new Colour(MathF.Pow(r, b), MathF.Pow(g, b), MathF.Pow(this.b, b));
+        public Colour Pow(double b) => new Colour(Math.Pow(r, b), Math.Pow(g, b), Math.Pow(this.b, b));
 
-        public int getIntFromColor(float red, float green, float blue)
+        public int getIntFromColor(double red, double green, double blue)
         {
-            if (float.IsNaN(red))
+            if (double.IsNaN(red))
                 red = 0.0f;
-            if (float.IsNaN(green))
+            if (double.IsNaN(green))
                 green = 0.0f;
-            if (float.IsNaN(blue))
+            if (double.IsNaN(blue))
                 blue = 0.0f;
 
             var r = (int)(256 * Math.Clamp(red, 0.0, 0.999));
@@ -95,10 +95,10 @@ namespace PTSharpCore
             return 255 << 24 | r << 16 | g << 8 | b;
         }
 
-        public static Colour Kelvin(float K)
+        public static Colour Kelvin(double K)
         {
-            float red, green, blue;
-            float a, b, c, x;
+            double red, green, blue;
+            double a, b, c, x;
             // red
             if (K >= 6600)
             {
@@ -107,7 +107,7 @@ namespace PTSharpCore
                 c = -40.25366309332127F;
                 x = K / 100 - 55;
 
-                red = a + b * x + c * MathF.Log(x);
+                red = a + b * x + c * Math.Log(x);
             }
             else
             {
@@ -119,7 +119,7 @@ namespace PTSharpCore
                 b = 0.07943456536662342F;
                 c = -28.0852963507957F;
                 x = K / 100 - 50;
-                green = a + b * x + c * MathF.Log(x);
+                green = a + b * x + c * Math.Log(x);
             }
             else if (K >= 1000)
             {
@@ -127,7 +127,7 @@ namespace PTSharpCore
                 b = -0.44596950469579133F;
                 c = 104.49216199393888F;
                 x = K / 100 - 2;
-                green = a + b * x + c * MathF.Log(x);
+                green = a + b * x + c * Math.Log(x);
             }
             else
             {
@@ -144,27 +144,27 @@ namespace PTSharpCore
                 c = 115.67994401066147F;
                 x = K / 100 - 10;
 
-                blue = a + b * x + c * MathF.Log(x);
+                blue = a + b * x + c * Math.Log(x);
 
             }
             else
             {
                 blue = 0;
             }
-            red = MathF.Min(1, red / 255.0f);
-            green = MathF.Min(1, green / 255.0f);
-            blue = MathF.Min(1, blue / 255.0f);
+            red = Math.Min(1, red / 255.0f);
+            green = Math.Min(1, green / 255.0f);
+            blue = Math.Min(1, blue / 255.0f);
             return new Colour(red, green, blue);
         }
 
-        public Colour Mix(Colour b, float pct)
+        public Colour Mix(Colour b, double pct)
         {
             Colour a = MulScalar(1 - pct);
             b = b.MulScalar(pct);
             return a.Add(b);
         }
 
-        public Colour MulScalar(float b) => new Colour(r * b, g * b, this.b * b);
+        public Colour MulScalar(double b) => new Colour(r * b, g * b, this.b * b);
 
         public Colour Add(Colour b) => new Colour(r + b.r, g + b.g, this.b + b.b);
 
@@ -174,14 +174,14 @@ namespace PTSharpCore
 
         public Colour Div(Colour b) => new Colour(r / b.r, g / b.g, this.b / b.b);
 
-        public Colour DivScalar(float b) => new Colour(r / b, g / b, this.b / b);
+        public Colour DivScalar(double b) => new Colour(r / b, g / b, this.b / b);
 
-        public Colour Min(Colour b) => new Colour(MathF.Min(r, b.r), MathF.Min(g, b.g), MathF.Min(this.b, b.b));
+        public Colour Min(Colour b) => new Colour(Math.Min(r, b.r), Math.Min(g, b.g), Math.Min(this.b, b.b));
 
-        public Colour Max(Colour b) => new Colour(MathF.Max(r, b.r), MathF.Max(g, b.g), MathF.Max(this.b, b.b));
+        public Colour Max(Colour b) => new Colour(Math.Max(r, b.r), Math.Max(g, b.g), Math.Max(this.b, b.b));
 
-        public float MinComponent() => MathF.Min(MathF.Min(r, g), b);
+        public double MinComponent() => Math.Min(Math.Min(r, g), b);
 
-        public float MaxComponent() => MathF.Max(MathF.Max(r, g), b);
+        public double MaxComponent() => Math.Max(Math.Max(r, g), b);
     }
 }

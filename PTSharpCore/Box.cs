@@ -50,9 +50,9 @@ namespace PTSharpCore
 
         public V Center() => Anchor(new V(0.5f, 0.5f, 0.5f));
 
-        public float OuterRadius() => Min.Sub(Center()).Length();
+        public double OuterRadius() => Min.Sub(Center()).Length();
 
-        public float InnerRadius() => Center().Sub(Min).MaxComponent();
+        public double InnerRadius() => Center().Sub(Min).MaxComponent();
 
         public V Size() => Max.Sub(Min);
 
@@ -65,7 +65,7 @@ namespace PTSharpCore
         public bool Intersects(Box b) => !(Min.v.X > b.Max.v.X || Max.v.X < b.Min.v.X || Min.v.Y > b.Max.v.Y ||
         Max.v.Y < b.Min.v.Y || Min.v.Z > b.Max.v.Z || Max.v.Z < b.Min.v.Z);
 
-        public (float, float) Intersect(Ray r)
+        public (double, double) Intersect(Ray r)
         {
             var x1 = (Min.v.X - r.Origin.v.X) / r.Direction.v.X;
             var y1 = (Min.v.Y - r.Origin.v.Y) / r.Direction.v.Y;
@@ -86,12 +86,12 @@ namespace PTSharpCore
             {
                 (z1, z2) = (z2, z1);
             }
-            var t1 = MathF.Max(MathF.Max(x1, y1), z1);
-            var t2 = MathF.Min(MathF.Min(x2, y2), z2);
+            var t1 = Math.Max(Math.Max(x1, y1), z1);
+            var t2 = Math.Min(Math.Min(x2, y2), z2);
             return (t1, t2);
         }
 
-        public (bool, bool) Partition(Axis axis, float point)
+        public (bool, bool) Partition(Axis axis, double point)
         {
             switch (axis)
             {

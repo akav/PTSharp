@@ -8,12 +8,12 @@ namespace PTSharpCore
 {
     class Hit
     {
-        static float INF = 1e9F;
+        static double INF = 1e9F;
         internal IShape Shape;
-        public float T;
+        public double T;
         public HitInfo HitInfo;
 
-        internal Hit(IShape shape, float t, HitInfo hinfo)
+        internal Hit(IShape shape, double t, HitInfo hinfo)
         {
             Shape = shape;
             T = t;

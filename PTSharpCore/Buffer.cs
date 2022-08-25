@@ -46,7 +46,7 @@ namespace PTSharpCore
             {
                 return Colour.Black;
             }
-            return V.DivScalar((float)(Samples - 1));
+            return V.DivScalar((double)(Samples - 1));
         }
 
         public Colour StandardDeviation() => Variance().Pow(0.5f);
@@ -102,7 +102,7 @@ namespace PTSharpCore
         {
             Bitmap bmp = new Bitmap(W, H);
             
-            float maxSamples=0;
+            double maxSamples=0;
             
             if (channel == Channel.SamplesChannel)
             {  
@@ -110,7 +110,7 @@ namespace PTSharpCore
                 {
                     for (int x = 0; x < W; x++)
                     {
-                        maxSamples = MathF.Max(maxSamples, Pixels[(x,y)].Samples);
+                        maxSamples = Math.Max(maxSamples, Pixels[(x,y)].Samples);
                     }
                 }
             }
@@ -132,7 +132,7 @@ namespace PTSharpCore
                             pixelColor = Pixels[(x,y)].StandardDeviation();
                             break;
                         case Channel.SamplesChannel:
-                            float p = (float)(Pixels[(x,y)].Samples / maxSamples);
+                            double p = (double)(Pixels[(x,y)].Samples / maxSamples);
                             pixelColor = new Colour(p, p, p);
                             break;
                     }

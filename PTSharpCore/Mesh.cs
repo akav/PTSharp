@@ -142,7 +142,7 @@ namespace PTSharpCore
             return new V();
         }
 
-        V smoothNormalsThreshold(V normal, V[] normals, float threshold)
+        V smoothNormalsThreshold(V normal, V[] normals, double threshold)
         {
             V result = new V();
             foreach (V x in normals)
@@ -155,9 +155,9 @@ namespace PTSharpCore
             return result.Normalize();
         }
 
-        internal void SmoothNormalsThreshold(float radians)
+        internal void SmoothNormalsThreshold(double radians)
         {
-            float threshold = MathF.Cos(radians);
+            double threshold = Math.Cos(radians);
             
             List<V> NL1 = new List<V>();
             List<V> NL2 = new List<V>();

@@ -8,7 +8,7 @@ namespace PTSharpCore
     {
         internal Colour Color = new Colour();
         internal ITexture Texture = null;
-        internal float TextureAngle = 0;
+        internal double TextureAngle = 0;
         private Tree tree;
         internal int rays = 0;
 

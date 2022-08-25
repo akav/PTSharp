@@ -177,11 +177,11 @@ namespace PTSharpCore
             return n;
         }
                 
-        float Area() {
+        double Area() {
             var e1 = V2.Sub(V1);
             var e2 = V3.Sub(V1);
             var n = e1.Cross(e2);
-            return n.Length() / 2;
+            return n.Length() / 2.0;
         }
         
         V Normal()
@@ -190,7 +190,7 @@ namespace PTSharpCore
             var e2 = V3.Sub(V1);
             return e1.Cross(e2).Normalize();
         }
-        (float, float, float) Barycentric(V p)
+        (double, double, double) Barycentric(V p)
         {
             var v0 = V2.Sub(V1);
             var v1 = V3.Sub(V1);

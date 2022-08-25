@@ -6,13 +6,13 @@ namespace PTSharpCore
 {
     class MC 
     {   
-        internal static Mesh NewSDFMesh(SDF sdf, Box box, float step)
+        internal static Mesh NewSDFMesh(SDF sdf, Box box, double step)
         {
             var min = box.Min;
             var size = box.Size();
-            var nx = (int)MathF.Ceiling(size.v.X / step);
-            var ny = (int)MathF.Ceiling(size.v.Y / step);
-            var nz = (int)MathF.Ceiling(size.v.Z / step);
+            var nx = (int)Math.Ceiling(size.v.X / step);
+            var ny = (int)Math.Ceiling(size.v.Y / step);
+            var nz = (int)Math.Ceiling(size.v.Z / step);
             var sx = size.v.X / nx;
             var sy = size.v.Y / ny;
             var sz = size.v.Z / nz;
@@ -37,7 +37,7 @@ namespace PTSharpCore
                                 new V( x0, y1, z1)
                         };
 
-                        float[] v = new float[8];
+                        double[] v = new double[8];
         
                         for(int i = 0; i < 8; i++)
                         {
@@ -66,7 +66,7 @@ namespace PTSharpCore
             return Mesh.NewMesh(triangles.ToArray());
         }
         
-        static Triangle[] mcPolygonize(V[] p, float[] v, float x)
+        static Triangle[] mcPolygonize(V[] p, double[] v, double x)
         {
             int index = 0;
             for (int i = 0; i < 8; i++)
@@ -108,15 +108,15 @@ namespace PTSharpCore
             return result;
         }
         
-        static V mcInterpolate(V p1, V p2, float v1, float v2, float x)
+        static V mcInterpolate(V p1, V p2, double v1, double v2, double x)
         {
-            if (MathF.Abs(x - v1) < Util.EPS)
+            if (Math.Abs(x - v1) < Util.EPS)
                 return p1;
             
-            if (MathF.Abs(x - v2) < Util.EPS)
+            if (Math.Abs(x - v2) < Util.EPS)
                 return p2;
             
-            if (MathF.Abs(v1 - v2) < Util.EPS)
+            if (Math.Abs(v1 - v2) < Util.EPS)
                 return p1;
             
             var t = (x - v1) / (v2 - v1);

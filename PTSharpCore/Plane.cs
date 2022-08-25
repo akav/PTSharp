@@ -33,13 +33,13 @@ namespace PTSharpCore
 
         Hit IShape.Intersect(Ray ray)
         {
-            float d = Normal.Dot(ray.Direction);
-            if (MathF.Abs(d) < Util.EPS)
+            double d = Normal.Dot(ray.Direction);
+            if (Math.Abs(d) < Util.EPS)
             {
                 return Hit.NoHit;
             }
             V a = Point.Sub(ray.Origin);
-            float t = a.Dot(Normal) / d;
+            double t = a.Dot(Normal) / d;
             if (t < Util.EPS)
             {
                 return Hit.NoHit;

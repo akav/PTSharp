@@ -16,10 +16,10 @@ namespace PTSharpCore
         int SamplesPerPixel;
         public bool StratifiedSampling;
         public int AdaptiveSamples;
-        float AdaptiveThreshold;
-        float AdaptiveExponent;
+        double AdaptiveThreshold;
+        double AdaptiveExponent;
         public int FireflySamples;
-        float FireflyThreshold;
+        double FireflyThreshold;
         int NumCPU;
         int iterations;
         String pathTemplate;
@@ -62,18 +62,18 @@ namespace PTSharpCore
             Buffer buf = PBuffer;
             (int w, int h) = (buf.W, buf.H);
             int spp = SamplesPerPixel;
-            int sppRoot = (int)(MathF.Sqrt(SamplesPerPixel));
+            int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
             scene.Compile();
             scene.rays = 0;
             Random rand = new Random();
-            float fu, fv;
+            double fu, fv;
 
             // Stop watch timer 
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            float invWidth = 1.0f / w;
-            float invHeight = 1.0f / h;
+            double invWidth = 1.0f / w;
+            double invHeight = 1.0f / h;
 
             for (int y = 0; y < h; y++)
             {
@@ -112,9 +112,9 @@ namespace PTSharpCore
                     // Adaptive Sampling
                     if (AdaptiveSamples > 0)
                     {
-                        float v = buf.StandardDeviation(x, y).MaxComponent();
+                        double v = buf.StandardDeviation(x, y).MaxComponent();
                         v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
-                        v = MathF.Pow(v, AdaptiveExponent);
+                        v = Math.Pow(v, AdaptiveExponent);
                         int samples = (int)(v * AdaptiveSamples);
                         for (int d = 0; d < samples; d++)
                         {
@@ -159,7 +159,7 @@ namespace PTSharpCore
             Buffer buf = PBuffer;
             (int w, int h) = (buf.W, buf.H);
             int spp = SamplesPerPixel;
-            int sppRoot = (int)(MathF.Sqrt(SamplesPerPixel));
+            int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
             scene.Compile();
             scene.rays = 0;
 
@@ -172,8 +172,8 @@ namespace PTSharpCore
 
             // Frame resolution
             int totalPixels = h * w;
-            float invWidth = 1.0f / w;
-            float invHeight = 1.0f / h;
+            double invWidth = 1.0f / w;
+            double invHeight = 1.0f / h;
 
             // Create a cancellation token for Parallel.For loop control
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -232,9 +232,9 @@ namespace PTSharpCore
                 _ = Parallel.For(0, w * h, po, (i, loopState) =>
                   {
                       int y = i / w, x = i % w;
-                      float v = buf.StandardDeviation(x, y).MaxComponent();
+                      double v = buf.StandardDeviation(x, y).MaxComponent();
                       v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
-                      v = MathF.Pow(v, AdaptiveExponent);
+                      v = Math.Pow(v, AdaptiveExponent);
                       int samples = (int)(v * AdaptiveSamples);
                       for (int s = 0; s < samples; s++)
                       {

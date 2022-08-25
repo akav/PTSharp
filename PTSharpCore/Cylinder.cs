@@ -4,11 +4,11 @@ namespace PTSharpCore
 {
     public class Cylinder : IShape
     {
-        float Radius;
-        float Z0, Z1;
+        double Radius;
+        double Z0, Z1;
         Material CylinderMaterial;
 
-        Cylinder(float radius, float z0, float z1, Material material)
+        Cylinder(double radius, double z0, double z1, Material material)
         {
             Radius = radius;
             Z0 = z0;
@@ -16,14 +16,14 @@ namespace PTSharpCore
             CylinderMaterial = material;
         }
 
-        internal static Cylinder NewCylinder(float radius, float z0, float z1, Material material) => new Cylinder(radius, z0, z1, material);
+        internal static Cylinder NewCylinder(double radius, double z0, double z1, Material material) => new Cylinder(radius, z0, z1, material);
 
-        internal static IShape NewTransformedCylinder(V v0, V v1, float radius, Material material)
+        internal static IShape NewTransformedCylinder(V v0, V v1, double radius, Material material)
         {
             var up = new V(0, 0, 1);
             var d = v1.Sub(v0);
             var z = d.Length();
-            var a = MathF.Acos(d.Normalize().Dot(up));
+            var a = Math.Acos(d.Normalize().Dot(up));
             var m = new Matrix().Translate(v0);
             if (a != 0)
             {
@@ -36,7 +36,7 @@ namespace PTSharpCore
 
         Box IShape.BoundingBox()
         {
-            float r = Radius;
+            double r = Radius;
             return new Box(new V(-r, -r, Z0), new V(r, r, Z1));
         }
 
@@ -53,7 +53,7 @@ namespace PTSharpCore
             {
                 return Hit.NoHit;
             }
-            var s = MathF.Sqrt(q);
+            var s = Math.Sqrt(q);
             var t0 = (-b + s) / (2 * a);
             var t1 = (-b - s) / (2 * a);
             if (t0 > t1)

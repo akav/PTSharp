@@ -6,26 +6,26 @@ namespace PTSharpCore
 {
     class Poisson
     {
-        float r, size;
+        double r, size;
         Dictionary<V, V> cells;
         
-        Poisson(float r, float size, Dictionary<V, V> hmap)
+        Poisson(double r, double size, Dictionary<V, V> hmap)
         {
             this.r = r;
             this.size = size;
             cells = hmap;
         }
 
-        Poisson newPoissonGrid(float r)
+        Poisson newPoissonGrid(double r)
         {
-            float gridsize = r / MathF.Sqrt(2);
+            double gridsize = r / Math.Sqrt(2);
             return new Poisson(r, gridsize, new Dictionary<V, V>());
         }
         
         V normalize(V v)
         {
-            var i = MathF.Floor(v.v.X / size);
-            var j = MathF.Floor(v.v.Y / size);
+            var i = Math.Floor(v.v.X / size);
+            var j = Math.Floor(v.v.Y / size);
             return new V(i, j, 0);
         }
 
@@ -33,15 +33,15 @@ namespace PTSharpCore
         {
             V n = normalize(v);
 
-            for (float i = n.v.X - 2; i < n.v.X + 3; i++)
+            for (double i = n.v.X - 2; i < n.v.X + 3; i++)
             {
-                for (float j = n.v.Y - 2; j < n.v.Y + 3; j++)
+                for (double j = n.v.Y - 2; j < n.v.Y + 3; j++)
                 {
                     if(cells.ContainsKey(new V(i, j, 0)))
                     {
                         V m = cells[new V(i, j, 0)];
 
-                        if(MathF.Sqrt(MathF.Pow(m.v.X - v.v.X, 2) + MathF.Pow(m.v.Y - v.v.Y, 2)) < r)
+                        if(Math.Sqrt(Math.Pow(m.v.X - v.v.X, 2) + Math.Pow(m.v.Y - v.v.Y, 2)) < r)
                         {
                             return false;
                         }
@@ -52,7 +52,7 @@ namespace PTSharpCore
             return true;
         }
         
-        V[] PoissonDisc(float x1, float y1, float x2, float y2, float r, int n)
+        V[] PoissonDisc(double x1, double y1, double x2, double y2, double r, int n)
         {
             V[] result;
             var x = x1 + (x2 - x1) / 2;
@@ -73,10 +73,10 @@ namespace PTSharpCore
 
                 for (int i = 0; i < n; i++)
                 {
-                    float a = Random.Shared.NextSingle() * 2 * MathF.PI;
-                    float d = Random.Shared.NextSingle() * r + r;
-                    x = point.v.X + MathF.Cos(a) * d;
-                    y = point.v.Y + MathF.Sin(a) * d;
+                    double a = Random.Shared.NextSingle() * 2 * Math.PI;
+                    double d = Random.Shared.NextSingle() * r + r;
+                    x = point.v.X + Math.Cos(a) * d;
+                    y = point.v.Y + Math.Sin(a) * d;
                     if (x < x1 || y < y1 || x > x2 || y > y2)
                     {
                         continue;

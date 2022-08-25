@@ -93,7 +93,7 @@ namespace PTSharpCore
                 result = result.Add(material.Color.MulScalar(material.Emittance * samples));
             }
 
-            var n = (int)MathF.Sqrt(samples);
+            var n = (int)Math.Sqrt(samples);
             BounceType ma, mb;
 
             if (SpecularMode == SpecularMode.SpecularModeAll || depth == 0 && SpecularMode == SpecularMode.SpecularModeFirst)
@@ -156,10 +156,10 @@ namespace PTSharpCore
             if (scene.Texture != null)
             {
                 var d = ray.Direction;
-                var u = MathF.Atan2(d.v.Z, d.v.X) + scene.TextureAngle;
-                var v = MathF.Atan2(d.v.Y, new V(d.v.X, 0, d.v.Z).Length());
-                u = (u + MathF.PI) / (2 * MathF.PI);
-                v = (v + MathF.PI / 2) / MathF.PI;
+                var u = Math.Atan2(d.v.Z, d.v.X) + scene.TextureAngle;
+                var v = Math.Atan2(d.v.Y, new V(d.v.X, 0, d.v.Z).Length());
+                u = (u + Math.PI) / (2 * Math.PI);
+                v = (v + Math.PI / 2) / Math.PI;
                 return scene.Texture.Sample(u, v);
             }
             return scene.Color;
@@ -187,14 +187,14 @@ namespace PTSharpCore
             {
                 // pick a random light
                 var light = scene.Lights[Random.Shared.Next(nLights)];
-                return sampleLight(scene, n, light).MulScalar((float)nLights);
+                return sampleLight(scene, n, light).MulScalar((double)nLights);
             }
         }
 
         Colour sampleLight(Scene scene, Ray n, IShape light)
         {
             V center;
-            float radius;
+            double radius;
 
             switch (light)
             {
@@ -246,16 +246,16 @@ namespace PTSharpCore
             // compute solid angle (hemisphere coverage)
             var hyp = center.Sub(n.Origin).Length();
             var opp = radius;
-            var theta = MathF.Asin(opp / hyp);
-            var adj = opp / MathF.Tan(theta);
-            var d = MathF.Cos(theta) * adj;
-            var r = MathF.Sin(theta) * adj;
+            var theta = Math.Asin(opp / hyp);
+            var adj = opp / Math.Tan(theta);
+            var d = Math.Cos(theta) * adj;
+            var r = Math.Sin(theta) * adj;
             var coverage = (r * r) / (d * d);
             if (hyp < opp)
             {
                 coverage = 1;
             }
-            coverage = MathF.Min(coverage, 1);
+            coverage = Math.Min(coverage, 1);
             // get material properties from light
             Material material = Material.MaterialAt(light, point);
             // combine factors
