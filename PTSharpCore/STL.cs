@@ -252,26 +252,121 @@ namespace PTSharpCore
         }
 
        public static Mesh LoadSTLB(String filename, Material material)
-        {
-            string header;
+       {
+            /*String header;
+            
             STLTriangle[] mesh;
-
+           
             using (var br = new BinaryReader(File.OpenRead(filename), Encoding.ASCII))
             {
+                
                 header = Encoding.ASCII.GetString(br.ReadBytes(80));
+                
                 var triCount = br.ReadUInt32();
+                
                 mesh = br.BaseStream.ReadUnmanagedStructRange<STLTriangle>((int)triCount);
+                
             }
-
+            Console.WriteLine("test");
             List<Triangle> tlist = new List<Triangle>();
+
+            Console.WriteLine("loading...");
 
             foreach (STLTriangle m in mesh)
             {
+                Console.WriteLine("verts");
                 Triangle t = new Triangle(new V(m.A.X, m.A.Y, m.A.Z), new V(m.B.X, m.B.Y, m.B.Z), new V(m.C.X, m.C.Y, m.C.Z), material);
                 t.FixNormals();
                 tlist.Add(t);
             }
-            return Mesh.NewMesh(tlist.ToArray());
-        }
+
+            return Mesh.NewMesh(tlist.ToArray());*/
+
+            List<Triangle> meshList = new List<Triangle>();
+            int numOfMesh = 0;
+            int i = 0;
+            int byteIndex = 0;
+            byte[] fileBytes = File.ReadAllBytes(filename);
+
+            byte[] temp = new byte[4];
+
+            /* 80 bytes title + 4 byte num of triangles + 50 bytes (1 of triangular mesh)  */
+            if (fileBytes.Length > 120)
+            {
+
+                temp[0] = fileBytes[80];
+                temp[1] = fileBytes[81];
+                temp[2] = fileBytes[82];
+                temp[3] = fileBytes[83];
+
+                numOfMesh = System.BitConverter.ToInt32(temp, 0);
+
+                byteIndex = 84;
+
+                for (i = 0; i < numOfMesh; i++)
+                {
+                    Triangle newMesh = new Triangle();
+
+                    /* this try-catch block will be reviewed */
+                    try
+                    {
+                        /* face normal */
+                        newMesh.N1.v.X = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+                        newMesh.N1.v.Y = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+                        newMesh.N1.v.Z = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+
+                        /* normals of vertex 2 and 3 equals to vertex 1's normals */
+                        newMesh.N2 = newMesh.N1;
+                        newMesh.N3 = newMesh.N1;
+
+                        /* vertex 1 */
+                        newMesh.V1.v.X = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+                        newMesh.V1.v.Y = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+                        newMesh.V1.v.Z = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+
+                        /* vertex 2 */
+                        newMesh.V2.v.X = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+                        newMesh.V2.v.Y = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+                        newMesh.V2.v.Z = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+
+                        /* vertex 3 */
+                        newMesh.V3.v.X = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+                        newMesh.V3.v.Y = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+                        newMesh.V3.v.Z = System.BitConverter.ToSingle(new byte[] { fileBytes[byteIndex], fileBytes[byteIndex + 1], fileBytes[byteIndex + 2], fileBytes[byteIndex + 3] }, 0);
+                        byteIndex += 4;
+
+                        byteIndex += 2; // Attribute byte count
+                        newMesh.Material = material;
+                    }
+                    catch
+                    {
+                        //processError = true;
+                        break;
+                    }
+                    newMesh.FixNormals();
+                    meshList.Add(newMesh);
+
+                }
+
+            }
+            else
+            {
+                // nitentionally left blank
+            }
+
+            return Mesh.NewMesh(meshList.ToArray());
+
+       }
     }
 }

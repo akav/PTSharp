@@ -244,12 +244,12 @@ namespace PTSharpCore
         {
             foreach(Triangle t in Triangles)
             {
-                t.V1 = matrix.MulPosition(t.V1);
-                t.V2 = matrix.MulPosition(t.V2);
-                t.V3 = matrix.MulPosition(t.V3);
-                t.N1 = matrix.MulDirection(t.N1);
-                t.N2 = matrix.MulDirection(t.N2);
-                t.N3 = matrix.MulDirection(t.N3);
+                t.V1 = new Matrix().MulPosition(matrix, t.V1);
+                t.V2 = new Matrix().MulPosition(matrix, t.V2);
+                t.V3 = new Matrix().MulPosition(matrix, t.V3);
+                t.N1 = new Matrix().MulPosition(matrix, t.N1);
+                t.N2 = new Matrix().MulPosition(matrix, t.N2);
+                t.N3 = new Matrix().MulPosition(matrix, t.N3);
             }
             dirty();
         }

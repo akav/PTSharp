@@ -225,22 +225,27 @@ namespace PTSharpCore
         public void refraction()
         {
             var scene = new Scene();
-            var glass = Material.ClearMaterial(1.5F, 0);
+            
+            var glass = Material.ClearMaterial(1.5, 0);
+     
             // add a sphere primitive
-            scene.Add(Sphere.NewSphere(new V(-1.5F, 0, 0.5F), 1, glass));
+            scene.Add(Sphere.NewSphere(new V(-1.5, 0, 0.5), 1, glass));
+            
             // add a mesh sphere
-            var mesh = STL.Load("models/sphere.stl", glass);
+            var mesh = STL.Load("models/spheretxt.stl", glass);
             mesh.SmoothNormals();
-            mesh.Transform(new Matrix().Translate(new V(1.5F, 0, 0.5F)));
+            mesh.Transform(new Matrix().Translate(new V(1.5, 0, 0.5)));
             scene.Add(mesh);
+            
             // add the floor
             scene.Add(Plane.NewPlane(new V(0, 0, -1), new V(0, 0, 1), Material.DiffuseMaterial(Colour.White)));
+
             // add the light
             scene.Add(Sphere.NewSphere(new V(0, 0, 5), 1, Material.LightMaterial(Colour.White, 15)));
             var camera = Camera.LookAt(new V(0, -5, 5), new V(0, 0, 0), new V(0, 0, 1), 50);
             var sampler = DefaultSampler.NewSampler(16, 8);
             sampler.SetSpecularMode(SpecularMode.SpecularModeAll);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("refraction.png", 100);
         }
 

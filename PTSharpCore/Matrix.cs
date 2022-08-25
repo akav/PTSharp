@@ -27,10 +27,14 @@ namespace PTSharpCore
 
         internal static Matrix Identity = new Matrix(Matrix4x4.Identity);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Matrix Translate(V v)
         {
-            return new Matrix(Matrix4x4.CreateTranslation(new Vector3(v.v.X, v.v.Y, v.v.Z)));
+            return new Matrix(1, 0, 0, v.v.X,
+                               0, 1, 0, v.v.Y,
+                               0, 0, 1, v.v.Z,
+                               0, 0, 0, 1);
+            //return Translate(v).Mul(this);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -88,6 +92,7 @@ namespace PTSharpCore
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Matrix Translate(Matrix m, V v) => new Matrix().Translate(v).Mul(m);
+                
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix Scale(Matrix m, V v) => Scale(v).Mul(m);
@@ -105,9 +110,20 @@ namespace PTSharpCore
         public V MulPosition(V b)
         {
             var x = m.M11 * b.v.X + m.M12 * b.v.Y + m.M13 * b.v.Z + m.M14;
-            var y = m.M21 * b.v.X + m.M22 * b.v.Y + m.M23 * b.v.Z + m.M24;
+            var y = m.M21 * b.v.X + m.M22 * b.v.Y + m.M23 * b.v.Z + m.M23;
             var z = m.M31 * b.v.X + m.M32 * b.v.Y + m.M33 * b.v.Z + m.M34;
             return new V(x, y, z);
+
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public V MulPosition(Matrix a, V b)
+        {
+            var x = a.m.M11 * b.v.X + a.m.M12 * b.v.Y + a.m.M13 * b.v.Z + a.m.M14;
+            var y = a.m.M21 * b.v.X + a.m.M22 * b.v.Y + a.m.M23 * b.v.Z + a.m.M23;
+            var z = a.m.M31 * b.v.X + a.m.M32 * b.v.Y + a.m.M33 * b.v.Z + a.m.M34;
+            return new V(x, y, z);
+
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -120,7 +136,12 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Ray MulRay(Ray b) => new Ray(MulPosition(b.Origin), MulDirection(b.Direction));
+        public Ray MulRay(Ray b)
+        {
+            //return new Ray(MulPosition(b.Origin), MulDirection(b.Direction));
+            return new Ray(MulPosition(b.Origin), MulDirection(b.Direction));
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Box MulBox(Box box)
