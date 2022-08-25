@@ -84,8 +84,8 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V RandomUnitVector()
         {
-            double z = Random.Shared.NextSingle() * 2.0f - 1.0f;
-            double a = Random.Shared.NextSingle() * 2.0f * Math.PI;
+            double z = Random.Shared.NextDouble() * 2.0f - 1.0f;
+            double a = Random.Shared.NextDouble() * 2.0f * Math.PI;
             double r = Math.Sqrt(1.0f - z * z);
             double x = Math.Sin(a);
             double y = Math.Cos(a);

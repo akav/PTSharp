@@ -46,10 +46,10 @@ namespace PTSharpCore
             {
                 return Colour.Black;
             }
-            return V.DivScalar((double)(Samples - 1));
+            return V.DivScalar(Samples - 1);
         }
 
-        public Colour StandardDeviation() => Variance().Pow(0.5f);
+        public Colour StandardDeviation() => Variance().Pow(0.5);
     }
 
     class Buffer
@@ -123,7 +123,7 @@ namespace PTSharpCore
                     switch (channel)
                     {
                         case Channel.ColorChannel:
-                            pixelColor = Pixels[(x,y)].Color().Pow(1 / 2.2f);
+                            pixelColor = Pixels[(x,y)].Color().Pow(1 / 2.2);
                             break;
                         case Channel.VarianceChannel:
                             pixelColor = Pixels[(x,y)].Variance();

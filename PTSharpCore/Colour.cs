@@ -102,9 +102,9 @@ namespace PTSharpCore
             // red
             if (K >= 6600)
             {
-                a = 351.97690566805693F;
-                b = 0.114206453784165F;
-                c = -40.25366309332127F;
+                a = 351.97690566805693;
+                b = 0.114206453784165;
+                c = -40.25366309332127;
                 x = K / 100 - 55;
 
                 red = a + b * x + c * Math.Log(x);
@@ -115,17 +115,17 @@ namespace PTSharpCore
             }
             if (K >= 6600)
             {
-                a = 325.4494125711974F;
-                b = 0.07943456536662342F;
-                c = -28.0852963507957F;
+                a = 325.4494125711974;
+                b = 0.07943456536662342;
+                c = -28.0852963507957;
                 x = K / 100 - 50;
                 green = a + b * x + c * Math.Log(x);
             }
             else if (K >= 1000)
             {
-                a = -155.25485562709179F;
-                b = -0.44596950469579133F;
-                c = 104.49216199393888F;
+                a = -155.25485562709179;
+                b = -0.44596950469579133;
+                c = 104.49216199393888;
                 x = K / 100 - 2;
                 green = a + b * x + c * Math.Log(x);
             }
@@ -139,9 +139,9 @@ namespace PTSharpCore
             }
             else if (K >= 2000)
             {
-                a = -254.76935184120902F;
-                b = 0.8274096064007395F;
-                c = 115.67994401066147F;
+                a = -254.76935184120902;
+                b = 0.8274096064007395;
+                c = 115.67994401066147;
                 x = K / 100 - 10;
 
                 blue = a + b * x + c * Math.Log(x);
@@ -151,9 +151,9 @@ namespace PTSharpCore
             {
                 blue = 0;
             }
-            red = Math.Min(1, red / 255.0f);
-            green = Math.Min(1, green / 255.0f);
-            blue = Math.Min(1, blue / 255.0f);
+            red = Math.Min(1, red / 255.0);
+            green = Math.Min(1, green / 255.0);
+            blue = Math.Min(1, blue / 255.0);
             return new Colour(red, green, blue);
         }
 

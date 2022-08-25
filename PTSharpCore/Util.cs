@@ -6,8 +6,8 @@ namespace PTSharpCore
 {
     class Util
     {
-        public static double INF = double.PositiveInfinity;
-        public static double EPS = double.Epsilon;
+        public static double INF = 1e9;//double.PositiveInfinity;
+        public static double EPS = 1e-9;// double.Epsilon;
         
         public static double Radians(double degrees) => degrees * Math.PI / 180;
         

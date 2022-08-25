@@ -8,7 +8,7 @@ namespace PTSharpCore
 {
     class Hit
     {
-        static double INF = 1e9F;
+        static double INF = 1e9;
         internal IShape Shape;
         public double T;
         public HitInfo HitInfo;

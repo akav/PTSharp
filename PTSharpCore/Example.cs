@@ -19,25 +19,23 @@ namespace PTSharpCore
             scene.Add(plane);
 
             // add the ball (a sphere)
-            var sphere = Sphere.NewSphere(new V(0, 0, 1), 1.0F, material);
+            var sphere = Sphere.NewSphere(new V(0, 0, 1), 1.0, material);
             scene.Add(sphere);
 
             // add a spherical light source
-            var light = Sphere.NewSphere(new V(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
+            var light = Sphere.NewSphere(new V(0, 0, 5.0F), 1.0, Material.LightMaterial(Colour.White, 8));
             scene.Add(light);
 
             // position the camera
-            var camera = Camera.LookAt(new V(3, 3, 3), new V(0, 0, 0.5F), new V(0, 0, 1), 50);
+            var camera = Camera.LookAt(new V(3, 3, 3), new V(0, 0, 0.5), new V(0, 0, 1), 50);
 
             // render the scene with progressive refinement
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
-            renderer.AdaptiveSamples = 64;
-            renderer.FireflySamples = 64;
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            //renderer.AdaptiveSamples = 64;
+            //renderer.FireflySamples = 64;
             renderer.IterativeRender("simplesphere.png", 1000);
         }
-
-
 
         public static void shrender(int l, int m)
         {
@@ -46,11 +44,11 @@ namespace PTSharpCore
             var center = new V(0, 0, 0);
             var up = new V(0, 0, 1);
             var light = Material.LightMaterial(Colour.White, 150);
-            scene.Add(Sphere.NewSphere(new V(0, 0, 5), 0.5F, light));
-            scene.Add(Sphere.NewSphere(new V(5, 0, 2), 0.5F, light));
-            scene.Add(Sphere.NewSphere(new V(0, 5, 2), 0.5F, light));
-            var pm = Material.GlossyMaterial(Colour.HexColor(0x105B63), 1.3F, Util.Radians(30));
-            var nm = Material.GlossyMaterial(Colour.HexColor(0xBD4932), 1.3F, Util.Radians(30));
+            scene.Add(Sphere.NewSphere(new V(0, 0, 5), 0.5, light));
+            scene.Add(Sphere.NewSphere(new V(5, 0, 2), 0.5, light));
+            scene.Add(Sphere.NewSphere(new V(0, 5, 2), 0.5, light));
+            var pm = Material.GlossyMaterial(Colour.HexColor(0x105B63), 1.3, Util.Radians(30));
+            var nm = Material.GlossyMaterial(Colour.HexColor(0xBD4932), 1.3, Util.Radians(30));
             var sh = SphericalHarmonic.NewSphericalHarmonic(l, m, pm, nm);
             scene.Add(sh);
             var camera = Camera.LookAt(eye, center, up, 50);
@@ -86,9 +84,9 @@ namespace PTSharpCore
            var light = Material.LightMaterial(Colour.White, 75);
            scene.Add(Sphere.NewSphere(new V(-1, 10, 4), 1, light));
            var mouth = Material.LightMaterial(Colour.HexColor(0xFFFAD5), 500);
-           scene.Add(Sphere.NewSphere(new V(-0.05F, 1, -0.5F), 0.03F, mouth));
-           var camera = Camera.LookAt(new V(-3, 2, -1), new V(0, 0.6F, -0.1F), new V(0, 1, 0), 35);
-           camera.SetFocus(new V(0, 1, -0.5F), 0.03F);
+           scene.Add(Sphere.NewSphere(new V(-0.05, 1, -0.5), 0.03, mouth));
+           var camera = Camera.LookAt(new V(-3, 2, -1), new V(0, 0.6, -0.1), new V(0, 1, 0), 35);
+           camera.SetFocus(new V(0, 1, -0.5), 0.03);
            var sampler = DefaultSampler.NewSampler(4, 4);
            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, false);
            renderer.IterativeRender("dragon.png", 100);
@@ -112,7 +110,7 @@ namespace PTSharpCore
                 for (int z = -12; z <= 12; z++)
                 {
                     var fx = (double)x;
-                    var fy = Random.Shared.NextSingle() * 2;
+                    var fy = Random.Shared.NextDouble() * 2;
                     var fz = (double)z;
                     scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new V(fx, fy, fz))));
                     scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new V(fx, fy - 1, fz))));
@@ -138,9 +136,9 @@ namespace PTSharpCore
             var light = Material.LightMaterial(Colour.Kelvin(2700), emission);
             for (int y = 0; y <= 6000; y += 40)
             {
-                scene.Add(Sphere.NewSphere(new V(-100, (double)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new V(0, (double)y, height), radius, light));
-                scene.Add(Sphere.NewSphere(new V(100, (double)y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(-100, y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(0, y, height), radius, light));
+                scene.Add(Sphere.NewSphere(new V(100, y, height), radius, light));
 
             }
             for (int y = -40; y >= -750; y -= 20)
@@ -187,7 +185,7 @@ namespace PTSharpCore
             var material = Material.GlossyMaterial(Colour.HexColor(0xF2EBC7), 1.5F, Util.Radians(0));
             var mesh = OBJ.Load("models/bunny.obj", material);
             mesh.SmoothNormals();
-            mesh.FitInside(new Box(new V(-1, 0, -1), new V(1, 2, 1)), new V(0.5F, 0, 0.5F));
+            mesh.FitInside(new Box(new V(-1, 0, -1), new V(1, 2, 1)), new V(0.5, 0, 0.5));
             scene.Add(mesh);
             var floor = Material.GlossyMaterial(Colour.HexColor(0x33332D), 1.2F, Util.Radians(20));
             scene.Add(Cube.NewCube(new V(-10000, -10000, -10000), new V(10000, 0, 10000), floor));
@@ -265,7 +263,7 @@ namespace PTSharpCore
         
                         if(x + y == n - z - 1)
                         {
-                            if (Random.Shared.NextSingle() > 0.75) 
+                            if (Random.Shared.NextDouble() > 0.75) 
                             {
                                 scene.Add(Sphere.NewSphere(new V(fx + 0.5F, fy + 0.5F, fz + 1.5F), 0.35F, ball));
                             }   
@@ -277,7 +275,7 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new V(fn, fn / 3, fn * 2), 1, Material.LightMaterial(Colour.White, 100)));
             var camera = Camera.LookAt(new V(fn * 2, fn * 2, fn * 2), new V(0, 0, fn / 4), new V(0, 0, 1), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.FireflySamples = 64;
             renderer.IterativeRender("qbert.png", 100); 
         }
@@ -289,7 +287,7 @@ namespace PTSharpCore
             scene.Add(Cube.NewCube(new V(-100, -1, -100), new V(100, 0, 100), material));
             var heart = Material.GlossyMaterial(Colour.HexColor(0xF60A20), 1.5F, Util.Radians(20));
             var mesh = STL.Load("models/love.stl", heart);
-            mesh.FitInside(new Box(new V(-0.5F, 0, -0.5F), new V(0.5F, 1, 0.5F)), new V(0.5F, 0, 0.5F));
+            mesh.FitInside(new Box(new V(-0.5, 0, -0.5), new V(0.5F, 1, 0.5)), new V(0.5, 0, 0.5));
             scene.Add(mesh);
             scene.Add(Sphere.NewSphere(new V(-2, 10, 2), 1, Material.LightMaterial(Colour.White, 30)));
             scene.Add(Sphere.NewSphere(new V(0, 10, 2), 1, Material.LightMaterial(Colour.White, 30)));
@@ -585,7 +583,7 @@ namespace PTSharpCore
             {
                 for (int y = -n; y <= n; y++)
                 {
-                    if (Random.Shared.NextSingle() > 0.8) 
+                    if (Random.Shared.NextDouble() > 0.8) 
                     {
                         var min = new V((double)x - 0.5F, (double)y - 0.5F, 0);
                         var max = new V((double)x + 0.5F, (double)y + 0.5F, 1);

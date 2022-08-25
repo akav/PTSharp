@@ -58,7 +58,7 @@ namespace PTSharpCore
             switch (bounceType)
             {
                 case BounceType.BounceTypeAny:
-                    reflect = Random.Shared.NextSingle() < p;
+                    reflect = Random.Shared.NextDouble() < p;
                     break;
                 case BounceType.BounceTypeDiffuse:
                     reflect = false;

@@ -36,8 +36,8 @@ namespace PTSharpCore
         public Ray CastRay(int x, int y, int w, int h, double u, double v)
         {
             double aspect = (double)w / (double)h;
-            var px = (((double)x + u - 0.5f) / ((double)w - 1)) * 2 - 1;
-            var py = (((double)y + v - 0.5f) / ((double)h - 1)) * 2 - 1;
+            var px = (((double)x + u - 0.5) / ((double)w - 1)) * 2 - 1;
+            var py = (((double)y + v - 0.5) / ((double)h - 1)) * 2 - 1;
             V d = new V();
             d = d.Add(this.u.MulScalar(-px * aspect));
             d = d.Add(this.v.MulScalar(-py));
@@ -47,8 +47,8 @@ namespace PTSharpCore
             if (apertureRadius > 0.0F)
             {
                 var focalPoint = this.p.Add(d.MulScalar(focalDistance));
-                var angle = Random.Shared.NextSingle() * 2.0f * Math.PI;
-                var radius = Random.Shared.NextSingle() * apertureRadius;
+                var angle = Random.Shared.NextDouble() * 2.0 * Math.PI;
+                var radius = Random.Shared.NextDouble() * apertureRadius;
                 p = p.Add(this.u.MulScalar(Math.Cos(angle) * radius));
                 p = p.Add(this.v.MulScalar(Math.Sin(angle) * radius));
                 d = focalPoint.Sub(p).Normalize();

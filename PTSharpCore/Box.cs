@@ -48,7 +48,7 @@ namespace PTSharpCore
 
         public V Anchor(V anchor) => Min.Add(Size().Mul(anchor));
 
-        public V Center() => Anchor(new V(0.5f, 0.5f, 0.5f));
+        public V Center() => Anchor(new V(0.5, 0.5, 0.5));
 
         public double OuterRadius() => Min.Sub(Center()).Length();
 
