@@ -4,9 +4,9 @@ namespace PTSharpCore
 {
     public class Colour
     {
-        internal double r;
-        internal double g;
-        internal double b;
+        [ThreadStatic] internal double r;
+        [ThreadStatic] internal double g;
+        [ThreadStatic] internal double b;
 
         public Colour(Colour c)
         {
@@ -159,9 +159,9 @@ namespace PTSharpCore
 
         public Colour Mix(Colour b, double pct)
         {
-            Colour a = MulScalar(1 - pct);
+            MulScalar(1 - pct);
             b = b.MulScalar(pct);
-            return a.Add(b);
+            return Add(b);
         }
 
         public Colour MulScalar(double b) => new Colour(r * b, g * b, this.b * b);

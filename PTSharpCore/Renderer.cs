@@ -1,7 +1,9 @@
 using MathNet.Numerics.Random;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -74,12 +76,12 @@ namespace PTSharpCore
 
             double invWidth = 1.0f / w;
             double invHeight = 1.0f / h;
+            int totalPixels = h * w;
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-
                     if (StratifiedSampling)
                     {
                         for (int u = 0; u < sppRoot; u++)
@@ -93,21 +95,21 @@ namespace PTSharpCore
                                 buf.AddSample(x, y, sample);
                             }
                         }
-                        
+
                     }
                     else
                     {
                         // Random subsampling
                         for (int p = 0; p < spp; p++)
                         {
-                            fu = (x+Random.Shared.NextDouble())*invWidth;
-                            fv = (y+Random.Shared.NextDouble())*invHeight;
+                            fu = (x + Random.Shared.NextDouble()) * invWidth;
+                            fv = (y + Random.Shared.NextDouble()) * invHeight;
                             Ray ray = camera.CastRay(x, y, w, h, fu, fv);
                             Colour sample = sampler.Sample(scene, ray);
                             sample += sample;
                             buf.AddSample(x, y, sample);
                         }
-                        
+
                     }
                     // Adaptive Sampling
                     if (AdaptiveSamples > 0)
@@ -125,12 +127,12 @@ namespace PTSharpCore
                             Colour sample = sampler.Sample(scene, ray);
                             buf.AddSample(x, y, sample);
                         }
-                        
+
                     }
 
                     if (FireflySamples > 0)
                     {
-                        
+
                         if (PBuffer.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
                         {
                             for (int e = 0; e < FireflySamples; e++)
@@ -143,7 +145,7 @@ namespace PTSharpCore
                                 PBuffer.AddSample(x, y, sample);
                             }
                         }
-                        
+
                     }
                 }
             }
@@ -185,7 +187,9 @@ namespace PTSharpCore
             // Set number of cores/threads
             po.MaxDegreeOfParallelism = Environment.ProcessorCount;
 
-            Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
+            List<int> pixelList = Enumerable.Range(0, totalPixels).ToList();
+
+            //Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
 
             if (StratifiedSampling)
             {
@@ -224,6 +228,21 @@ namespace PTSharpCore
                           }
                       }
                   });
+
+                /*Parallel.ForEach(pixelList, i =>
+                {
+                    for (int s = 0; s < spp; s++)
+                    {
+                        int y = i / w, x = i % w;
+                        var fu = (x + Random.Shared.NextDouble()) * invWidth;
+                        var fv = (y + Random.Shared.NextDouble()) * invHeight;
+                        var ray = camera.CastRay(x, y, w, h, fu, fv);
+                        var sample = sampler.Sample(scene, ray);
+                        buf.AddSample(x, y, sample);
+                    }
+
+                });*/
+
                 //Console.WriteLine("time elapsed:" + sw.Elapsed);
             }
 
@@ -255,16 +274,15 @@ namespace PTSharpCore
                       int y = i / w, x = i % w;
                       if (PBuffer.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
                       {
-
-                          Parallel.For(0, FireflySamples, po, (e, loop) =>
+                          for (int e = 0; e < FireflySamples; e++)
                           {
                               Colour sample = new Colour(0, 0, 0);
                               var fu = (x + Random.Shared.NextDouble()) * invWidth;
                               var fv = (y + Random.Shared.NextDouble()) * invHeight;
                               Ray ray = camera.CastRay(x, y, w, h, fu, fv);
-                              sample = sampler.Sample(scene, ray);
-                              buf.AddSample(x, y, sample);
-                          });
+                              sample += sampler.Sample(scene, ray);
+                              PBuffer.AddSample(x, y, sample);
+                          }
                       }
                   });
             }
@@ -277,7 +295,8 @@ namespace PTSharpCore
             System.Drawing.Bitmap finalrender = null;
             for (int iter = 1; iter < this.iterations; iter++)
             {
-                Console.WriteLine("[Iteration:" + iter + " of " + iterations + "]");
+                //Console.WriteLine("[Iteration:" + iter + " of " + iterations + "]");
+                Console.Write("[Iteration:" + iter + " of " + iterations + "]" + "\r");
                 if (NumCPU.Equals(1))
                 {
                     Render();
@@ -287,7 +306,7 @@ namespace PTSharpCore
                 }
                 this.pathTemplate = pathTemplate;
                 finalrender = PBuffer.Image(Channel.ColorChannel);
-                Console.WriteLine("Writing file...");
+                //Console.WriteLine("Writing file...");
                 finalrender.Save(pathTemplate);                
             }
             
@@ -298,7 +317,6 @@ namespace PTSharpCore
         {
             for (int i = 1; i <= iterations; i++)
             {
-                Console.WriteLine("Iterations " + i + " of " + iterations);
                 Render();
             }
             Buffer buf = PBuffer.Copy();

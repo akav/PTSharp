@@ -13,8 +13,8 @@ namespace PTSharpCore
     public class Pixel
     {
         public int Samples;
-        public Colour M;
-        public Colour V;
+        [ThreadStatic] public Colour M;
+        [ThreadStatic] public Colour V;
 
         public Pixel() { }
 
@@ -28,13 +28,13 @@ namespace PTSharpCore
         public void AddSample(Colour sample)
         {
             Interlocked.Increment(ref Samples);
-            if (Samples.Equals(1))
+            if (Samples==1)
             {
                 M = sample;
                 return;
             }
             Colour m = M;
-            M = M.Add(sample.Sub(M).DivScalar(Samples));
+            M = M.Add(sample.Sub(M).DivScalar((double)Samples));
             V = V.Add(sample.Sub(m).Mul(sample.Sub(M)));
         }
 
@@ -46,7 +46,7 @@ namespace PTSharpCore
             {
                 return Colour.Black;
             }
-            return V.DivScalar(Samples - 1);
+            return V.DivScalar((double)Samples - 1.0d);
         }
 
         public Colour StandardDeviation() => Variance().Pow(0.5);
@@ -102,7 +102,7 @@ namespace PTSharpCore
         {
             Bitmap bmp = new Bitmap(W, H);
             
-            double maxSamples=0;
+            double maxSamples = 1;
             
             if (channel == Channel.SamplesChannel)
             {  

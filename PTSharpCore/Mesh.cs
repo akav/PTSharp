@@ -202,25 +202,26 @@ namespace PTSharpCore
                 lookup[t.V3] = lookup[t.V3].Add(t.N3);
             }
 
-            Dictionary<V, V> lookup2 = new Dictionary<V, V>();
+            //Dictionary<V, V> lookup2 = new Dictionary<V, V>();
 
-            foreach (KeyValuePair<V, V> p in lookup)
+            foreach (var p in lookup)
             {
-                lookup2[p.Key] = lookup[p.Key].Normalize();
+                //lookup2[p.Key] = lookup[p.Key].Normalize();
+                lookup[p.Key] = lookup[p.Key].Normalize();
             }
 
             foreach (var t in Triangles)
             {
-                t.N1 = lookup2[t.V1];
-                t.N2 = lookup2[t.V2];
-                t.N3 = lookup2[t.V3];
+                t.N1 = lookup[t.V1];
+                t.N2 = lookup[t.V2];
+                t.N3 = lookup[t.V3];
             }
         }
 
         void UnitCube()
         {
             FitInside(new Box(new V(0, 0, 0), new V(1, 1, 1)), new V(0, 0, 0));
-            MoveTo(new V(0, 0, 0), new V(0.5F, 0.5F, 0.5F));
+            MoveTo(new V(0, 0, 0), new V(0.5, 0.5, 0.5));
         }
 
         public void MoveTo(V position, V anchor)

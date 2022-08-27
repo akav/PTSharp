@@ -45,15 +45,22 @@ namespace PTSharpCore
             var n = info.Ray;
             var material = info.material;
             
-            var n1 = 1.0;
-            var n2 = material.Index;
+            (var n1, var n2) = (1.0, material.Index);
             
             if (info.inside)
             {
                 (n1, n2) = (n2, n1);
             }
 
-            double p = material.Reflectivity >= 0 ? material.Reflectivity : n.Reflectance(this, n1, n2);
+            double p;
+            if (material.Reflectivity >= 0)
+            {
+                p = material.Reflectivity;
+            }
+            else
+            {
+                p = n.Reflectance(this, n1, n2);
+            }
 
             switch (bounceType)
             {
@@ -76,7 +83,7 @@ namespace PTSharpCore
             else if (material.Transparent)
             {
                 var refracted = n.Refract(this, n1, n2);
-                refracted.Origin = refracted.Origin.Add(refracted.Direction.MulScalar(1e-4F));
+                refracted.Origin = refracted.Origin.Add(refracted.Direction.MulScalar(1e-4));
                 return (refracted.ConeBounce(material.Gloss, u, v), true, 1 - p);
             }
             else

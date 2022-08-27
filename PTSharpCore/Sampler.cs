@@ -90,10 +90,11 @@ namespace PTSharpCore
                 {
                     return Colour.Black;
                 }
-                result = result.Add(material.Color.MulScalar(material.Emittance * samples));
+                result = result.Add(material.Color.MulScalar(material.Emittance * (double)samples));
             }
 
-            var n = (int)Math.Sqrt(samples);
+            var n = (int)(Math.Sqrt((double)samples));
+            
             BounceType ma, mb;
 
             if (SpecularMode == SpecularMode.SpecularModeAll || depth == 0 && SpecularMode == SpecularMode.SpecularModeFirst)
@@ -115,8 +116,8 @@ namespace PTSharpCore
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
 
-                        var fu = (u + Random.Shared.NextDouble()) / n;
-                        var fv = (v + Random.Shared.NextDouble()) / n;
+                        var fu = ((double)u + Random.Shared.NextDouble()) / (double)n;
+                        var fv = ((double)v + Random.Shared.NextDouble()) / (double)n;
                         
                         (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode);
 
@@ -149,7 +150,7 @@ namespace PTSharpCore
                     }
                 }
             }
-            return result.DivScalar(n * n);
+            return result.DivScalar((double)(n * n)); 
         }
 
         Colour sampleEnvironment(Scene scene, Ray ray)

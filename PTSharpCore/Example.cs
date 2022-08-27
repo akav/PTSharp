@@ -23,7 +23,7 @@ namespace PTSharpCore
             scene.Add(sphere);
 
             // add a spherical light source
-            var light = Sphere.NewSphere(new V(0, 0, 5.0F), 1.0, Material.LightMaterial(Colour.White, 8));
+            var light = Sphere.NewSphere(new V(0, 0, 5.0), 1.0, Material.LightMaterial(Colour.White, 8));
             scene.Add(light);
 
             // position the camera
@@ -174,8 +174,8 @@ namespace PTSharpCore
             }
             var camera = Camera.LookAt(new V(0, -1500, 200), new V(0, -100, 0), new V(0, 0, 1), 20);
             camera.SetFocus(new V(0, 20000, 0), 1);
-            var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
+            var sampler = DefaultSampler.NewSampler(8, 8);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("runway.png", 1000);
         }
 
@@ -428,14 +428,14 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new V(-2, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Sphere.NewSphere(new V(5, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Cube.NewCube(new V(-30, -1, -30), new V(30, 0, 30), Material.SpecularMaterial(Colour.HexColor(0xFCFAE1), 2)));
-            var mesh = OBJ.Load("teapot.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
+            var mesh = OBJ.Load("models/teapot.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
             mesh.SmoothNormals();
             scene.Add(mesh);
             var camera = Camera.LookAt(new V(2, 5, -6), new V(0.5F, 1, 0), new V(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, false);
-            renderer.FireflySamples = 64;
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            //renderer.FireflySamples = 64;
             renderer.IterativeRender("teapot.png", 1000); 
         }
 
