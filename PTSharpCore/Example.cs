@@ -1,13 +1,88 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Numerics;
+using static Microsoft.FSharp.Core.ByRefKinds;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace PTSharpCore
 {
     class Example
     {
+        public void example1()
+        {
+            Scene scene = new Scene();
+            scene.Add(Sphere.NewSphere(new Vector(1.5, 1.25, 0), 1.25, Material.SpecularMaterial(Colour.HexColor(0x004358), 1.3)));
+            scene.Add(Sphere.NewSphere(new Vector(-1, 1, 2), 1, Material.SpecularMaterial(Colour.HexColor(0xFFE11A), 1.3)));
+            scene.Add(Sphere.NewSphere(new Vector(-2.5, 0.75, 0), 0.75, Material.SpecularMaterial(Colour.HexColor(0xFD7400), 1.3)));
+            scene.Add(Sphere.NewSphere(new Vector(-0.7, 0.5, -1), 0.5F, Material.ClearMaterial(1.5, 0)));
+            scene.Add(Cube.NewCube(new Vector(-10, -1, -10), new Vector(10, 0, 10), Material.GlossyMaterial(Colour.White, 1.1, Util.Radians(10))));
+            scene.Add(Sphere.NewSphere(new Vector(-1.5, 4, 0), 0.5, Material.LightMaterial(Colour.White, 30)));
+            Camera camera = Camera.LookAt(new Vector(0, 2, -5), new Vector(0, 0.25, 3), new Vector(0, 1, 0), 45);
+            camera.SetFocus(new Vector(-0.75, 1, -1), 0.1);
+            DefaultSampler sampler = DefaultSampler.NewSampler(4, 8);
+            sampler.SpecularMode = SpecularMode.SpecularModeFirst;
+            Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            renderer.AdaptiveSamples = 32;
+            renderer.FireflySamples = 128;
+            renderer.IterativeRender("example1.png", 500);
+        }
+
+        public void example2()
+        {
+            var scene = new Scene();
+            var material = Material.GlossyMaterial(Colour.HexColor(0xEFC94C), 3, Util.Radians(30));
+            var whiteMat = Material.GlossyMaterial(Colour.White, 3, Util.Radians(30));
+
+            for (int x = 0; x < 40; x++) 
+            {
+
+                for(int z = 0; z < 40; z++)
+                {
+                    var center = new Vector((double)x - 19.5, 0, (double)z - 19.5);
+                    scene.Add(Sphere.NewSphere(center, 0.4, material));
+        
+                }
+            }
+            scene.Add(Cube.NewCube(new Vector(-100, -1, -100), new Vector(100, 0, 100), whiteMat));
+            scene.Add(Sphere.NewSphere(new Vector(-1, 4, -1), 1, Material.LightMaterial(Colour.White, 30)));
+            var camera = Camera.LookAt(new Vector(0, 4, -8), new Vector(0, 0, -2), new Vector(0, 1, 0), 45);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            renderer.IterativeRender("example2.png", 1000);
+        }
+
+        public void example3()
+        {
+            var scene = new Scene();
+            var material = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1));
+            scene.Add(Cube.NewCube(new Vector(-1000, -1, -1000), new Vector(1000, 0, 1000), material));
+
+            for(int x = -20; x <= 20; x++)
+            {
+                for(int z = -20; z <= 20; z++)
+                {
+                    if ((x + z)% 2 == 0)
+                    {
+                        continue;
+        
+                    }   
+                    var s = 0.1;
+                    var min = new Vector((double)x - s, 0, (double)z - s);
+                    var max = new Vector((double)x + s, 2, (double)z + s);
+                    scene.Add(Cube.NewCube(min, max, material));
+                }
+            }
+            scene.Add(Cube.NewCube(new Vector(-5, 10, -5), new Vector(5, 11, 5), Material.LightMaterial(Colour.White, 5)));
+            var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            renderer.IterativeRender("example3.png", 1000);
+        }
+
+
         public void simplesphere()
         {
             var scene = new Scene();
@@ -397,26 +472,6 @@ namespace PTSharpCore
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("cylinder.png", 1000);
-        }
-
-        public void sphere()
-        {
-            int width = 960;
-            int height = 540;
-            Scene scene = new Scene();
-            scene.Add(Sphere.NewSphere(new Vector(1.5F, 1.25F, 0), 1.25F, Material.SpecularMaterial(Colour.HexColor(0x004358), 1.3F)));
-            scene.Add(Sphere.NewSphere(new Vector(-1, 1, 2), 1, Material.SpecularMaterial(Colour.HexColor(0xFFE11A), 1.3F)));
-            scene.Add(Sphere.NewSphere(new Vector(-2.5F, 0.75F, 0), 0.75F, Material.SpecularMaterial(Colour.HexColor(0xFD7400), 1.3F)));
-            scene.Add(Sphere.NewSphere(new Vector(-0.75F, 0.5F, -1), 0.5F, Material.ClearMaterial(1.5F, 0)));
-            scene.Add(Cube.NewCube(new Vector(-10, -1, -10), new Vector(10, 0, 10), Material.GlossyMaterial(Colour.White, 1.1F, Util.Radians(10))));
-            scene.Add(Sphere.NewSphere(new Vector(-1.5F, 4, 0), 0.5F, Material.LightMaterial(Colour.White, 30)));
-            Camera camera = Camera.LookAt(new Vector(0, 2, -5), new Vector(0, 0.25F, 3), new Vector(0, 1, 0), 45);
-            camera.SetFocus(new Vector(-0.75F, 1, -1), 0.1F);
-            DefaultSampler sampler = DefaultSampler.NewSampler(8, 8);
-            sampler.SpecularMode = SpecularMode.SpecularModeFirst;
-            Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            renderer.FireflySamples = 64;
-            renderer.IterativeRender("sphere.png", 500);
         }
 
         public void teapot()
