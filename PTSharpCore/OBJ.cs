@@ -87,7 +87,7 @@ namespace PTSharpCore
                                         if (parts[i].Length > 0)
                                             d[c++] = Double.Parse(parts[i]);
                                     }
-                                    n[nn] = new Vector(d[0], d[1], d[2], 0.0);
+                                    n[nn] = new Vector((double)d[0], (double)d[1], (double)d[2], 0.0f);
                                     nn++;
                                 }
                                 else
@@ -100,7 +100,7 @@ namespace PTSharpCore
                                         if (parts[i].Length > 0)
                                             d[c++] = Double.Parse(parts[i]);
                                     }
-                                    v[nv] = new Vector(d[0], d[1], d[2], 1.0);
+                                    v[nv] = new Vector((double)d[0], (double)d[1], (double)d[2], 1.0f);
                                     nv++;
                                 }
                             }
@@ -172,15 +172,15 @@ namespace PTSharpCore
                             matList[words[1]] = material;
                             break;
                         case "Ke":
-                            var max = Math.Max(Math.Max(float.Parse(words[1]), float.Parse(words[2])), float.Parse(words[3]));
+                            var max = Math.Max(Math.Max(double.Parse(words[1]), double.Parse(words[2])), double.Parse(words[3]));
                             if (max > 0)
                             {
-                                material.Color = new Colour(float.Parse(words[1]) / max, float.Parse(words[2]) / max, float.Parse(words[3]) / max);
+                                material.Color = new Colour(double.Parse(words[1]) / max, double.Parse(words[2]) / max, double.Parse(words[3]) / max);
                                 material.Emittance = max;
                             }
                             break;
                         case "Kd":
-                            material.Color = new Colour(float.Parse(words[1]), float.Parse(words[2]), float.Parse(words[3]));
+                            material.Color = new Colour(double.Parse(words[1]), double.Parse(words[2]), double.Parse(words[3]));
                             break;
                         case "map_Kd":
                             Console.WriteLine("map_Kd: " + Directory.GetCurrentDirectory() + "\\" + words[1]);
@@ -190,7 +190,7 @@ namespace PTSharpCore
                         case "map_bump":
                             Console.WriteLine("map_bump: " + Directory.GetCurrentDirectory() + "\\" + words[3]);
                             var bumpmap = Directory.GetCurrentDirectory() + "\\" + words[3];
-                            material.NormalTexture = ColorTexture.GetTexture(bumpmap).Pow(1 / 2.2);
+                            material.NormalTexture = ColorTexture.GetTexture(bumpmap).Pow(1 / 2.2f);
                             break;
                         default:
                             break;

@@ -67,17 +67,17 @@ namespace PTSharpCore
             return hit;
         }
 
-        V IShape.UV(V uv)
+        Vector IShape.UVector(Vector uv)
         {
-            return Shape.UV(uv);
+            return Shape.UVector(uv);
         }
 
-        V IShape.NormalAt(V normal)
+        Vector IShape.NormalAt(Vector normal)
         {
             return Shape.NormalAt(normal);
         }
 
-        Material IShape.MaterialAt(V v)
+        Material IShape.MaterialAt(Vector v)
         {
             return Shape.MaterialAt(v);
         }

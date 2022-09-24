@@ -16,10 +16,10 @@ namespace PTSharpCore
         int SamplesPerPixel;
         public bool StratifiedSampling;
         public int AdaptiveSamples;
-        float AdaptiveThreshold;
-        float AdaptiveExponent;
+        double AdaptiveThreshold;
+        double AdaptiveExponent;
         public int FireflySamples;
-        float FireflyThreshold;
+        double FireflyThreshold;
         int NumCPU;
         int iterations;
         String pathTemplate;
@@ -62,18 +62,18 @@ namespace PTSharpCore
             Buffer buf = PBuffer;
             (int w, int h) = (buf.W, buf.H);
             int spp = SamplesPerPixel;
-            int sppRoot = (int)(MathF.Sqrt(SamplesPerPixel));
+            int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
             scene.Compile();
             scene.rays = 0;
             Random rand = new Random();
-            float fu, fv;
+            double fu, fv;
 
             // Stop watch timer 
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            float invWidth = 1.0f / w;
-            float invHeight = 1.0f / h;
+            double invWidth = 1.0f / w;
+            double invHeight = 1.0f / h;
 
             for (int y = 0; y < h; y++)
             {
@@ -100,8 +100,10 @@ namespace PTSharpCore
                         // Random subsampling
                         for (int p = 0; p < spp; p++)
                         {
-                            fu = (x+Random.Shared.NextSingle())*invWidth;
-                            fv = (y+Random.Shared.NextSingle())*invHeight;
+                            //fu = (x+Random.Shared.NextDouble())*invWidth;
+                            //fv = (y+Random.Shared.NextDouble())*invHeight;
+                            fu = Random.Shared.NextDouble();
+                            fv = Random.Shared.NextDouble();
                             Ray ray = camera.CastRay(x, y, w, h, fu, fv);
                             Colour sample = sampler.Sample(scene, ray);
                             sample += sample;
@@ -112,15 +114,15 @@ namespace PTSharpCore
                     // Adaptive Sampling
                     if (AdaptiveSamples > 0)
                     {
-                        float v = buf.StandardDeviation(x, y).MaxComponent();
+                        double v = buf.StandardDeviation(x, y).MaxComponent();
                         v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
-                        v = MathF.Pow(v, AdaptiveExponent);
+                        v = Math.Pow(v, AdaptiveExponent);
                         int samples = (int)(v * AdaptiveSamples);
                         for (int d = 0; d < samples; d++)
                         {
 
-                            fu = Random.Shared.NextSingle();
-                            fv = Random.Shared.NextSingle();
+                            fu = Random.Shared.NextDouble();
+                            fv = Random.Shared.NextDouble();
                             Ray ray = camera.CastRay(x, y, w, h, fu, fv);
                             Colour sample = sampler.Sample(scene, ray);
                             buf.AddSample(x, y, sample);
@@ -136,8 +138,8 @@ namespace PTSharpCore
                             for (int e = 0; e < FireflySamples; e++)
                             {
                                 Colour sample = new Colour(0, 0, 0);
-                                fu = (x + Random.Shared.NextSingle()) * invWidth;
-                                fv = (y + Random.Shared.NextSingle()) * invHeight;
+                                fu = (x + Random.Shared.NextDouble()) * invWidth;
+                                fv = (y + Random.Shared.NextDouble()) * invHeight;
                                 Ray ray = camera.CastRay(x, y, w, h, fu, fv);
                                 sample += sampler.Sample(scene, ray);
                                 PBuffer.AddSample(x, y, sample);
@@ -159,7 +161,7 @@ namespace PTSharpCore
             Buffer buf = PBuffer;
             (int w, int h) = (buf.W, buf.H);
             int spp = SamplesPerPixel;
-            int sppRoot = (int)(MathF.Sqrt(SamplesPerPixel));
+            int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
             scene.Compile();
             scene.rays = 0;
 
@@ -172,8 +174,8 @@ namespace PTSharpCore
 
             // Frame resolution
             int totalPixels = h * w;
-            float invWidth = 1.0f / w;
-            float invHeight = 1.0f / h;
+            double invWidth = 1.0f / w;
+            double invHeight = 1.0f / h;
 
             // Create a cancellation token for Parallel.For loop control
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -216,8 +218,8 @@ namespace PTSharpCore
                           for (int s = 0; s < spp; s++)
                           {
                               int y = i / w, x = i % w;
-                              var fu = (x + Random.Shared.NextSingle()) * invWidth;
-                              var fv = (y + Random.Shared.NextSingle()) * invHeight;
+                              var fu = (x + Random.Shared.NextDouble()) * invWidth;
+                              var fv = (y + Random.Shared.NextDouble()) * invHeight;
                               var ray = camera.CastRay(x, y, w, h, fu, fv);
                               var sample = sampler.Sample(scene, ray);
                               buf.AddSample(x, y, sample);
@@ -232,15 +234,15 @@ namespace PTSharpCore
                 _ = Parallel.For(0, w * h, po, (i, loopState) =>
                   {
                       int y = i / w, x = i % w;
-                      float v = buf.StandardDeviation(x, y).MaxComponent();
+                      double v = buf.StandardDeviation(x, y).MaxComponent();
                       v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
-                      v = MathF.Pow(v, AdaptiveExponent);
+                      v = Math.Pow(v, AdaptiveExponent);
                       int samples = (int)(v * AdaptiveSamples);
                       for (int s = 0; s < samples; s++)
                       {
 
-                          var fu = Random.Shared.NextSingle();
-                          var fv = Random.Shared.NextSingle();
+                          var fu = Random.Shared.NextDouble();
+                          var fv = Random.Shared.NextDouble();
                           Ray ray = camera.CastRay(x, y, w, h, fu, fv);
                           Colour sample = sampler.Sample(scene, ray);
                           buf.AddSample(x, y, sample);
@@ -259,8 +261,8 @@ namespace PTSharpCore
                           Parallel.For(0, FireflySamples, po, (e, loop) =>
                           {
                               Colour sample = new Colour(0, 0, 0);
-                              var fu = (x + Random.Shared.NextSingle()) * invWidth;
-                              var fv = (y + Random.Shared.NextSingle()) * invHeight;
+                              var fu = (x + Random.Shared.NextDouble()) * invWidth;
+                              var fv = (y + Random.Shared.NextDouble()) * invHeight;
                               Ray ray = camera.CastRay(x, y, w, h, fu, fv);
                               sample = sampler.Sample(scene, ray);
                               buf.AddSample(x, y, sample);

@@ -73,13 +73,13 @@ namespace PTSharpCore
                 {
                     int index = y * xMax + x;
                     System.Drawing.Color pixelcolor = image.GetPixel(x, y);
-                    imgdata[index] = new Colour((float)(pixelcolor.R)  / 255, (float)(pixelcolor.G) / 255, (float)(pixelcolor.B) / 255).Pow(2.2F); 
+                    imgdata[index] = new Colour((double)(pixelcolor.R)  / 255, (double)(pixelcolor.G) / 255, (double)(pixelcolor.B) / 255).Pow(2.2F); 
                 }
             }
             return new ColorTexture(xMax, yMax, imgdata);
         }
         
-        ITexture ITexture.Pow(float a)
+        ITexture ITexture.Pow(double a)
         {
             for (int i = 0; i < Data.Length; i++)
             {
@@ -88,7 +88,7 @@ namespace PTSharpCore
             return this;
         }
 
-        ITexture ITexture.MulScalar(float a)
+        ITexture ITexture.MulScalar(double a)
         {
             for (int i = 0; i < Data.Length; i++)
             {
@@ -97,7 +97,7 @@ namespace PTSharpCore
             return this;
         }
 
-        Colour bilinearSample(float u, float v)
+        Colour bilinearSample(double u, double v)
         {
             if(u == 1)
             {
@@ -107,8 +107,8 @@ namespace PTSharpCore
             {
                 v -= Util.EPS;
             }
-            var w = (float)Width -1;
-            var h = (float)Height - 1;
+            var w = (double)Width -1;
+            var h = (double)Height - 1;
             (var X, var x) = Util.Modf(u * w);
             (var Y, var y) = Util.Modf(v * h);
             var x0 = (int)X;
@@ -127,28 +127,28 @@ namespace PTSharpCore
             return c;
         }
 
-        float Fract(float x)
+        double Fract(double x)
         {
             x = Util.Modf(x).Item2;
             return x;
         }
 
-        Colour ITexture.Sample(float u, float v)
+        Colour ITexture.Sample(double u, double v)
         {
             u = Fract(Fract(u) + 1);
             v = Fract(Fract(v) + 1);
             return bilinearSample(u, 1 - v);
         }
 
-        V ITexture.NormalSample(float u, float v)
+        Vector ITexture.NormalSample(double u, double v)
         {
             u = Fract(Fract(u) + 1);
             v = Fract(Fract(v) + 1);
             var c = bilinearSample(u, 1 - v);
-            return new V(c.r * 2 - 1, c.g * 2 - 1, c.b * 2 - 1).Normalize();
+            return new Vector(c.r * 2 - 1, c.g * 2 - 1, c.b * 2 - 1).Normalize();
         }
 
-        V ITexture.BumpSample(float u, float v)
+        Vector ITexture.BumpSample(double u, double v)
         {
             u = Fract(Fract(u) + 1);
             v = Fract(Fract(v) + 1);
@@ -159,7 +159,7 @@ namespace PTSharpCore
             (var y1, var y2) = (Util.ClampInt(y - 1, 0, Height - 1), Util.ClampInt(y + 1, 0, Height - 1));
             Colour cx = Data[y * Width + x1].Sub(Data[y * Width + x2]);
             Colour cy = Data[y1 * Width + x].Sub(Data[y2 * Width + x]);
-            return new V(cx.r, cy.r, 0);
+            return new Vector(cx.r, cy.r, 0);
         }
     }
 }

@@ -2,7 +2,7 @@ using System;
 
 namespace PTSharpCore
 {
-    internal delegate float func(V d);
+    internal delegate double func(Vector d);
 
     class SphericalHarmonic : IShape, SDF
     {
@@ -28,20 +28,20 @@ namespace PTSharpCore
 
         Box IShape.BoundingBox()
         {
-            float r = 1;
-            return new Box(new V(-r, -r, -r), new V(r, r, r));
+            double r = 1;
+            return new Box(new Vector(-r, -r, -r), new Vector(r, r, r));
         }
 
         Box SDF.BoundingBox()
         {
-            float r = 1;
-            return new Box(new V(-r, -r, -r), new V(r, r, r));
+            double r = 1;
+            return new Box(new Vector(-r, -r, -r), new Vector(r, r, r));
         }
 
         internal Box BoundingBox()
         {
             const int r = 1;
-            return new Box(new V(-r, -r, -r), new V(r, r, r));
+            return new Box(new Vector(-r, -r, -r), new Vector(r, r, r));
         }
 
         Hit IShape.Intersect(Ray r)
@@ -54,12 +54,12 @@ namespace PTSharpCore
             return new Hit(this, hit.T, null);
         }
 
-        V IShape.UV(V p)
+        Vector IShape.UVector(Vector p)
         {
-            return new V();
+            return new Vector();
         }
 
-        Material IShape.MaterialAt(V p)
+        Material IShape.MaterialAt(Vector p)
         {
             var h = EvaluateHarmonic(p);
             if (h < 0)
@@ -72,179 +72,179 @@ namespace PTSharpCore
             }
         }
 
-        V IShape.NormalAt(V p)
+        Vector IShape.NormalAt(Vector p)
         {
-            const float e = 0.0001F;
-            (var x, var y, var z) = (p.v.X, p.v.Y, p.v.Z);
+            const double e = 0.0001;
+            (var x, var y, var z) = (p.x, p.y, p.z);
 
-            var n = new V(
-                Evaluate(new V(x - e, y, z)) - Evaluate(new V(x + e, y, z)),
-                Evaluate(new V(x, y - e, z)) - Evaluate(new V(x, y + e, z)),
-                Evaluate(new V(x, y, z - e)) - Evaluate(new V(x, y, z + e)));
+            var n = new Vector(
+                Evaluate(new Vector(x - e, y, z)) - Evaluate(new Vector(x + e, y, z)),
+                Evaluate(new Vector(x, y - e, z)) - Evaluate(new Vector(x, y + e, z)),
+                Evaluate(new Vector(x, y, z - e)) - Evaluate(new Vector(x, y, z + e)));
 
             return n.Normalize();
         }
 
-        float EvaluateHarmonic(V p)
+        double EvaluateHarmonic(Vector p)
         {
             return harmonicFunction(p.Normalize());
         }
 
-        float Evaluate(V p)
+        double Evaluate(Vector p)
         {
-            return p.Length() - MathF.Abs(harmonicFunction(p.Normalize()));
+            return p.Length() - Math.Abs(harmonicFunction(p.Normalize()));
         }
 
-        float SDF.Evaluate(V p)
+        double SDF.Evaluate(Vector p)
         {
-            return p.Length() - MathF.Abs(harmonicFunction(p.Normalize()));
+            return p.Length() - Math.Abs(harmonicFunction(p.Normalize()));
         }
 
-        static float sh00(V d)
+        static double sh00(Vector d)
         {
             return 0.282095F;
         }
 
-        static float sh1n1(V d)
+        static double sh1n1(Vector d)
         {
-            return -0.488603F * d.v.Y;
+            return -0.488603F * d.y;
         }
 
-        static float sh10(V d)
+        static double sh10(Vector d)
         {
-            return 0.488603F * d.v.Z;
+            return 0.488603F * d.z;
         }
 
-        static float sh1p1(V d)
+        static double sh1p1(Vector d)
         {
-            return -0.488603F * d.v.X;
+            return -0.488603F * d.x;
         }
 
-        static float sh2n2(V d)
+        static double sh2n2(Vector d)
         {
             // 0.5 * sqrt(15/pi) * x * y
-            return 1.092548F * d.v.X * d.v.Y;
+            return 1.092548F * d.x * d.y;
         }
 
-        static float sh2n1(V d)
+        static double sh2n1(Vector d)
         {
             // -0.5 * sqrt(15/pi) * y * z
-            return -1.092548F * d.v.Y * d.v.Z;
+            return -1.092548F * d.y * d.z;
         }
 
-        static float sh20(V d)
+        static double sh20(Vector d)
         {
             // 0.25 * sqrt(5/pi) * (-x^2-y^2+2z^2)
-            return 0.315392F * (-d.v.X * d.v.X - d.v.Y * d.v.Y + 2.0F * d.v.Z * d.v.Z);
+            return 0.315392F * (-d.x * d.x - d.y * d.y + 2.0F * d.z * d.z);
         }
 
-        static float sh2p1(V d)
+        static double sh2p1(Vector d)
         {
             // -0.5 * sqrt(15/pi) * x * z
-            return -1.092548F * d.v.X * d.v.Z;
+            return -1.092548F * d.x * d.z;
         }
 
-        static float sh2p2(V d)
+        static double sh2p2(Vector d)
         {
             // 0.25 * sqrt(15/pi) * (x^2 - y^2)
-            return 0.546274F * (d.v.X * d.v.X - d.v.Y * d.v.Y);
+            return 0.546274F * (d.x * d.x - d.y * d.y);
         }
 
-        static float sh3n3(V d)
+        static double sh3n3(Vector d)
         {
             // -0.25 * sqrt(35/(2pi)) * y * (3x^2 - y^2)
-            return -0.590044F * d.v.Y * (3.0F * d.v.X * d.v.X - d.v.Y * d.v.Y);
+            return -0.590044F * d.y * (3.0F * d.x * d.x - d.y * d.y);
         }
 
-        static float sh3n2(V d)
+        static double sh3n2(Vector d)
         {
             // 0.5 * sqrt(105/pi) * x * y * z
-            return 2.890611F * d.v.X * d.v.Y * d.v.Z;
+            return 2.890611F * d.x * d.y * d.z;
         }
 
-        static float sh3n1(V d)
+        static double sh3n1(Vector d)
         {
             // -0.25 * sqrt(21/(2pi)) * y * (4z^2-x^2-y^2)
-            return -0.457046F * d.v.Y * (4.0F * d.v.Z * d.v.Z - d.v.X * d.v.X - d.v.Y * d.v.Y);
+            return -0.457046F * d.y * (4.0F * d.z * d.z - d.x * d.x - d.y * d.y);
         }
 
-        static float sh30(V d)
+        static double sh30(Vector d)
         {
             // 0.25 * sqrt(7/pi) * z * (2z^2 - 3x^2 - 3y^2)
-            return 0.373176F * d.v.Z * (2.0F * d.v.Z * d.v.Z - 3.0F * d.v.X * d.v.X - 3.0F * d.v.Y * d.v.Y);
+            return 0.373176F * d.z * (2.0F * d.z * d.z - 3.0F * d.x * d.x - 3.0F * d.y * d.y);
         }
 
-        static float sh3p1(V d)
+        static double sh3p1(Vector d)
         {
             // -0.25 * sqrt(21/(2pi)) * x * (4z^2-x^2-y^2)
-            return -0.457046F * d.v.X * (4.0F * d.v.Z * d.v.Z - d.v.X * d.v.X - d.v.Y * d.v.Y);
+            return -0.457046F * d.x * (4.0F * d.z * d.z - d.x * d.x - d.y * d.y);
         }
 
-        static float sh3p2(V d)
+        static double sh3p2(Vector d)
         {
             // 0.25 * sqrt(105/pi) * z * (x^2 - y^2)
-            return 1.445306F * d.v.Z * (d.v.X * d.v.X - d.v.Y * d.v.Y);
+            return 1.445306F * d.z * (d.x * d.x - d.y * d.y);
         }
 
-        static float sh3p3(V d)
+        static double sh3p3(Vector d)
         {
             // -0.25 * sqrt(35/(2pi)) * x * (x^2-3y^2)
-            return -0.590044F * d.v.X * (d.v.X * d.v.X - 3.0F * d.v.Y * d.v.Y);
+            return -0.590044F * d.x * (d.x * d.x - 3.0F * d.y * d.y);
         }
-        static float sh4n4(V d)
+        static double sh4n4(Vector d)
         {
             // 0.75 * sqrt(35/pi) * x * y * (x^2-y^2)
-            return 2.503343F * d.v.X * d.v.Y * (d.v.X * d.v.X - d.v.Y * d.v.Y);
+            return 2.503343F * d.x * d.y * (d.x * d.x - d.y * d.y);
         }
 
-        static float sh4n3(V d)
+        static double sh4n3(Vector d)
         {
             // -0.75 * sqrt(35/(2pi)) * y * z * (3x^2-y^2)
-            return -1.770131F * d.v.Y * d.v.Z * (3.0F * d.v.X * d.v.X - d.v.Y * d.v.Y);
+            return -1.770131F * d.y * d.z * (3.0F * d.x * d.x - d.y * d.y);
         }
 
-        static float sh4n2(V d)
+        static double sh4n2(Vector d)
         {
             // 0.75 * sqrt(5/pi) * x * y * (7z^2-1)
-            return 0.946175F * d.v.X * d.v.Y * (7.0F * d.v.Z * d.v.Z - 1.0F);
+            return 0.946175F * d.x * d.y * (7.0F * d.z * d.z - 1.0F);
         }
 
-        static float sh4n1(V d)
+        static double sh4n1(Vector d)
         {
             // -0.75 * sqrt(5/(2pi)) * y * z * (7z^2-3)
-            return -0.669047F * d.v.Y * d.v.Z * (7.0F * d.v.Z * d.v.Z - 3.0F);
+            return -0.669047F * d.y * d.z * (7.0F * d.z * d.z - 3.0F);
         }
 
-        static float sh40(V d)
+        static double sh40(Vector d)
         {
             // 3/16 * sqrt(1/pi) * (35z^4-30z^2+3)
-            float z2 = d.v.Z * d.v.Z;
+            double z2 = d.z * d.z;
             return 0.105786F * (35.0F * z2 * z2 - 30.0F * z2 + 3.0F);
         }
 
-        static float sh4p1(V d)
+        static double sh4p1(Vector d)
         {
             // -0.75 * sqrt(5/(2pi)) * x * z * (7z^2-3)
-            return -0.669047F * d.v.X * d.v.Z * (7.0F * d.v.Z * d.v.Z - 3.0F);
+            return -0.669047F * d.x * d.z * (7.0F * d.z * d.z - 3.0F);
         }
 
-        static float sh4p2(V d)
+        static double sh4p2(Vector d)
         {
             // 3/8 * sqrt(5/pi) * (x^2 - y^2) * (7z^2 - 1)
-            return 0.473087F * (d.v.X * d.v.X - d.v.Y * d.v.Y) * (7.0F * d.v.Z * d.v.Z - 1.0F);
+            return 0.473087F * (d.x * d.x - d.y * d.y) * (7.0F * d.z * d.z - 1.0F);
         }
 
-        static float sh4p3(V d)
+        static double sh4p3(Vector d)
         {
             // -0.75 * sqrt(35/(2pi)) * x * z * (x^2 - 3y^2)
-            return -1.770131F * d.v.X * d.v.Z * (d.v.X * d.v.X - 3.0F * d.v.Y * d.v.Y);
+            return -1.770131F * d.x * d.z * (d.x * d.x - 3.0F * d.y * d.y);
         }
 
-        static float sh4p4(V d)
+        static double sh4p4(Vector d)
         {
             // 3/16*sqrt(35/pi) * (x^2 * (x^2 - 3y^2) - y^2 * (3x^2 - y^2))
-            float x2 = d.v.X * d.v.X;
-            float y2 = d.v.Y * d.v.Y;
+            double x2 = d.x * d.x;
+            double y2 = d.y * d.y;
             return 0.625836F * (x2 * (x2 - 3.0F * y2) - y2 * (3.0F * x2 - y2));
         }
 

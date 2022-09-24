@@ -93,7 +93,7 @@ namespace PTSharpCore
                 result = result.Add(material.Color.MulScalar(material.Emittance * samples));
             }
 
-            var n = (int)MathF.Sqrt(samples);
+            var n = (int)Math.Sqrt(samples);
             BounceType ma, mb;
 
             if (SpecularMode == SpecularMode.SpecularModeAll || depth == 0 && SpecularMode == SpecularMode.SpecularModeFirst)
@@ -115,8 +115,8 @@ namespace PTSharpCore
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
 
-                        var fu = (u + Random.Shared.NextSingle()) / n;
-                        var fv = (v + Random.Shared.NextSingle()) / n;
+                        var fu = (u + Random.Shared.NextDouble()) / n;
+                        var fv = (v + Random.Shared.NextDouble()) / n;
                         (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode);
 
                         if (mode == BounceType.BounceTypeAny)
@@ -156,10 +156,10 @@ namespace PTSharpCore
             if (scene.Texture != null)
             {
                 var d = ray.Direction;
-                var u = MathF.Atan2(d.v.Z, d.v.X) + scene.TextureAngle;
-                var v = MathF.Atan2(d.v.Y, new V(d.v.X, 0, d.v.Z).Length());
-                u = (u + MathF.PI) / (2 * MathF.PI);
-                v = (v + MathF.PI / 2) / MathF.PI;
+                var u = Math.Atan2(d.z, d.x) + scene.TextureAngle;
+                var v = Math.Atan2(d.y, new Vector(d.x, 0, d.z).Length());
+                u = (u + Math.PI) / (2 * Math.PI);
+                v = (v + Math.PI / 2) / Math.PI;
                 return scene.Texture.Sample(u, v);
             }
             return scene.Color;
@@ -187,14 +187,14 @@ namespace PTSharpCore
             {
                 // pick a random light
                 var light = scene.Lights[Random.Shared.Next(nLights)];
-                return sampleLight(scene, n, light).MulScalar((float)nLights);
+                return sampleLight(scene, n, light).MulScalar((double)nLights);
             }
         }
 
         Colour sampleLight(Scene scene, Ray n, IShape light)
         {
-            V center;
-            float radius;
+            Vector center;
+            double radius;
 
             switch (light)
             {
@@ -214,14 +214,14 @@ namespace PTSharpCore
             {
                 for (; ; )
                 {
-                    var x = Random.Shared.NextSingle() * 2 - 1;
-                    var y = Random.Shared.NextSingle() * 2 - 1;
+                    var x = Random.Shared.NextDouble() * 2 - 1;
+                    var y = Random.Shared.NextDouble() * 2 - 1;
                     if (x * x + y * y <= 1)
                     {
                         var l = center.Sub(n.Origin).Normalize();
-                        var u = l.Cross(V.RandomUnitVector()).Normalize();
+                        var u = l.Cross(Vector.RandomUnitVector()).Normalize();
                         var v = l.Cross(u);
-                        point = new V();
+                        point = new Vector();
                         point = point.Add(u.MulScalar(x * radius));
                         point = point.Add(v.MulScalar(y * radius));
                         point = point.Add(center);
@@ -246,16 +246,16 @@ namespace PTSharpCore
             // compute solid angle (hemisphere coverage)
             var hyp = center.Sub(n.Origin).Length();
             var opp = radius;
-            var theta = MathF.Asin(opp / hyp);
-            var adj = opp / MathF.Tan(theta);
-            var d = MathF.Cos(theta) * adj;
-            var r = MathF.Sin(theta) * adj;
+            var theta = Math.Asin(opp / hyp);
+            var adj = opp / Math.Tan(theta);
+            var d = Math.Cos(theta) * adj;
+            var r = Math.Sin(theta) * adj;
             var coverage = (r * r) / (d * d);
             if (hyp < opp)
             {
                 coverage = 1;
             }
-            coverage = MathF.Min(coverage, 1);
+            coverage = Math.Min(coverage, 1);
             // get material properties from light
             Material material = Material.MaterialAt(light, point);
             // combine factors

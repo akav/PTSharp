@@ -20,15 +20,15 @@ namespace PTSharpCore
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         struct STLVector
         {
-            public float X;
-            public float Y;
-            public float Z;
+            public double x;
+            public double y;
+            public double z;
 
-            public STLVector(float x, float y, float z)
+            public STLVector(double x, double y, double z)
             {
-                X = x;
-                Y = y;
-                Z = z;
+                this.x = x;
+                this.y = y;
+                this.z = z;
             }
         }
 
@@ -121,10 +121,10 @@ namespace PTSharpCore
             int counter = 0;
 
             // Creating storage structures for storing facets, vertex and normals
-            List<V> facetnormal = new List<V>();
-            List<V> vertexes = new List<V>();
+            List<Vector> facetnormal = new List<Vector>();
+            List<Vector> vertexes = new List<Vector>();
             List<Triangle> triangles = new List<Triangle>();
-            V[] varray;
+            Vector[] varray;
             Match match = null;
 
             const string regex = @"\s*(facet normal|vertex)\s+(?<X>[^\s]+)\s+(?<Y>[^\s]+)\s+(?<Z>[^\s]+)";
@@ -147,11 +147,11 @@ namespace PTSharpCore
                             match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
                             //Reading facet
                             //Console.WriteLine("Read facet on line " + counter);
-                            float.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out float x);
-                            float.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out float y);
-                            float.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out float z);
+                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
+                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
+                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
-                            V f = new V(x, y, z);
+                            Vector f = new Vector(x, y, z);
                             //Console.WriteLine("Added facet (x,y,z)"+ " "+x+" "+y+" "+z);
                             facetnormal.Add(f);
                         }
@@ -171,11 +171,11 @@ namespace PTSharpCore
                         {
                             match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
                             //Console.WriteLine("Read vertex on line " + counter);
-                            float.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out float x);
-                            float.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out float y);
-                            float.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out float z);
+                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
+                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
+                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
-                            V v = new V(x, y, z);
+                            Vector v = new Vector(x, y, z);
                             //Console.WriteLine("Added vertex 1 (x,y,z)" + " " + x + " " + y + " " + z);
                             vertexes.Add(v);
                         }
@@ -187,11 +187,11 @@ namespace PTSharpCore
                         {
                             match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
                             //Console.WriteLine("Read vertex on line " + counter);
-                            float.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out float x);
-                            float.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out float y);
-                            float.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out float z);
+                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
+                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
+                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
-                            V v = new V(x, y, z);
+                            Vector v = new Vector(x, y, z);
                             //Console.WriteLine("Added vertex 2 (x,y,z)" + " " + x + " " + y + " " + z);
                             vertexes.Add(v);
                             line = file.ReadLine();
@@ -202,11 +202,11 @@ namespace PTSharpCore
                         {
                             match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
                             //Console.WriteLine("Read vertex on line " + counter);
-                            float.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out float x);
-                            float.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out float y);
-                            float.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out float z);
+                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
+                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
+                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
 
-                            V v = new V(x, y, z);
+                            Vector v = new Vector(x, y, z);
                             //Console.WriteLine("Added vertex 3 (x,y,z)" + " " + x + " " + y + " " + z);
                             vertexes.Add(v);
                             line = file.ReadLine();
@@ -267,7 +267,7 @@ namespace PTSharpCore
 
             foreach (STLTriangle m in mesh)
             {
-                Triangle t = new Triangle(new V(m.A.X, m.A.Y, m.A.Z), new V(m.B.X, m.B.Y, m.B.Z), new V(m.C.X, m.C.Y, m.C.Z), material);
+                Triangle t = new Triangle(new Vector(m.A.x, m.A.y, m.A.z), new Vector(m.B.x, m.B.y, m.B.z), new Vector(m.C.x, m.C.y, m.C.z), material);
                 t.FixNormals();
                 tlist.Add(t);
             }

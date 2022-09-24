@@ -8,12 +8,12 @@ namespace PTSharpCore
 {
     class Hit
     {
-        static float INF = 1e9F;
+        static double INF = 1e9F;
         internal IShape Shape;
-        public float T;
+        public double T;
         public HitInfo HitInfo;
 
-        internal Hit(IShape shape, float t, HitInfo hinfo)
+        internal Hit(IShape shape, double t, HitInfo hinfo)
         {
             Shape = shape;
             T = t;
@@ -56,13 +56,13 @@ namespace PTSharpCore
     public class HitInfo
     {
         private IShape shape;
-        private V position;
-        private V normal;
+        private Vector position;
+        private Vector normal;
         public Ray Ray;
         internal Material material;
         public bool inside;
 
-        internal HitInfo(IShape shape, V position, V normal, Ray r, Material mat, bool inside)
+        internal HitInfo(IShape shape, Vector position, Vector normal, Ray r, Material mat, bool inside)
         {
             this.shape = shape;
             this.position = position;
