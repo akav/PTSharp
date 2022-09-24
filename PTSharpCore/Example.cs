@@ -1,9 +1,14 @@
+using MathNet.Numerics.Financial;
+using PTSharpCore;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Numerics;
+using System.Text;
+using System.Text.RegularExpressions;
 using static Microsoft.FSharp.Core.ByRefKinds;
 using static System.Formats.Asn1.AsnWriter;
 
@@ -11,16 +16,131 @@ namespace PTSharpCore
 {
     class Example
     {
+        Vector offset(double stdev)
+        {
+            var a = Random.Shared.NextDouble() * 2 * Math.PI;
+            var r = Random.Shared.NextDouble() * stdev;
+            var x = Math.Cos(a) * r;
+            var y = Math.Sin(a) * r;
+            return new Vector(x, 0, y);
+        }
+
+        public bool intersects(Scene scene, IShape shape)
+        {
+            var box = shape.BoundingBox();
+            foreach(var other in scene.Shapes)
+            {
+                if (box.Intersects(other.BoundingBox()))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void go()
+        {
+            (double,double)[] blackPositions = {
+                ( 7, 3), (14, 17), ( 14, 4), (18, 4), ( 0, 7), ( 5, 8), (11, 5), (10, 7), 
+                (7, 6), ( 6, 10), (12, 6), ( 3, 2), (5, 11), ( 7, 5), ( 14, 15), ( 12, 11), 
+                ( 8, 12), ( 4, 15), ( 2, 11), ( 9, 9), ( 10, 3), ( 6, 17), ( 7, 2), ( 14, 5), 
+                ( 13, 3), ( 13, 16), ( 3, 6), ( 1, 10), ( 4, 1), ( 10, 9), ( 5, 17), ( 12, 7), 
+                ( 3, 5), ( 2, 7), ( 5, 10), ( 10, 10), ( 5, 7), ( 7, 4), ( 12, 4), ( 8, 13), ( 9, 8), 
+                ( 15, 17), ( 3, 10), ( 4, 13), ( 2, 13), ( 8, 16), ( 12, 3), ( 17, 5), ( 13, 2), 
+                ( 15, 3), ( 2, 3), (6, 5), (11, 7), ( 16, 5), (11, 8), (14, 7), (15, 6), 
+                ( 1, 7), ( 5, 9), (10, 11), ( 6, 6), (4, 18), ( 7, 14), ( 17, 3), ( 4, 9), 
+                 (10, 12), ( 6, 3), (16, 7), (14, 14), (16, 18), (3, 13), (1, 13), (2, 10), 
+                 (7, 9), (13, 1), (12, 15), (4, 3), (5, 2), (10, 2)
+            };
+
+            (double, double)[] whitePositions = {
+                (16, 6), (16, 9), (13, 4), (1, 6), (0, 10), (3, 7), 
+                (1, 11), (8, 5), (6, 7), (5, 5), (15, 11), (13, 7), 
+                (18, 9), (2, 6), (7, 10), (15, 14), (13, 10), (17, 18), 
+                (7, 15), (5, 14), (3, 18), (15, 16), (14, 8), (12, 8), 
+                (7, 13), (1, 15), (8, 9), (6, 14), (12, 2), (17, 6), 
+                (18, 5), (17, 11), (9, 7), (6, 4), (5, 4), (6, 11), 
+                (11, 9), (13, 6), (18, 6), (0, 8), (8, 3), (4, 6), 
+                (9, 2), (4, 17), (14, 12), (13, 9), (18, 11), (3, 15), 
+                (4, 8), (2, 8), (12, 9), (16, 17), (8, 10), (9, 11), (17, 7), 
+                (16, 11), (14, 10), (3, 9), (1, 9), (8, 7), (2, 14), (9, 6), (5, 3), 
+                (14, 16), (5, 16), (16, 8), (13, 5), (8, 4), (4, 7), (5, 6), (11, 2), (12, 5), 
+                (15, 8), (2, 9), (9, 15), (8, 1), (4, 4), (16, 15), (12, 10), (13, 11), (2, 16), 
+                (4, 14), (5, 15), (10, 1), (6, 8), (6, 12), (17, 9), (8, 8)
+            };
+
+
+            var scene = new Scene();
+            scene.Color = Colour.White;
+            var black = Material.GlossyMaterial(Colour.HexColor(0x111111), 1.5, Util.Radians(45));
+            var white = Material.GlossyMaterial(Colour.HexColor(0xFFFFFF), 1.6, Util.Radians(20));
+
+            foreach(var p in blackPositions)
+            {
+                while (true)
+                {
+                    var m = new Matrix().Scale(new Vector(0.48, 0.2, 0.48)).Translate(new Vector(p.Item1 - 9.5, 0, p.Item2 - 9.5));
+                    m = m.Translate(offset(0.02));
+                    var shape = TransformedShape.NewTransformedShape(Sphere.NewSphere(new Vector(), 1, black), m);
+
+                    if(intersects(scene, shape))
+                    {
+                        continue;
+                    }
+                    scene.Add(shape);
+                    break;
+                }
+            }
+
+        	foreach(var p in whitePositions)
+            {
+                while (true)
+                {
+                    var m = new Matrix().Scale(new Vector(0.48, 0.2, 0.48)).Translate(new Vector(p.Item1 - 9.5, 0, p.Item2 - 9.5));
+                    m = m.Translate(offset(0.02));
+
+                    var shape = TransformedShape.NewTransformedShape(Sphere.NewSphere(new Vector(), 1, white), m);
+			    
+                    if(intersects(scene, shape))
+                    {
+                        continue;
+                    }
+                    scene.Add(shape);
+
+                    break;
+                    
+                }
+            }
+	
+            for(int i = 0; i< 19; i++)
+            {
+                var x = (double)i - 9.5;
+                var m = 0.015;
+                scene.Add(Cube.NewCube(new Vector(x - m, -1, -9.5), new Vector(x + m, -0.195, 8.5), black));
+                scene.Add(Cube.NewCube(new Vector(-9.5, -1, x - m), new Vector(8.5, -0.195, x + m), black));
+	        }
+
+            var material = Material.GlossyMaterial(Colour.HexColor(0xEFECCA), 1.2, Util.Radians(30));
+            //material.Texture = ColorTexture.GetTexture("examples/wood.jpg");
+            scene.Add(Cube.NewCube(new Vector(-12, -12, -12), new Vector(12, -0.2, 12), material));
+            //scene.Texture = ColorTexture.GetTexture("examples/courtyard_ccby/courtyard_8k.png");
+            var camera = Camera.LookAt(new Vector(-0.5, 5, 5), new Vector(-0.5, 0, 0.5), new Vector(0, 1, 0), 50);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 2560 / 2, 1440 / 2, false);
+            renderer.IterativeRender("gogo.png", 1000);
+        }
+
+
         public void example1()
         {
             Scene scene = new Scene();
             scene.Add(Sphere.NewSphere(new Vector(1.5, 1.25, 0), 1.25, Material.SpecularMaterial(Colour.HexColor(0x004358), 1.3)));
             scene.Add(Sphere.NewSphere(new Vector(-1, 1, 2), 1, Material.SpecularMaterial(Colour.HexColor(0xFFE11A), 1.3)));
             scene.Add(Sphere.NewSphere(new Vector(-2.5, 0.75, 0), 0.75, Material.SpecularMaterial(Colour.HexColor(0xFD7400), 1.3)));
-            scene.Add(Sphere.NewSphere(new Vector(-0.7, 0.5, -1), 0.5F, Material.ClearMaterial(1.5, 0)));
+            scene.Add(Sphere.NewSphere(new Vector(-0.75, 0.5, -1), 0.5, Material.ClearMaterial(1.5, 0)));
             scene.Add(Cube.NewCube(new Vector(-10, -1, -10), new Vector(10, 0, 10), Material.GlossyMaterial(Colour.White, 1.1, Util.Radians(10))));
             scene.Add(Sphere.NewSphere(new Vector(-1.5, 4, 0), 0.5, Material.LightMaterial(Colour.White, 30)));
-            Camera camera = Camera.LookAt(new Vector(0, 2, -5), new Vector(0, 0.25, 3), new Vector(0, 1, 0), 45);
+            var camera = Camera.LookAt(new Vector(0, 2, -5), new Vector(0, 0.25, 3), new Vector(0, 1, 0), 45);
             camera.SetFocus(new Vector(-0.75, 1, -1), 0.1);
             DefaultSampler sampler = DefaultSampler.NewSampler(4, 8);
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
