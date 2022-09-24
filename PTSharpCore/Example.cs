@@ -31,7 +31,7 @@ namespace PTSharpCore
 
             // render the scene with progressive refinement
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, false);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             //renderer.AdaptiveSamples = 128;
             //renderer.FireflySamples = 128;
             renderer.IterativeRender("simplesphere.png", 100);
@@ -227,13 +227,13 @@ namespace PTSharpCore
         public void refraction()
         {
             var scene = new Scene();
-            var glass = Material.ClearMaterial(1.5F, 0);
+            var glass = Material.ClearMaterial(1.5, 0);
             // add a sphere primitive
-            scene.Add(Sphere.NewSphere(new Vector(-1.5F, 0, 0.5F), 1, glass));
+            scene.Add(Sphere.NewSphere(new Vector(-1.5, 0, 0.5), 1, glass));
             // add a mesh sphere
             var mesh = STL.Load("models/sphere.stl", glass);
             mesh.SmoothNormals();
-            mesh.Transform(new Matrix().Translate(new Vector(1.5F, 0, 0.5F)));
+            mesh.Transform(new Matrix().Translate(new Vector(1.5, 0, 0.5)));
             scene.Add(mesh);
             // add the floor
             scene.Add(Plane.NewPlane(new Vector(0, 0, -1), new Vector(0, 0, 1), Material.DiffuseMaterial(Colour.White)));
@@ -249,9 +249,9 @@ namespace PTSharpCore
         public void qbert()
         {
             var scene = new Scene();
-            var floor = Material.GlossyMaterial(Colour.HexColor(0xFCFFF5), 1.2F, Util.Radians(30));
-            var cube = Material.GlossyMaterial(Colour.HexColor(0xFF8C00), 1.3F, Util.Radians(20));
-            var ball = Material.GlossyMaterial(Colour.HexColor(0xD90000), 1.4F, Util.Radians(10));
+            var floor = Material.GlossyMaterial(Colour.HexColor(0xFCFFF5), 1.2, Util.Radians(30));
+            var cube = Material.GlossyMaterial(Colour.HexColor(0xFF8C00), 1.3, Util.Radians(20));
+            var ball = Material.GlossyMaterial(Colour.HexColor(0xD90000), 1.4, Util.Radians(10));
             int n = 7;
             var fn = (double)n;
             for (int z = 0; z < n; z++)
@@ -277,7 +277,7 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(fn, fn / 3, fn * 2), 1, Material.LightMaterial(Colour.White, 100)));
             var camera = Camera.LookAt(new Vector(fn * 2, fn * 2, fn * 2), new Vector(0, 0, fn / 4), new Vector(0, 0, 1), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, false);
             renderer.FireflySamples = 64;
             renderer.IterativeRender("qbert.png", 100); 
         }
@@ -285,11 +285,11 @@ namespace PTSharpCore
         public void love()
         {
             var scene = new Scene();
-            var material = Material.GlossyMaterial(Colour.HexColor(0xF2F2F2), 1.5F, Util.Radians(20));
+            var material = Material.GlossyMaterial(Colour.HexColor(0xF2F2F2), 1.5, Util.Radians(20));
             scene.Add(Cube.NewCube(new Vector(-100, -1, -100), new Vector(100, 0, 100), material));
-            var heart = Material.GlossyMaterial(Colour.HexColor(0xF60A20), 1.5F, Util.Radians(20));
+            var heart = Material.GlossyMaterial(Colour.HexColor(0xF60A20), 1.5, Util.Radians(20));
             var mesh = STL.Load("models/love.stl", heart);
-            mesh.FitInside(new Box(new Vector(-0.5F, 0, -0.5F), new Vector(0.5F, 1, 0.5F)), new Vector(0.5F, 0, 0.5F));
+            mesh.FitInside(new Box(new Vector(-0.5F, 0, -0.5), new Vector(0.5, 1, 0.5)), new Vector(0.5, 0, 0.5));
             scene.Add(mesh);
             scene.Add(Sphere.NewSphere(new Vector(-2, 10, 2), 1, Material.LightMaterial(Colour.White, 30)));
             scene.Add(Sphere.NewSphere(new Vector(0, 10, 2), 1, Material.LightMaterial(Colour.White, 30)));

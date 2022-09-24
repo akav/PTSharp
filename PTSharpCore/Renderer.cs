@@ -100,8 +100,6 @@ namespace PTSharpCore
                         // Random subsampling
                         for (int p = 0; p < spp; p++)
                         {
-                            //fu = (x+Random.Shared.NextDouble())*invWidth;
-                            //fv = (y+Random.Shared.NextDouble())*invHeight;
                             fu = Random.Shared.NextDouble();
                             fv = Random.Shared.NextDouble();
                             Ray ray = camera.CastRay(x, y, w, h, fu, fv);
@@ -166,8 +164,8 @@ namespace PTSharpCore
             scene.rays = 0;
 
             // Stop watch timer 
-            //Stopwatch sw = new Stopwatch();
-            //sw.Start();
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
 
             // Random Number Generator from on Math.Numerics
             //System.Random rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
@@ -198,15 +196,14 @@ namespace PTSharpCore
                       {
                           for (int v = 0; v < sppRoot; v++)
                           {
-                              var fu = (u + 0.5F) / sppRoot;
-                              var fv = (v + 0.5F) / sppRoot;
+                              var fu = (u + 0.5) / sppRoot;
+                              var fv = (v + 0.5) / sppRoot;
                               Ray ray = camera.CastRay(x, y, w, h, fu, fv);
                               Colour sample = sampler.Sample(scene, ray);
                               buf.AddSample(x, y, sample);
                           }
                       }
                   });
-                //Console.WriteLine("time elapsed:" + sw.Elapsed);
             }
             else
             {
@@ -218,15 +215,14 @@ namespace PTSharpCore
                           for (int s = 0; s < spp; s++)
                           {
                               int y = i / w, x = i % w;
-                              var fu = (x + Random.Shared.NextDouble()) * invWidth;
-                              var fv = (y + Random.Shared.NextDouble()) * invHeight;
+                              var fu = Random.Shared.NextDouble();
+                              var fv = Random.Shared.NextDouble();
                               var ray = camera.CastRay(x, y, w, h, fu, fv);
                               var sample = sampler.Sample(scene, ray);
                               buf.AddSample(x, y, sample);
                           }
                       }
                   });
-                //Console.WriteLine("time elapsed:" + sw.Elapsed);
             }
 
             if (AdaptiveSamples > 0)
@@ -240,7 +236,6 @@ namespace PTSharpCore
                       int samples = (int)(v * AdaptiveSamples);
                       for (int s = 0; s < samples; s++)
                       {
-
                           var fu = Random.Shared.NextDouble();
                           var fv = Random.Shared.NextDouble();
                           Ray ray = camera.CastRay(x, y, w, h, fu, fv);
@@ -270,7 +265,8 @@ namespace PTSharpCore
                       }
                   });
             }
-            //sw.Stop();
+            Console.WriteLine("time elapsed:" + sw.Elapsed);
+            sw.Stop();
         }
 
         public System.Drawing.Bitmap IterativeRender(String pathTemplate, int iterations)
