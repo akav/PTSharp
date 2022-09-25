@@ -13,7 +13,7 @@ namespace PTSharpCore
         
         public static double Degrees(double radians) => radians * 180 / Math.PI;
         
-        public static Vector Cone(Vector direction, double theta, double u, double v)
+        public static Vector Cone(Vector direction, double theta, double u, double v, Random rand)
         {
             if (theta < Util.EPS)
             {
@@ -23,7 +23,7 @@ namespace PTSharpCore
             var m1 = Math.Sin(theta);
             var m2 = Math.Cos(theta);
             var a = v * 2 * Math.PI;
-            var q = Vector.RandomUnitVector();
+            var q = Vector.RandomUnitVector(rand);
             var s = direction.Cross(q);
             var t = direction.Cross(s);
             var d = new Vector();

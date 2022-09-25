@@ -66,12 +66,12 @@ namespace PTSharpCore
             int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
             scene.Compile();
             scene.rays = 0;
-            Random rand = new Random();
-            double fu, fv;
-
+            
             // Stop watch timer 
             Stopwatch sw = new Stopwatch();
             sw.Start();
+            // Random Number Generator from on Math.Numerics
+            var rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
 
             double invWidth = 1.0f / w;
             double invHeight = 1.0f / h;
@@ -87,10 +87,10 @@ namespace PTSharpCore
                         {
                             for (int v = 0; v < sppRoot; v++)
                             {
-                                fu = (u + 0.5F) / sppRoot;
-                                fv = (v + 0.5F) / sppRoot;
-                                Ray ray = camera.CastRay(x, y, w, h, fu, fv);
-                                Colour sample = sampler.Sample(scene, ray);
+                                var fu = (u + 0.5) / sppRoot;
+                                var fv = (v + 0.5) / sppRoot;
+                                Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                                Colour sample = sampler.Sample(scene, ray, rand);
                                 buf.AddSample(x, y, sample);
                             }
                         }
@@ -101,10 +101,12 @@ namespace PTSharpCore
                         // Random subsampling
                         for (int p = 0; p < spp; p++)
                         {
-                            fu = Random.Shared.NextDouble();
-                            fv = Random.Shared.NextDouble();
-                            Ray ray = camera.CastRay(x, y, w, h, fu, fv);
-                            Colour sample = sampler.Sample(scene, ray);
+                            //fu = Random.Shared.NextDouble();
+                            //fv = Random.Shared.NextDouble();
+                            var fu = rand.NextDouble();
+                            var fv = rand.NextDouble();
+                            Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                            Colour sample = sampler.Sample(scene, ray, rand);
                             sample += sample;
                             buf.AddSample(x, y, sample);
                         }
@@ -120,10 +122,12 @@ namespace PTSharpCore
                         for (int d = 0; d < samples; d++)
                         {
 
-                            fu = Random.Shared.NextDouble();
-                            fv = Random.Shared.NextDouble();
-                            Ray ray = camera.CastRay(x, y, w, h, fu, fv);
-                            Colour sample = sampler.Sample(scene, ray);
+                            //var fu = Random.Shared.NextDouble();
+                            //var fv = Random.Shared.NextDouble();
+                            var fu = rand.NextDouble();
+                            var fv = rand.NextDouble();
+                            Ray ray = camera.CastRay(x, y, w, h, fu, fv,rand);
+                            Colour sample = sampler.Sample(scene, ray, rand);
                             buf.AddSample(x, y, sample);
                         }
                         
@@ -137,10 +141,10 @@ namespace PTSharpCore
                             for (int e = 0; e < FireflySamples; e++)
                             {
                                 Colour sample = new Colour(0, 0, 0);
-                                fu = (x + Random.Shared.NextDouble()) * invWidth;
-                                fv = (y + Random.Shared.NextDouble()) * invHeight;
-                                Ray ray = camera.CastRay(x, y, w, h, fu, fv);
-                                sample += sampler.Sample(scene, ray);
+                                var fu = (x + rand.NextDouble()) * invWidth;
+                                var fv = (y + rand.NextDouble()) * invHeight;
+                                Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                                sample += sampler.Sample(scene, ray, rand);
                                 PBuffer.AddSample(x, y, sample);
                             }
                         }
@@ -169,7 +173,7 @@ namespace PTSharpCore
             sw.Start();
 
             // Random Number Generator from on Math.Numerics
-            //System.Random rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
+            var rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
 
             // Frame resolution
             int totalPixels = h * w;
@@ -199,8 +203,8 @@ namespace PTSharpCore
                           {
                               var fu = (u + 0.5) / sppRoot;
                               var fv = (v + 0.5) / sppRoot;
-                              Ray ray = camera.CastRay(x, y, w, h, fu, fv);
-                              Colour sample = sampler.Sample(scene, ray);
+                              Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                              Colour sample = sampler.Sample(scene, ray, rand);
                               buf.AddSample(x, y, sample);
                           }
                       }
@@ -230,10 +234,12 @@ namespace PTSharpCore
                     
                     for (int x = 0; x < w; x++)
                     {
-                        var fu = Random.Shared.NextDouble();
-                        var fv = Random.Shared.NextDouble();
-                        var r = camera.CastRay(x, y, w, h, fu, fv);//new Ray(camera.Pos, GetPoint(x, y, camera)), scene, 0);
-                        buf.AddSample(x, y, sampler.Sample(scene,r));
+                        //var fu = Random.Shared.NextDouble();
+                        //var fv = Random.Shared.NextDouble();
+                        var fu = rand.NextDouble();
+                        var fv = rand.NextDouble();
+                        var r = camera.CastRay(x, y, w, h, fu, fv, rand);//new Ray(camera.Pos, GetPoint(x, y, camera)), scene, 0);
+                        buf.AddSample(x, y, sampler.Sample(scene,r, rand));
                         //rgb[x + stride] = color.ToInt32();
                     }
                 });
@@ -250,10 +256,12 @@ namespace PTSharpCore
                       int samples = (int)(v * AdaptiveSamples);
                       for (int s = 0; s < samples; s++)
                       {
-                          var fu = Random.Shared.NextDouble();
-                          var fv = Random.Shared.NextDouble();
-                          Ray ray = camera.CastRay(x, y, w, h, fu, fv);
-                          Colour sample = sampler.Sample(scene, ray);
+                          //var fu = Random.Shared.NextDouble();
+                          //var fv = Random.Shared.NextDouble();
+                          var fu = rand.NextDouble();
+                          var fv = rand.NextDouble();
+                          Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                          Colour sample = sampler.Sample(scene, ray, rand);
                           buf.AddSample(x, y, sample);
                       }
                   });
@@ -272,10 +280,12 @@ namespace PTSharpCore
                               //Parallel.For(0, FireflySamples, po, (e, loop) =>
                               //{
                               Colour sample = new Colour(0, 0, 0);
-                              var fu = Random.Shared.NextDouble();
-                              var fv = Random.Shared.NextDouble();
-                              Ray ray = camera.CastRay(x, y, w, h, fu, fv);
-                              sample = sampler.Sample(scene, ray);
+                              //var fu = Random.Shared.NextDouble();
+                              //var fv = Random.Shared.NextDouble();
+                              var fu = rand.NextDouble();
+                              var fv = rand.NextDouble();
+                              Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                              sample = sampler.Sample(scene, ray, rand);
                               buf.AddSample(x, y, sample);
                               //});
                           }

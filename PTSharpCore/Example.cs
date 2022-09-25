@@ -18,8 +18,8 @@ namespace PTSharpCore
     {
         Vector offset(double stdev)
         {
-            var a = Random.Shared.NextDouble() * 2 * Math.PI;
-            var r = Random.Shared.NextDouble() * stdev;
+            var a = new Random().NextDouble() * 2 * Math.PI;
+            var r = new Random().NextDouble() * stdev;
             var x = Math.Cos(a) * r;
             var y = Math.Sin(a) * r;
             return new Vector(x, 0, y);
@@ -126,7 +126,7 @@ namespace PTSharpCore
             //scene.Texture = ColorTexture.GetTexture("examples/courtyard_ccby/courtyard_8k.png");
             var camera = Camera.LookAt(new Vector(-0.5, 5, 5), new Vector(-0.5, 0, 0.5), new Vector(0, 1, 0), 50);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 2560 / 2, 1440 / 2, false);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 2560 / 2, 1440 / 2, true);
             renderer.IterativeRender("gogo.png", 1000);
         }
 
@@ -472,7 +472,7 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(fn, fn / 3, fn * 2), 1, Material.LightMaterial(Colour.White, 100)));
             var camera = Camera.LookAt(new Vector(fn * 2, fn * 2, fn * 2), new Vector(0, 0, fn / 4), new Vector(0, 0, 1), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, false);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
             renderer.FireflySamples = 64;
             renderer.IterativeRender("qbert.png", 100); 
         }
@@ -600,13 +600,13 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(-2, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Sphere.NewSphere(new Vector(5, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Cube.NewCube(new Vector(-30, -1, -30), new Vector(30, 0, 30), Material.SpecularMaterial(Colour.HexColor(0xFCFAE1), 2)));
-            var mesh = OBJ.Load("teapot.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
+            var mesh = OBJ.Load("models/teapot.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
             mesh.SmoothNormals();
             scene.Add(mesh);
             var camera = Camera.LookAt(new Vector(2, 5, -6), new Vector(0.5F, 1, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, false);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
             renderer.FireflySamples = 64;
             renderer.IterativeRender("teapot.png", 1000); 
         }
@@ -633,10 +633,10 @@ namespace PTSharpCore
         {
             var scene = new Scene();
             var material = Material.DiffuseMaterial(Colour.HexColor(0x334D5C));
-            scene.Add(Sphere.NewSphere(new Vector(0.5F, 1, 3), 1, Material.LightMaterial(Colour.White, 4)));
-            scene.Add(Sphere.NewSphere(new Vector(1.5F, 1, 3), 1, Material.LightMaterial(Colour.White, 4)));
+            scene.Add(Sphere.NewSphere(new Vector(0.5, 1, 3), 1, Material.LightMaterial(Colour.White, 4)));
+            scene.Add(Sphere.NewSphere(new Vector(1.5, 1, 3), 1, Material.LightMaterial(Colour.White, 4)));
             scene.Add(Cube.NewCube(new Vector(-5, -5, -2), new Vector(5, 5, -1), material));
-            var mesh = OBJ.Load("models/suzanne.obj", Material.SpecularMaterial(Colour.HexColor(0xEFC94C), 1.3F));
+            var mesh = OBJ.Load("models/suzanne.obj", Material.SpecularMaterial(Colour.HexColor(0xEFC94C), 1.3));
             scene.Add(mesh);
             var camera = Camera.LookAt(new Vector(1, -0.45F, 4), new Vector(1, -0.6F, 0.4F), new Vector(0, 1, 0), 40);
             var sampler = DefaultSampler.NewSampler(16, 8);

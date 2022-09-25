@@ -95,7 +95,7 @@ namespace PTSharpCore
                 Vector min = Triangles[0].V1;
                 Vector max = Triangles[0].V1;
 
-                foreach (Triangle t in Triangles)
+                foreach (var t in Triangles)
                 {
                     min = min.Min(t.V1).Min(t.V2).Min(t.V3);
                     max = max.Max(t.V1).Max(t.V2).Max(t.V3);

@@ -5,7 +5,7 @@ namespace PTSharpCore
 {
     public interface Sampler
     {
-        Colour Sample(Scene scene, Ray ray);
+        Colour Sample(Scene scene, Ray ray, Random rand);
     }
 
     public enum LightMode
@@ -51,9 +51,9 @@ namespace PTSharpCore
             return new DefaultSampler(1, 0, true, false, LightMode.LightModeAll, SpecularMode.SpecularModeAll);
         }
 
-        public Colour Sample(Scene scene, Ray ray)
+        public Colour Sample(Scene scene, Ray ray, Random rand)
         {
-            return sample(scene, ray, true, FirstHitSamples, 0);
+            return sample(scene, ray, true, FirstHitSamples, 0, rand);
         }
 
         public void SetSpecularMode(SpecularMode s)
@@ -66,7 +66,7 @@ namespace PTSharpCore
             LightMode = l;
         }
 
-        Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth)
+        Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand)
         {
             if (depth > MaxBounces)
             {
@@ -115,9 +115,9 @@ namespace PTSharpCore
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
 
-                        var fu = (u + Random.Shared.NextDouble()) / n;
-                        var fv = (v + Random.Shared.NextDouble()) / n;
-                        (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode);
+                        var fu = (u + rand.NextDouble()) / n;
+                        var fv = (v + rand.NextDouble()) / n;
+                        (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode, rand);
 
                         if (mode == BounceType.BounceTypeAny)
                         {
@@ -127,7 +127,7 @@ namespace PTSharpCore
                         if (p > 0 && reflected)
                         {
                             // specular
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
                             var tinted = indirect.Mix(material.Color.Mul(indirect), material.Tint);
                             result = result.Add(tinted.MulScalar(p));
                         }
@@ -135,12 +135,12 @@ namespace PTSharpCore
                         if (p > 0 && !reflected)
                         {
                             // diffuse
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
                             var direct = Colour.Black;
 
                             if (DirectLighting)
                             {
-                                direct = sampleLights(scene, info.Ray);
+                                direct = sampleLights(scene, info.Ray, rand);
                             }
                             result = result.Add(material.Color.Mul(direct.Add(indirect)).MulScalar(p));
                         }
@@ -165,7 +165,7 @@ namespace PTSharpCore
             return scene.Color;
         }
 
-        Colour sampleLights(Scene scene, Ray n)
+        Colour sampleLights(Scene scene, Ray n, Random rand)
         {
             var nLights = scene.Lights.Length;
             if (nLights == 0)
@@ -178,7 +178,7 @@ namespace PTSharpCore
                 Colour result = new Colour();
                 foreach (var light in scene.Lights)
                 {
-                    result = result.Add(sampleLight(scene, n, light));
+                    result = result.Add(sampleLight(scene, n, light, rand));
                 }
                 return result;
 
@@ -186,12 +186,12 @@ namespace PTSharpCore
             else
             {
                 // pick a random light
-                var light = scene.Lights[Random.Shared.Next(nLights)];
-                return sampleLight(scene, n, light).MulScalar((double)nLights);
+                var light = scene.Lights[rand.Next(nLights)];
+                return sampleLight(scene, n, light, rand).MulScalar((double)nLights);
             }
         }
 
-        Colour sampleLight(Scene scene, Ray n, IShape light)
+        Colour sampleLight(Scene scene, Ray n, IShape light, Random rand)
         {
             Vector center;
             double radius;
@@ -214,12 +214,12 @@ namespace PTSharpCore
             {
                 for (; ; )
                 {
-                    var x = Random.Shared.NextDouble() * 2 - 1;
-                    var y = Random.Shared.NextDouble() * 2 - 1;
+                    var x = rand.NextDouble() * 2 - 1;
+                    var y = rand.NextDouble() * 2 - 1;
                     if (x * x + y * y <= 1)
                     {
                         var l = center.Sub(n.Origin).Normalize();
-                        var u = l.Cross(Vector.RandomUnitVector()).Normalize();
+                        var u = l.Cross(Vector.RandomUnitVector(rand)).Normalize();
                         var v = l.Cross(u);
                         point = new Vector();
                         point = point.Add(u.MulScalar(x * radius));

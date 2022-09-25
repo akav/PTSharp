@@ -7,7 +7,7 @@ namespace PTSharpCore
         static void Main(string[] args)
         {
             var ex = new Example();
-            ex.go();
+            ex.qbert();
         }
     }
 }
