@@ -81,7 +81,7 @@ namespace PTSharpCore
         {
           
             byte[] buffer = new byte[80];
-            FileInfo fi = new FileInfo(filePath);
+            FileInfo fi = new(filePath);
             BinaryReader reader;
             long size;
 

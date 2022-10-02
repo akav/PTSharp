@@ -16,7 +16,7 @@ namespace PTSharpCore
         {
             Width = 0;
             Height = 0;
-            Data = new Colour[] { };
+            Data = Array.Empty<Colour>();//new Colour[] { };
         }
         
         ColorTexture(int width, int height, Colour[] data)
@@ -36,12 +36,12 @@ namespace PTSharpCore
             else
             {
                 Console.WriteLine("Adding texture to list...");
-                ITexture img = new ColorTexture().LoadTexture(path);
+                ITexture img = LoadTexture(path);
                 textures.Add(path, img);
                 return img;
             }
         }
-        internal ITexture LoadTexture(String path)
+        internal static ITexture LoadTexture(String path)
         {
             Console.WriteLine("IMG: "+path);
             Bitmap image = Util.LoadImage(path);
@@ -55,12 +55,12 @@ namespace PTSharpCore
             }
             return NewTexture(image);
         }
-                
-        ITexture NewTexture(Bitmap image)
+
+        static ITexture NewTexture(Bitmap image)
         {
             GraphicsUnit unit = GraphicsUnit.Pixel;
             RectangleF boundsF = image.GetBounds(ref unit);
-            Rectangle bounds = new Rectangle((int)boundsF.Left, (int)boundsF.Top, (int)boundsF.Width, (int)boundsF.Height);
+            Rectangle bounds = new((int)boundsF.Left, (int)boundsF.Top, (int)boundsF.Width, (int)boundsF.Height);
 
             int yMax = (int)boundsF.Height;
             int xMax = (int)boundsF.Width;
@@ -97,7 +97,7 @@ namespace PTSharpCore
             return this;
         }
 
-        Colour bilinearSample(double u, double v)
+        Colour BilinearSample(double u, double v)
         {
             if(u == 1)
             {
@@ -127,7 +127,7 @@ namespace PTSharpCore
             return c;
         }
 
-        double Fract(double x)
+        static double Fract(double x)
         {
             x = Util.Modf(x).Item2;
             return x;
@@ -137,14 +137,14 @@ namespace PTSharpCore
         {
             u = Fract(Fract(u) + 1);
             v = Fract(Fract(v) + 1);
-            return bilinearSample(u, 1 - v);
+            return BilinearSample(u, 1 - v);
         }
 
         Vector ITexture.NormalSample(double u, double v)
         {
             u = Fract(Fract(u) + 1);
             v = Fract(Fract(v) + 1);
-            var c = bilinearSample(u, 1 - v);
+            var c = BilinearSample(u, 1 - v);
             return new Vector(c.r * 2 - 1, c.g * 2 - 1, c.b * 2 - 1).Normalize();
         }
 

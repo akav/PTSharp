@@ -6,7 +6,7 @@ namespace PTSharpCore
 {
     public class Scene
     {
-        internal Colour Color = new Colour();
+        internal Colour Color = new();
         internal ITexture Texture = null;
         internal double TextureAngle = 0;
         private Tree tree;
@@ -17,8 +17,8 @@ namespace PTSharpCore
 
         public Scene() 
         {
-            Shapes = new IShape[0];
-            Lights = new IShape[0];        
+            Shapes = Array.Empty<IShape>(); // new IShape[0];
+            Lights = Array.Empty<IShape>(); //new IShape[0];        
         }
 
         internal void Add(IShape p)
@@ -38,10 +38,7 @@ namespace PTSharpCore
             {
                 shape.Compile();
             }
-            if (tree is null)
-            {
-                tree = Tree.NewTree(Shapes);
-            }
+            tree ??= Tree.NewTree(Shapes);
         }
 
         int RayCount()

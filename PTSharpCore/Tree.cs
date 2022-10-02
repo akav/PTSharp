@@ -143,22 +143,22 @@ namespace PTSharpCore
                 return hit;
             }
 
-            public double Median(List<double> list)
+            public static double Median(List<double> list)
             {
-                int middle = list.Count() / 2;
+                int middle = list.Count / 2;
 
                 if (list.Count == 0)
                 {
                     return 0;
                 }
-                else if (list.Count() % 2 == 1)
+                else if (list.Count % 2 == 1)
                 {
                     return list.ElementAt(middle);
                 }
                 else
                 {
-                    var a = list.ElementAt(list.Count() / 2 - 1);
-                    var b = list.ElementAt(list.Count() / 2);
+                    var a = list.ElementAt(list.Count / 2 - 1);
+                    var b = list.ElementAt(list.Count / 2);
                     return (a + b) / 2;
                 }
             }
@@ -192,8 +192,8 @@ namespace PTSharpCore
 
             (IShape[], IShape[]) Partition(int size, Axis axis, double point)
             {
-                List<IShape> left = new List<IShape>();
-                List<IShape> right = new List<IShape>();
+                List<IShape> left = new();
+                List<IShape> right = new();
 
                 foreach (var shape in Shapes)
                 {
@@ -221,9 +221,9 @@ namespace PTSharpCore
                     return;
                 }
 
-                List<double> xs = new List<double>();
-                List<double> ys = new List<double>();
-                List<double> zs = new List<double>();
+                List<double> xs = new();
+                List<double> ys = new();
+                List<double> zs = new();
 
                 foreach (var shape in Shapes) {
                     Box box = shape.BoundingBox();

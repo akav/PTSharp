@@ -1,8 +1,10 @@
 using MathNet.Numerics.Random;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -190,6 +192,9 @@ namespace PTSharpCore
             // Set number of cores/threads
             po.MaxDegreeOfParallelism = Environment.ProcessorCount;
 
+            var numbers = Enumerable.Range(0, w*h).ToList();
+            
+
             Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
 
             if (StratifiedSampling)
@@ -228,7 +233,7 @@ namespace PTSharpCore
                           }
                       }
                   });*/
-                Parallel.For(0, h, po, y =>
+                /*Parallel.For(0, h, po, y =>
                 {
                     int stride = y * w;
                     
@@ -242,7 +247,40 @@ namespace PTSharpCore
                         buf.AddSample(x, y, sampler.Sample(scene,r, rand));
                         //rgb[x + stride] = color.ToInt32();
                     }
-                });
+                });*/
+
+                for (int j = 0; j < spp; j++)
+                {
+                    Parallel.For(0, w * h, index =>
+                    {
+                        var x = index % w;
+                        var y = index / w;
+                        Debug.Assert(index == y * w + x);
+                        var fu = rand.NextDouble();
+                        var fv = rand.NextDouble();
+                        var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                        Colour sample = new Colour(0, 0, 0);
+                        sample += sampler.Sample(scene, ray, rand);
+                        buf.AddSample(x, y, sample);
+                    });
+                }
+
+                /*Parallel.ForEach(Partitioner.Create(0, w*h), po, (range) =>
+                {
+                    for (int i = range.Item1; i < range.Item2; i++)
+                    {
+                        for (int s = 0; s < spp; s++)
+                        {
+                            int y = i / w, x = i % w;
+                            var fu = rand.NextDouble();
+                            var fv = rand.NextDouble();
+                            var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                            var sample = sampler.Sample(scene, ray, rand);
+
+                            buf.AddSample(x, y, sample);
+                        }
+                    }
+                });*/
             }
 
             if (AdaptiveSamples > 0)

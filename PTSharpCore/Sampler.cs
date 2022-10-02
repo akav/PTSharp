@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace PTSharpCore
@@ -151,6 +153,55 @@ namespace PTSharpCore
             return result.DivScalar(n * n);
         }
 
+        public static Vector RandomUnitVectorOnUnitSphere()
+        {
+            //ref: http://mathworld.wolfram.com/SpherePointPicking.html
+            var x0 = Random.Shared.NextDouble() * 2 - 1;
+            var x1 = Random.Shared.NextDouble() * 2 - 1;
+            var x2 = Random.Shared.NextDouble() * 2 - 1;
+            var x3 = Random.Shared.NextDouble() * 2 - 1;
+            var divider = x0 * x0 + x1 * x1 + x2 * x2 + x3 * x3;
+            var pX = 2 * (x1 * x3 + x0 * x2) / divider;
+            var pY = 2 * (x2 * x3 - x0 * x1) / divider;
+            var pZ = x0 * x0 + x3 * x3 - x1 * x1 - x2 * x2 / divider;
+            return new Vector(pX, pY, pZ);
+        }
+
+        public static Vector RandomUnitVectorOnNorthernHemisphere()
+        {
+            var p = RandomUnitVectorOnUnitSphere();
+            Debug.Assert(Math.Abs(p.Length() * p.Length() - 1) <= 0.001);
+            //move the point onto northern hemisphere surface
+            p.y = Math.Abs(p.y);
+
+            return p;
+        }
+
+        public static double AngleBetween(Vector a, Vector b)
+        {
+            return Math.Acos(a.Dot(b) / (a.Length() * b.Length()));
+        }
+
+        public static Vector RotateUnitVector(Vector p, Vector a, Vector b)
+        {
+            a = a.Normalize();
+            b = b.Normalize();
+            var axis = a.Cross(b).Normalize();
+            var angle = AngleBetween(a, b);
+            var quaternion = Quaternion.CreateFromAxisAngle(new Vector3((float)axis.x, (float)axis.y, (float)axis.z), (float)angle);
+            var v = Vector3.Transform(new Vector3((float)p.x, (float)p.y, (float)p.z), quaternion);
+            return new Vector(v.X,v.Y,v.Z);
+        }
+
+        public static Vector RandomUnitVectorInHemisphereOf(Vector dir)
+        {
+            var p = RandomUnitVectorOnNorthernHemisphere();
+            //now p is distributed around the north unit vector: Vector3.UnitY
+            p = RotateUnitVector(p, new Vector(Vector3.UnitY.X, Vector3.UnitY.Y, Vector3.UnitY.Z), dir.Normalize());//rotate the vector to make it surround dir
+            //now p is distributed around dir
+            return p;
+        }
+
         Colour sampleEnvironment(Scene scene, Ray ray)
         {
             if (scene.Texture != null)
@@ -231,18 +282,23 @@ namespace PTSharpCore
             }
             // construct ray toward light point
             Ray ray = new Ray(n.Origin, point.Sub(n.Origin).Normalize());
+            
             // get cosine term
             var diffuse = ray.Direction.Dot(n.Direction);
+            
             if (diffuse <= 0)
             {
                 return Colour.Black;
             }
+            
             // check for light visibility
             Hit hit = scene.Intersect(ray);
+            
             if (!hit.Ok() || hit.Shape != light)
             {
                 return Colour.Black;
             }
+            
             // compute solid angle (hemisphere coverage)
             var hyp = center.Sub(n.Origin).Length();
             var opp = radius;
@@ -251,15 +307,20 @@ namespace PTSharpCore
             var d = Math.Cos(theta) * adj;
             var r = Math.Sin(theta) * adj;
             var coverage = (r * r) / (d * d);
+            
             if (hyp < opp)
             {
                 coverage = 1;
             }
+            
             coverage = Math.Min(coverage, 1);
+            
             // get material properties from light
             Material material = Material.MaterialAt(light, point);
+            
             // combine factors
             var m = material.Emittance * diffuse * coverage;
+            
             return material.Color.MulScalar(m);
         }
     }

@@ -8,10 +8,10 @@ namespace PTSharpCore
         internal Vector Origin, Direction;
         internal bool reflect;
 
-        internal Ray(Vector Origin_, Vector Direction_)
+        internal Ray(Vector O, Vector D)
         {
-            Origin = Origin_;
-            Direction = Direction_;
+            Origin = O;
+            Direction = D;
         }
 
         internal Vector Position(double t) => Origin.Add(Direction.MulScalar(t));
@@ -76,7 +76,7 @@ namespace PTSharpCore
             else if (material.Transparent)
             {
                 var refracted = n.Refract(this, n1, n2);
-                refracted.Origin = refracted.Origin.Add(refracted.Direction.MulScalar(1e-4F));
+                refracted.Origin = refracted.Origin.Add(refracted.Direction.MulScalar(1e-4));
                 return (refracted.ConeBounce(material.Gloss, u, v, rand), true, 1 - p);
             }
             else

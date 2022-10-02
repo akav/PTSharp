@@ -1,12 +1,13 @@
 using System;
+using System.Threading;
 
 namespace PTSharpCore
 {
     public class Colour
     {
-        internal double r;
-        internal double g;
-        internal double b;
+        public double r;
+        public double g;
+        public double b;
 
         public Colour(Colour c)
         {
@@ -22,8 +23,8 @@ namespace PTSharpCore
             b = B;
         }
 
-        public static Colour Black = new Colour(0, 0, 0);
-        public static Colour White = new Colour(1, 1, 1);
+        public static Colour Black = new(0, 0, 0);
+        public static Colour White = new(1, 1, 1);
 
         public Colour() { }
 
@@ -74,13 +75,13 @@ namespace PTSharpCore
             var red = ((x >> 16) & 0xff) / 255.0f;
             var green = ((x >> 8) & 0xff) / 255.0f;
             var blue = (x & 0xff) / 255.0f;
-            Colour color = new Colour(red, green, blue);
+            Colour color = new(red, green, blue);
             return color.Pow(2.2f);
         }
 
         public Colour Pow(double b) => new Colour(Math.Pow(r, b), Math.Pow(g, b), Math.Pow(this.b, b));
 
-        public int getIntFromColor(double red, double green, double blue)
+        public static int getIntFromColor(double red, double green, double blue)
         {
             if (double.IsNaN(red))
                 red = 0.0f;
@@ -164,21 +165,21 @@ namespace PTSharpCore
             return a.Add(b);
         }
 
-        public Colour MulScalar(double b) => new Colour(r * b, g * b, this.b * b);
+        public Colour MulScalar(double b) => new(r * b, g * b, this.b * b);
 
-        public Colour Add(Colour b) => new Colour(r + b.r, g + b.g, this.b + b.b);
+        public Colour Add(Colour b) => new(this.r + b.r, this.g + b.g, this.b + b.b);
+        
+        public Colour Sub(Colour b) => new(r - b.r, g - b.g, this.b - b.b);
 
-        public Colour Sub(Colour b) => new Colour(r - b.r, g - b.g, this.b - b.b);
+        public Colour Mul(Colour b) => new(r * b.r, g * b.g, this.b * b.b);
 
-        public Colour Mul(Colour b) => new Colour(r * b.r, g * b.g, this.b * b.b);
+        public Colour Div(Colour b) => new(r / b.r, g / b.g, this.b / b.b);
 
-        public Colour Div(Colour b) => new Colour(r / b.r, g / b.g, this.b / b.b);
+        public Colour DivScalar(double b) => new(r / b, g / b, this.b / b);
 
-        public Colour DivScalar(double b) => new Colour(r / b, g / b, this.b / b);
+        public Colour Min(Colour b) => new(Math.Min(r, b.r), Math.Min(g, b.g), Math.Min(this.b, b.b));
 
-        public Colour Min(Colour b) => new Colour(Math.Min(r, b.r), Math.Min(g, b.g), Math.Min(this.b, b.b));
-
-        public Colour Max(Colour b) => new Colour(Math.Max(r, b.r), Math.Max(g, b.g), Math.Max(this.b, b.b));
+        public Colour Max(Colour b) => new(Math.Max(r, b.r), Math.Max(g, b.g), Math.Max(this.b, b.b));
 
         public double MinComponent() => Math.Min(Math.Min(r, g), b);
 

@@ -16,7 +16,7 @@ namespace PTSharpCore
             var sx = size.x / nx;
             var sy = size.y / ny;
             var sz = size.z / nz;
-            List<Triangle> triangles = new List<Triangle>();
+            List<Triangle> triangles = new();
             for (int x = 0; x < nx - 1; x++)
             {
                 for(int y = 0; y < ny - 1; y++)
@@ -98,10 +98,12 @@ namespace PTSharpCore
             
             for (int i = 0; i < count; i++)
             {
-                Triangle triangle = new Triangle();
-                triangle.V3 = points[table[i * 3 + 0]];
-                triangle.V2 = points[table[i * 3 + 1]];
-                triangle.V1 = points[table[i * 3 + 2]];
+                Triangle triangle = new()
+                {
+                    V3 = points[table[i * 3 + 0]],
+                    V2 = points[table[i * 3 + 1]],
+                    V1 = points[table[i * 3 + 2]]
+                };
                 triangle.FixNormals();
                 result[i] = triangle;
             }

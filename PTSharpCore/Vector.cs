@@ -9,8 +9,7 @@ namespace PTSharpCore
     {
         public static Vector ORIGIN = new Vector(0, 0, 0);
         public double x, y, z, w;
-
-
+        
         public Vector(double x, double y, double z)
         {
             this.x = x;

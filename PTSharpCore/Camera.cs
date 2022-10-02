@@ -1,4 +1,7 @@
+using MathNet.Numerics.Random;
+using MathNet.Numerics.RootFinding;
 using System;
+using System.Numerics;
 
 namespace PTSharpCore
 {
@@ -35,9 +38,9 @@ namespace PTSharpCore
 
         public Ray CastRay(int x, int y, int w, int h, double u, double v, Random rand)
         {
-            double aspect = (double)w / (double)h;
-            var px = (((double)x + u - 0.5f) / ((double)w - 1)) * 2 - 1;
-            var py = (((double)y + v - 0.5f) / ((double)h - 1)) * 2 - 1;
+            double aspect = w / (double)h;
+            var px = ((x + u - 0.5) / (w - 1.0)) * 2 - 1;
+            var py = ((y + v - 0.5) / (h - 1.0)) * 2 - 1;
             Vector d = new Vector();
             d = d.Add(this.u.MulScalar(-px * aspect));
             d = d.Add(this.v.MulScalar(-py));
@@ -55,5 +58,7 @@ namespace PTSharpCore
             }
             return new Ray(p, d);
         }
+
+        
     }
 }
