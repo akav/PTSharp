@@ -28,7 +28,7 @@ namespace PTSharpCore
             this.apertureRadius = apertureRadius;
         }
         
-        public Ray CastRay(int x, int y, int w, int h, double u, double v, Random rand)
+        public Ray CastRay(int x, int y, int w, int h, ref double u, ref double v, ref Random rand)
         {
             double aspect = (double)w / (double)h;
             var px = (((double)x + u - 0.5D) / ((double)w - 1D)) * 2D - 1D;

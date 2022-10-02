@@ -244,8 +244,8 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new IVector<double>(new double[] { fn, fn / 3, fn * 2, 0 }), 1, Material.LightMaterial(Colour.White, 100)));
             var camera = Camera.LookAt(new IVector<double>(new double[] { fn * 2, fn * 2, fn * 2, 0 }), new IVector<double>(new double[] { 0, 0, fn / 4, 0 }), new IVector<double>(new double[] { 0, 0, 1, 0 }), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
-            renderer.FireflySamples = 64;
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            //renderer.FireflySamples = 64;
             renderer.IterativeRender("qbert.png", 100); 
         }
 

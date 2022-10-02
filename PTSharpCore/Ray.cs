@@ -8,10 +8,10 @@ namespace PTSharpCore
         internal IVector<double> Origin, Direction;
         internal bool reflect;
 
-        internal Ray(IVector<double> Origin_, IVector<double> Direction_)
+        internal Ray(IVector<double> O, IVector<double> D)
         {
-            Origin = Origin_;
-            Direction = Direction_;
+            Origin = O;
+            Direction = D;
         }
 
         internal IVector<double> Position(double t) => Origin.Add(Direction.MulScalar(t));

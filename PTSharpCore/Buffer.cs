@@ -89,7 +89,7 @@ namespace PTSharpCore
             return new Buffer(W, H, pixcopy);
         }
 
-        public void AddSample(int x, int y, Colour sample) => Pixels[y * W + x].AddSample(sample);
+        public void AddSample(int x, int y, ref Colour sample) => Pixels[y * W + x].AddSample(sample);
 
         public int Samples(int x, int y) => Pixels[y * W + x].Samples;
 
