@@ -11,27 +11,15 @@ namespace PTSharpCore
         public double x20, x21, x22, x23;
         public double x30, x31, x32, x33;
 
-        public Matrix(double x00_, double x01_, double x02_, double x03_,
-                      double x10_, double x11_, double x12_, double x13_,
-                      double x20_, double x21_, double x22_, double x23_,
-                      double x30_, double x31_, double x32_, double x33_)
+        public Matrix(double x00, double x01, double x02, double x03,
+                      double x10, double x11, double x12, double x13,
+                      double x20, double x21, double x22, double x23,
+                      double x30, double x31, double x32, double x33)
         {
-            x00 = x00_;
-            x01 = x01_;
-            x02 = x02_;
-            x03 = x03_;
-            x10 = x10_;
-            x11 = x11_;
-            x12 = x12_;
-            x13 = x13_;
-            x20 = x20_;
-            x21 = x21_;
-            x22 = x22_;
-            x23 = x23_;
-            x30 = x30_;
-            x31 = x31_;
-            x32 = x32_;
-            x33 = x33_;
+            this.x00 = x00; this.x01 = x01; this.x02 = x02; this.x03 = x03;
+            this.x10 = x10; this.x11 = x11; this.x12 = x12; this.x13 = x13;
+            this.x20 = x20; this.x21 = x21; this.x22 = x22; this.x23 = x23;
+            this.x30 = x30; this.x31 = x31; this.x32 = x32; this.x33 = x33;
         }
 
         internal static Matrix Identity = new Matrix(1, 0, 0, 0,
