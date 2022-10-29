@@ -1,9 +1,10 @@
 using System;
 using System.Runtime.CompilerServices;
-
+using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct Matrix
     {
         public double x00, x01, x02, x03;
@@ -27,13 +28,16 @@ namespace PTSharpCore
                                                      0, 0, 1, 0,
                                                      0, 0, 0, 1);
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         internal Matrix Translate(Vector v) => new Matrix(1, 0, 0, v.x,
                               0, 1, 0, v.y,
                               0, 0, 1, v.z,
                               0, 0, 0, 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         internal Matrix Scale(Vector v) => new Matrix(v.x, 0, 0, 0,
                               0, v.y, 0, 0,
                               0, 0, v.z, 0,
@@ -42,6 +46,7 @@ namespace PTSharpCore
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         internal Matrix Rotate(Vector v, double a)
         {
             v = v.Normalize();
@@ -54,7 +59,9 @@ namespace PTSharpCore
                               0, 0, 0, 1);
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         internal Matrix Frustum(double l, double r, double b, double t, double n, double f)
         {
             double t1 = 2 * n;
@@ -67,7 +74,9 @@ namespace PTSharpCore
                               0, 0, -1, 0);
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         internal Matrix Orthographic(double l, double r, double b, double t, double n, double f)
         {
             return new Matrix(2 / (r - l), 0, 0, -(r + l) / (r - l),
@@ -76,7 +85,9 @@ namespace PTSharpCore
                               0, 0, 0, 1);
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         internal Matrix Perspective(double fovy, double aspect, double near, double far)
         {
             double ymax = near * Math.Tan(fovy * Math.PI / 360);
@@ -84,7 +95,9 @@ namespace PTSharpCore
             return Frustum(-xmax, xmax, -ymax, ymax, near, far);
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         internal Matrix LookAtMatrix(Vector eye, Vector center, Vector up)
         {
             up = up.Normalize();
@@ -100,8 +113,10 @@ namespace PTSharpCore
             return m.Transpose().Inverse().Translate(m, eye);
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Matrix Translate(Matrix m, Vector v) => new Matrix().Translate(v).Mul(m);
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix Scale(Matrix m, Vector v) => Scale(v).Mul(m);

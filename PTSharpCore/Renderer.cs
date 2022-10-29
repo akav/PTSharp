@@ -29,6 +29,7 @@ namespace PTSharpCore
         double FireflyThreshold;
         int NumCPU;
         public static int iterations;
+        public string pathTemplate;
 
         Renderer() { }
 
@@ -180,7 +181,7 @@ namespace PTSharpCore
             sw.Start();
 
             // Random Number Generator from on Math.Numerics
-            var rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
+            var rand = Random.Shared; //new SystemRandomSource(sw.Elapsed.Milliseconds, true);
 
             // Frame resolution
             int totalPixels = h * w;
@@ -198,11 +199,10 @@ namespace PTSharpCore
             po.MaxDegreeOfParallelism = Environment.ProcessorCount;
 
             var numbers = Enumerable.Range(0, w * h).ToList();
-            var random = new Random();
-
+            
             // Experiment:
             // Use ILGPU to generate an array of random numbers
-            using var rng = RNG.Create<XorShift64Star>(a, random);
+            using var rng = RNG.Create<XorShift64Star>(a, rand);
             var rngView = rng.GetView(a.WarpSize);
             using var bufferfu = a.Allocate1D<double>(w*h);
             var kernelfu = a.LoadAutoGroupedStreamKernel<Index1D, RNGView<XorShift64Star>, ArrayView1D<double, Stride1D.Dense>>(MyRandomKernel);
@@ -245,9 +245,10 @@ namespace PTSharpCore
                     {
                         var x = index % w;
                         var y = index / w;
-                        var fu = rand.NextDouble();
-                        var fv = rand.NextDouble();
-                        buf.AddSample(x, y, sampler.Sample(scene, camera.CastRay(x, y, w, h, fu, fv , rand),rand));
+                        var fu = Random.Shared.NextDouble();
+                        var fv = Random.Shared.NextDouble();
+                        rayBuffer.TryAdd((x, y), camera.CastRay(x, y, w, h, fu, fv, rand));
+                        buf.AddSample(x, y, sampler.Sample(scene, rayBuffer[(x, y)], rand));
                     });
                 }
             }

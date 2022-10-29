@@ -20,7 +20,7 @@ namespace PTSharpCore
             HitInfo = hinfo;
         }
 
-        public bool Ok() => T < INF;
+        public bool Ok => T < INF;
 
         public static Hit NoHit = new Hit(null, INF, null);
 

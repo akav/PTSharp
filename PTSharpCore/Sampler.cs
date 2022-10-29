@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Threading;
 
 namespace PTSharpCore
 {
@@ -76,7 +77,7 @@ namespace PTSharpCore
 
             var hit = scene.Intersect(ray);
 
-            if (!hit.Ok())
+            if (!hit.Ok)
             {
                 return sampleEnvironment(scene, ray);
             }
@@ -127,7 +128,7 @@ namespace PTSharpCore
                         if (p > 0 && reflected)
                         {
                             // specular
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
+                            var indirect = sample(scene, newRay, reflected, 1, Interlocked.Increment(ref depth), rand);
                             var tinted = indirect.Mix(material.Color.Mul(indirect), material.Tint);
                             result = result.Add(tinted.MulScalar(p));
                         }
@@ -135,7 +136,7 @@ namespace PTSharpCore
                         if (p > 0 && !reflected)
                         {
                             // diffuse
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
+                            var indirect = sample(scene, newRay, reflected, 1, Interlocked.Increment(ref depth), rand);
                             var direct = Colour.Black;
 
                             if (DirectLighting)
@@ -274,7 +275,7 @@ namespace PTSharpCore
             // check for light visibility
             Hit hit = scene.Intersect(ray);
             
-            if (!hit.Ok() || hit.Shape != light)
+            if (!hit.Ok || hit.Shape != light)
             {
                 return Colour.Black;
             }

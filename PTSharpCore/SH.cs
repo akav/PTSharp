@@ -47,7 +47,7 @@ namespace PTSharpCore
         Hit IShape.Intersect(Ray r)
         {
             var hit = mesh.Intersect(r);
-            if (!hit.Ok())
+            if (!hit.Ok)
             {
                 return Hit.NoHit;
             }

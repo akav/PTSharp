@@ -73,7 +73,7 @@ namespace PTSharpCore
             return Hit.NoHit;
         }
 
-        Vector IShape.UVector(Vector p) => new Vector();
+        Vector IShape.UVector(Vector p) => new();
 
         Material IShape.MaterialAt(Vector p) => CylinderMaterial;
 

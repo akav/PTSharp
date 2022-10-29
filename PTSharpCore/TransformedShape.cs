@@ -41,7 +41,7 @@ namespace PTSharpCore
             var shapeRay = Matrix.Inverse().MulRay(r);
             var hit = Shape.Intersect(shapeRay);
 
-            if(!hit.Ok())
+            if(!hit.Ok)
             {
                 return hit;
             }

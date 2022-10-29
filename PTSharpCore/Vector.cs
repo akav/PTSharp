@@ -7,6 +7,7 @@ namespace PTSharpCore
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct Vector
     {
+        
         public static Vector ORIGIN = new Vector(0, 0, 0);
 
         public double x, y, z, w;
@@ -18,6 +19,7 @@ namespace PTSharpCore
             this.z = z;
             w = 1.0;
             Index = 0;
+
         }
         public Vector(double x, double y, double z, double w)
         {
@@ -33,50 +35,75 @@ namespace PTSharpCore
 
         public int Index { get; internal set; }
 
+        // Operators
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector operator +(Vector a, Vector v)
         {
             return new Vector(a.x + v.x, a.y + v.y, a.z + v.z, a.w + v.w);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static Vector operator -(Vector a, Vector v)
         {
             return new Vector(a.x - v.x, a.y - v.y, a.z - v.z, a.w - v.w);
         }
 
+        // Dot product
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static double operator *(Vector a, Vector v)
         {
             return (a.x * v.x) + (a.y * v.y) + (a.z * v.z);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static Vector operator *(double c, Vector v)
         {
             return new Vector(c * v.x, c * v.y, c * v.z, v.w);
         }
 
+        // Cross product
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector operator ^(Vector a, Vector v)
         {
             return new Vector(a.y * v.z - a.z * v.y, a.z * v.x - a.x * v.z, a.x * v.y - a.y * v.x, a.w);
         }
+
+        // Componentwise Multiply
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static Vector operator %(Vector a, Vector v)
         {
             return new Vector(a.x * v.x, a.y * v.y, a.z * v.z, a.w * v.w);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector operator *(Vector a, double c)
         {
             return new Vector(c * a.x, c * a.y, c * a.z, a.w);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static Vector operator /(Vector a, double c)
         {
             return new Vector(a.x / c, a.y / c, a.z / c, a.w);
         }
 
+        // Unary Minus
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector operator -(Vector v)
         {
             return new Vector(-v.x, -v.y, -v.z, v.w);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static Vector operator +(Vector v)
         {

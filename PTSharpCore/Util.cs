@@ -26,11 +26,7 @@ namespace PTSharpCore
             var q = Vector.RandomUnitVector(rand);
             var s = direction.Cross(q);
             var t = direction.Cross(s);
-            var d = new Vector();
-            d = d.Add(s.MulScalar(m1 * Math.Cos(a)));
-            d = d.Add(t.MulScalar(m1 * Math.Sin(a)));
-            d = d.Add(direction.MulScalar(m2));
-            d = d.Normalize();
+            var d = new Vector().Add(s.MulScalar(m1 * Math.Cos(a))).Add(t.MulScalar(m1 * Math.Sin(a))).Add(direction.MulScalar(m2)).Normalize();
             return d;
         }
         
