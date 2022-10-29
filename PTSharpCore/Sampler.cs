@@ -1,7 +1,5 @@
 using System;
-using System.Diagnostics;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
@@ -26,6 +24,7 @@ namespace PTSharpCore
     }
     class DefaultSampler : Sampler
     {
+        
         int FirstHitSamples;
         int MaxBounces;
         bool DirectLighting;
@@ -33,12 +32,12 @@ namespace PTSharpCore
         public LightMode LightMode;
         public SpecularMode SpecularMode;
 
-        DefaultSampler(int FirstHitSamples, int MaxBounces, bool DirectLighting, bool SoftShadows, LightMode LM, SpecularMode SM)
+        DefaultSampler(int FH, int MB, bool DL, bool SS, LightMode LM, SpecularMode SM)
         {
-            this.FirstHitSamples = FirstHitSamples;
-            this.MaxBounces = MaxBounces;
-            this.DirectLighting = DirectLighting;
-            this.SoftShadows = SoftShadows;
+            FirstHitSamples = FH;
+            MaxBounces = MB;
+            DirectLighting = DL;
+            SoftShadows = SS;
             LightMode = LM;
             SpecularMode = SM;
         }
@@ -84,7 +83,7 @@ namespace PTSharpCore
 
             var info = hit.Info(ray);
             var material = info.material;
-            var result = Colour.Black;
+            var result = new Colour(0, 0, 0);
 
             if (material.Emittance > 0)
             {
@@ -102,7 +101,6 @@ namespace PTSharpCore
             {
                 ma = BounceType.BounceTypeDiffuse;
                 mb = BounceType.BounceTypeSpecular;
-
             }
             else
             {
@@ -116,9 +114,9 @@ namespace PTSharpCore
                 {
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
-
                         var fu = (u + rand.NextDouble()) / n;
                         var fv = (v + rand.NextDouble()) / n;
+                        
                         (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode, rand);
 
                         if (mode == BounceType.BounceTypeAny)
@@ -146,35 +144,25 @@ namespace PTSharpCore
                             }
                             result = result.Add(material.Color.Mul(direct.Add(indirect)).MulScalar(p));
                         }
-
                     }
                 }
             }
-            return result.DivScalar(n * n);
+            result = result.DivScalar(n * n);
+            return result;
         }
 
-        public static Vector RandomUnitVectorOnUnitSphere()
+        public static Vector RandomUnitVectorOnUnitSphere(Random rand)
         {
             //ref: http://mathworld.wolfram.com/SpherePointPicking.html
-            var x0 = Random.Shared.NextDouble() * 2 - 1;
-            var x1 = Random.Shared.NextDouble() * 2 - 1;
-            var x2 = Random.Shared.NextDouble() * 2 - 1;
-            var x3 = Random.Shared.NextDouble() * 2 - 1;
+            var x0 = rand.NextDouble() * 2 - 1;
+            var x1 = rand.NextDouble() * 2 - 1;
+            var x2 = rand.NextDouble() * 2 - 1;
+            var x3 = rand.NextDouble() * 2 - 1;
             var divider = x0 * x0 + x1 * x1 + x2 * x2 + x3 * x3;
             var pX = 2 * (x1 * x3 + x0 * x2) / divider;
             var pY = 2 * (x2 * x3 - x0 * x1) / divider;
             var pZ = x0 * x0 + x3 * x3 - x1 * x1 - x2 * x2 / divider;
             return new Vector(pX, pY, pZ);
-        }
-
-        public static Vector RandomUnitVectorOnNorthernHemisphere()
-        {
-            var p = RandomUnitVectorOnUnitSphere();
-            Debug.Assert(Math.Abs(p.Length() * p.Length() - 1) <= 0.001);
-            //move the point onto northern hemisphere surface
-            p.y = Math.Abs(p.y);
-
-            return p;
         }
 
         public static double AngleBetween(Vector a, Vector b)
@@ -192,16 +180,7 @@ namespace PTSharpCore
             var v = Vector3.Transform(new Vector3((float)p.x, (float)p.y, (float)p.z), quaternion);
             return new Vector(v.X,v.Y,v.Z);
         }
-
-        public static Vector RandomUnitVectorInHemisphereOf(Vector dir)
-        {
-            var p = RandomUnitVectorOnNorthernHemisphere();
-            //now p is distributed around the north unit vector: Vector3.UnitY
-            p = RotateUnitVector(p, new Vector(Vector3.UnitY.X, Vector3.UnitY.Y, Vector3.UnitY.Z), dir.Normalize());//rotate the vector to make it surround dir
-            //now p is distributed around dir
-            return p;
-        }
-
+        
         Colour sampleEnvironment(Scene scene, Ray ray)
         {
             if (scene.Texture != null)
@@ -209,8 +188,8 @@ namespace PTSharpCore
                 var d = ray.Direction;
                 var u = Math.Atan2(d.z, d.x) + scene.TextureAngle;
                 var v = Math.Atan2(d.y, new Vector(d.x, 0, d.z).Length());
-                u = (u + Math.PI) / (2 * Math.PI);
-                v = (v + Math.PI / 2) / Math.PI;
+                u = (u + Math.PI) / (2*Math.PI);
+                v = (v + Math.PI/2) / Math.PI;
                 return scene.Texture.Sample(u, v);
             }
             return scene.Color;
@@ -219,6 +198,7 @@ namespace PTSharpCore
         Colour sampleLights(Scene scene, Ray n, Random rand)
         {
             var nLights = scene.Lights.Length;
+            
             if (nLights == 0)
             {
                 return Colour.Black;
@@ -232,12 +212,11 @@ namespace PTSharpCore
                     result = result.Add(sampleLight(scene, n, light, rand));
                 }
                 return result;
-
             }
             else
             {
                 // pick a random light
-                var light = scene.Lights[rand.Next(nLights)];
+                var light = scene.Lights[Random.Shared.Next(nLights)];
                 return sampleLight(scene, n, light, rand).MulScalar((double)nLights);
             }
         }
@@ -265,10 +244,11 @@ namespace PTSharpCore
             {
                 for (; ; )
                 {
-                    var x = rand.NextDouble() * 2 - 1;
-                    var y = rand.NextDouble() * 2 - 1;
+                    var x = Random.Shared.NextDouble() * 2 - 1;
+                    var y = Random.Shared.NextDouble() * 2 - 1;
                     if (x * x + y * y <= 1)
                     {
+                        
                         var l = center.Sub(n.Origin).Normalize();
                         var u = l.Cross(Vector.RandomUnitVector(rand)).Normalize();
                         var v = l.Cross(u);

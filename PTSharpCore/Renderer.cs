@@ -1,12 +1,16 @@
 using MathNet.Numerics.Random;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ILGPU;
+using ILGPU.Runtime;
+using ILGPU.Runtime.OpenCL;
+using ILGPU.Algorithms.Random;
+using ILGPU.Runtime.Cuda;
+using ILGPU.Algorithms;
+using System.Collections.Concurrent;
 
 namespace PTSharpCore
 {
@@ -15,8 +19,8 @@ namespace PTSharpCore
         Scene Scene;
         Camera Camera;
         Sampler Sampler;
-        Buffer PBuffer;
-        int SamplesPerPixel;
+        public Buffer PBuffer;
+        public int SamplesPerPixel;
         public bool StratifiedSampling;
         public int AdaptiveSamples;
         double AdaptiveThreshold;
@@ -24,11 +28,10 @@ namespace PTSharpCore
         public int FireflySamples;
         double FireflyThreshold;
         int NumCPU;
-        int iterations;
-        String pathTemplate;
+        public static int iterations;
 
-        Renderer() {}
-        
+        Renderer() { }
+
         public static Renderer NewRenderer(Scene scene, Camera camera, Sampler sampler, int w, int h, bool multithreaded)
         {
             Renderer r = new Renderer();
@@ -45,7 +48,7 @@ namespace PTSharpCore
             r.FireflyThreshold = 1;
             if (multithreaded)
                 r.NumCPU = Environment.ProcessorCount;
-            else 
+            else
                 r.NumCPU = 1;
             return r;
         }
@@ -64,101 +67,103 @@ namespace PTSharpCore
             Sampler sampler = Sampler;
             Buffer buf = PBuffer;
             (int w, int h) = (buf.W, buf.H);
+
             int spp = SamplesPerPixel;
             int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
+
             scene.Compile();
-            scene.rays = 0;
-            
+
             // Stop watch timer 
             Stopwatch sw = new Stopwatch();
             sw.Start();
+            
             // Random Number Generator from on Math.Numerics
             var rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
 
             double invWidth = 1.0f / w;
             double invHeight = 1.0f / h;
+            scene.rays = 0;
 
-            for (int y = 0; y < h; y++)
+            for (int i = 0; i < 1; i++)
             {
-                for (int x = 0; x < w; x++)
+                for (int y = i; y < h; y += 1)
                 {
-
-                    if (StratifiedSampling)
+                    for (int x = 0; x < w; x++)
                     {
-                        for (int u = 0; u < sppRoot; u++)
+                        if (StratifiedSampling)
                         {
-                            for (int v = 0; v < sppRoot; v++)
+                            for (int u = 0; u < sppRoot; u++)
                             {
-                                var fu = (u + 0.5) / sppRoot;
-                                var fv = (v + 0.5) / sppRoot;
+                                for (int v = 0; v < sppRoot; v++)
+                                {
+                                    var fu = (u + 0.5) / sppRoot;
+                                    var fv = (v + 0.5) / sppRoot;
+                                    Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                                    Colour sample = sampler.Sample(scene, ray, rand);
+                                    buf.AddSample(x, y, sample);
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            for (int p = 0; p < spp; p++)
+                            {
+                                Colour c = new Colour(0, 0, 0);
+                                c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
+                                buf.AddSample(x, y, c);
+                            }
+
+                        }
+                        // Adaptive Sampling
+                        if (AdaptiveSamples > 0)
+                        {
+                            double v = buf.StandardDeviation(x, y).MaxComponent();
+                            v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
+                            v = Math.Pow(v, AdaptiveExponent);
+                            int samples = (int)(v * AdaptiveSamples);
+                            for (int d = 0; d < samples; d++)
+                            {
+
+                                var fu = rand.NextDouble();
+                                var fv = rand.NextDouble();
                                 Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
                                 Colour sample = sampler.Sample(scene, ray, rand);
                                 buf.AddSample(x, y, sample);
                             }
+
                         }
-                        
-                    }
-                    else
-                    {
-                        // Random subsampling
-                        for (int p = 0; p < spp; p++)
-                        {
-                            //fu = Random.Shared.NextDouble();
-                            //fv = Random.Shared.NextDouble();
-                            var fu = rand.NextDouble();
-                            var fv = rand.NextDouble();
-                            Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                            Colour sample = sampler.Sample(scene, ray, rand);
-                            sample += sample;
-                            buf.AddSample(x, y, sample);
-                        }
-                        
-                    }
-                    // Adaptive Sampling
-                    if (AdaptiveSamples > 0)
-                    {
-                        double v = buf.StandardDeviation(x, y).MaxComponent();
-                        v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
-                        v = Math.Pow(v, AdaptiveExponent);
-                        int samples = (int)(v * AdaptiveSamples);
-                        for (int d = 0; d < samples; d++)
+
+                        if (FireflySamples > 0)
                         {
 
-                            //var fu = Random.Shared.NextDouble();
-                            //var fv = Random.Shared.NextDouble();
-                            var fu = rand.NextDouble();
-                            var fv = rand.NextDouble();
-                            Ray ray = camera.CastRay(x, y, w, h, fu, fv,rand);
-                            Colour sample = sampler.Sample(scene, ray, rand);
-                            buf.AddSample(x, y, sample);
-                        }
-                        
-                    }
-
-                    if (FireflySamples > 0)
-                    {
-                        
-                        if (PBuffer.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
-                        {
-                            for (int e = 0; e < FireflySamples; e++)
+                            if (PBuffer.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
                             {
-                                Colour sample = new Colour(0, 0, 0);
-                                var fu = (x + rand.NextDouble()) * invWidth;
-                                var fv = (y + rand.NextDouble()) * invHeight;
-                                Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                                sample += sampler.Sample(scene, ray, rand);
-                                PBuffer.AddSample(x, y, sample);
+                                for (int e = 0; e < FireflySamples; e++)
+                                {
+                                    Colour sample = new Colour(0, 0, 0);
+                                    var fu = (x + rand.NextDouble()) * invWidth;
+                                    var fv = (y + rand.NextDouble()) * invHeight;
+                                    Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                                    sample += sampler.Sample(scene, ray, rand);
+                                    PBuffer.AddSample(x, y, sample);
+                                }
                             }
                         }
-                        
                     }
                 }
             }
+
             Console.WriteLine("time elapsed:" + sw.Elapsed);
             sw.Stop();
         }
 
-        public void RenderParallel()
+        public static void MyRandomKernel(Index1D index, RNGView<XorShift64Star> rng, ArrayView1D<double, Stride1D.Dense> view)
+        {
+            view[index] = rng.NextDouble();
+        }
+                
+        public void RenderParallel(Accelerator a, Device dev)
         {
             Scene scene = Scene;
             Camera camera = Camera;
@@ -192,8 +197,21 @@ namespace PTSharpCore
             // Set number of cores/threads
             po.MaxDegreeOfParallelism = Environment.ProcessorCount;
 
-            var numbers = Enumerable.Range(0, w*h).ToList();
-            
+            var numbers = Enumerable.Range(0, w * h).ToList();
+            var random = new Random();
+
+            // Experiment:
+            // Use ILGPU to generate an array of random numbers
+            using var rng = RNG.Create<XorShift64Star>(a, random);
+            var rngView = rng.GetView(a.WarpSize);
+            using var bufferfu = a.Allocate1D<double>(w*h);
+            var kernelfu = a.LoadAutoGroupedStreamKernel<Index1D, RNGView<XorShift64Star>, ArrayView1D<double, Stride1D.Dense>>(MyRandomKernel);
+            kernelfu((int)bufferfu.Length, rngView, bufferfu.View);
+
+            ThreadLocal<double[]> fuRandomValues = new ThreadLocal<double[]>(() =>
+            {
+                return bufferfu.GetAsArray1D();
+            });
 
             Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
 
@@ -218,69 +236,20 @@ namespace PTSharpCore
             else
             {
                 //Random subsampling
-                /*_ = Parallel.ForEach(Partitioner.Create(0, totalPixels), po, (range) =>
-                  {
-                      for (int i = range.Item1; i < range.Item2; i++)
-                      {
-                          for (int s = 0; s < spp; s++)
-                          {
-                              int y = i / w, x = i % w;
-                              var fu = Random.Shared.NextDouble();
-                              var fv = Random.Shared.NextDouble();
-                              var ray = camera.CastRay(x, y, w, h, fu, fv);
-                              var sample = sampler.Sample(scene, ray);
-                              buf.AddSample(x, y, sample);
-                          }
-                      }
-                  });*/
-                /*Parallel.For(0, h, po, y =>
-                {
-                    int stride = y * w;
-                    
-                    for (int x = 0; x < w; x++)
-                    {
-                        //var fu = Random.Shared.NextDouble();
-                        //var fv = Random.Shared.NextDouble();
-                        var fu = rand.NextDouble();
-                        var fv = rand.NextDouble();
-                        var r = camera.CastRay(x, y, w, h, fu, fv, rand);//new Ray(camera.Pos, GetPoint(x, y, camera)), scene, 0);
-                        buf.AddSample(x, y, sampler.Sample(scene,r, rand));
-                        //rgb[x + stride] = color.ToInt32();
-                    }
-                });*/
+                ConcurrentDictionary<(int, int), Ray> rayBuffer = new ConcurrentDictionary<(int, int), Ray>();
+                ThreadLocal<Colour> colourLocal = new();                
 
                 for (int j = 0; j < spp; j++)
                 {
-                    Parallel.For(0, w * h, index =>
+                    Parallel.For(0, w * h, po, (index) =>
                     {
                         var x = index % w;
                         var y = index / w;
-                        Debug.Assert(index == y * w + x);
                         var fu = rand.NextDouble();
                         var fv = rand.NextDouble();
-                        var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                        Colour sample = new Colour(0, 0, 0);
-                        sample += sampler.Sample(scene, ray, rand);
-                        buf.AddSample(x, y, sample);
+                        buf.AddSample(x, y, sampler.Sample(scene, camera.CastRay(x, y, w, h, fu, fv , rand),rand));
                     });
                 }
-
-                /*Parallel.ForEach(Partitioner.Create(0, w*h), po, (range) =>
-                {
-                    for (int i = range.Item1; i < range.Item2; i++)
-                    {
-                        for (int s = 0; s < spp; s++)
-                        {
-                            int y = i / w, x = i % w;
-                            var fu = rand.NextDouble();
-                            var fv = rand.NextDouble();
-                            var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                            var sample = sampler.Sample(scene, ray, rand);
-
-                            buf.AddSample(x, y, sample);
-                        }
-                    }
-                });*/
             }
 
             if (AdaptiveSamples > 0)
@@ -294,12 +263,10 @@ namespace PTSharpCore
                       int samples = (int)(v * AdaptiveSamples);
                       for (int s = 0; s < samples; s++)
                       {
-                          //var fu = Random.Shared.NextDouble();
-                          //var fv = Random.Shared.NextDouble();
-                          var fu = rand.NextDouble();
-                          var fv = rand.NextDouble();
-                          Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                          Colour sample = sampler.Sample(scene, ray, rand);
+                          var fu = Random.Shared.NextDouble();
+                          var fv = Random.Shared.NextDouble();
+                          Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
+                          Colour sample = sampler.Sample(scene, ray, Random.Shared);
                           buf.AddSample(x, y, sample);
                       }
                   });
@@ -310,50 +277,47 @@ namespace PTSharpCore
                 _ = Parallel.For(0, w * h, po, (i, loopState) =>
                   {
                       int y = i / w, x = i % w;
-                      if (PBuffer.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
+                      if (buf.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
                       {
                           for (int j = 0; j < FireflySamples; j++)
                           {
-
-                              //Parallel.For(0, FireflySamples, po, (e, loop) =>
-                              //{
-                              Colour sample = new Colour(0, 0, 0);
-                              //var fu = Random.Shared.NextDouble();
-                              //var fv = Random.Shared.NextDouble();
-                              var fu = rand.NextDouble();
-                              var fv = rand.NextDouble();
-                              Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                              sample = sampler.Sample(scene, ray, rand);
-                              buf.AddSample(x, y, sample);
-                              //});
+                              buf.AddSample(x, y, sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), Random.Shared), Random.Shared));
                           }
                       }
                   });
             }
             Console.WriteLine("time elapsed:" + sw.Elapsed);
+            
             sw.Stop();
         }
 
-        public System.Drawing.Bitmap IterativeRender(String pathTemplate, int iterations)
+        public System.Drawing.Bitmap IterativeRender(String pathTemplate, int iter)
         {
-            this.iterations = iterations;
+            iterations = iter;
             System.Drawing.Bitmap finalrender = null;
-            for (int iter = 1; iter < this.iterations; iter++)
+
+            using Context context = Context.Create(builder => builder.Default().EnableAlgorithms());
+            Device dev = context.GetPreferredDevice(preferCPU: false);
+            using var accelerator = dev.CreateAccelerator(context);
+            //Console.WriteLine($"Performing operations on {accelerator}\n");
+            
+            for (int i = 1; i < iterations; i++)
             {
-                Console.WriteLine("[Iteration:" + iter + " of " + iterations + "]");
+                Console.WriteLine("Iterations " + i + " of " + iterations);
                 if (NumCPU.Equals(1))
                 {
                     Render();
-                } else
+                }
+                else
                 {
-                    RenderParallel();
+                    RenderParallel(accelerator, dev);
                 }
                 this.pathTemplate = pathTemplate;
                 finalrender = PBuffer.Image(Channel.ColorChannel);
-                Console.WriteLine("Writing file...");
-                finalrender.Save(pathTemplate);                
+                finalrender.Save(pathTemplate);
             }
-            
+
+            accelerator.Dispose();
             return PBuffer.Image(Channel.ColorChannel);
         }
 

@@ -1,8 +1,11 @@
 using PTSharpCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PTSharpCore
@@ -143,7 +146,7 @@ namespace PTSharpCore
                 return hit;
             }
 
-            public static double Median(List<double> list)
+            public static double Median(ConcurrentBag<double> list)
             {
                 int middle = list.Count / 2;
 
@@ -173,12 +176,12 @@ namespace PTSharpCore
                     (bool l, bool r) = box.Partition(axis, point);
                     if (l)
                     {
-                        left++;
+                        Interlocked.Increment(ref left);
                     }
 
                     if (r)
                     {
-                        right++;
+                        Interlocked.Increment(ref right);
                     }
                 }
 
@@ -192,8 +195,8 @@ namespace PTSharpCore
 
             (IShape[], IShape[]) Partition(int size, Axis axis, double point)
             {
-                List<IShape> left = new();
-                List<IShape> right = new();
+                ConcurrentBag<IShape> left = new();
+                ConcurrentBag<IShape> right = new();
 
                 foreach (var shape in Shapes)
                 {
@@ -221,9 +224,9 @@ namespace PTSharpCore
                     return;
                 }
 
-                List<double> xs = new();
-                List<double> ys = new();
-                List<double> zs = new();
+                ConcurrentBag<double> xs = new();
+                ConcurrentBag<double> ys = new();
+                ConcurrentBag<double> zs = new();
 
                 foreach (var shape in Shapes) {
                     Box box = shape.BoundingBox();
@@ -235,11 +238,12 @@ namespace PTSharpCore
                     zs.Add(box.Max.z); 
                 }
 
-                xs.Sort();
-                ys.Sort();
-                zs.Sort();
-
+                xs.AsParallel().AsOrdered();
+                ys.AsParallel().AsOrdered();
+                zs.AsParallel().AsOrdered();
+                
                 (double mx, double my, double mz) = (Median(xs), Median(ys), Median(zs));
+                
                 var best = (int)(Shapes.Length * 0.85);
                 var bestAxis = Axis.AxisNone;
                 var bestPoint = 0.0;

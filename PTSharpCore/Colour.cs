@@ -84,11 +84,11 @@ namespace PTSharpCore
         public static int getIntFromColor(double red, double green, double blue)
         {
             if (double.IsNaN(red))
-                red = 0.0f;
+                red = 0;
             if (double.IsNaN(green))
-                green = 0.0f;
+                green = 0;
             if (double.IsNaN(blue))
-                blue = 0.0f;
+                blue = 0;
 
             var r = (int)(256 * Math.Clamp(red, 0.0, 0.999));
             var g = (int)(256 * Math.Clamp(green, 0.0, 0.999));

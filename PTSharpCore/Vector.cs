@@ -8,6 +8,7 @@ namespace PTSharpCore
     struct Vector
     {
         public static Vector ORIGIN = new Vector(0, 0, 0);
+
         public double x, y, z, w;
         
         public Vector(double x, double y, double z)
@@ -17,7 +18,6 @@ namespace PTSharpCore
             this.z = z;
             w = 1.0;
             Index = 0;
-
         }
         public Vector(double x, double y, double z, double w)
         {
@@ -33,7 +33,6 @@ namespace PTSharpCore
 
         public int Index { get; internal set; }
 
-        // Operators
         public static Vector operator +(Vector a, Vector v)
         {
             return new Vector(a.x + v.x, a.y + v.y, a.z + v.z, a.w + v.w);
@@ -44,7 +43,6 @@ namespace PTSharpCore
             return new Vector(a.x - v.x, a.y - v.y, a.z - v.z, a.w - v.w);
         }
 
-        // Dot product
         public static double operator *(Vector a, Vector v)
         {
             return (a.x * v.x) + (a.y * v.y) + (a.z * v.z);
@@ -55,13 +53,11 @@ namespace PTSharpCore
             return new Vector(c * v.x, c * v.y, c * v.z, v.w);
         }
 
-        // Cross product
         public static Vector operator ^(Vector a, Vector v)
         {
             return new Vector(a.y * v.z - a.z * v.y, a.z * v.x - a.x * v.z, a.x * v.y - a.y * v.x, a.w);
         }
 
-        // Componentwise Multiply
         public static Vector operator %(Vector a, Vector v)
         {
             return new Vector(a.x * v.x, a.y * v.y, a.z * v.z, a.w * v.w);
@@ -77,7 +73,6 @@ namespace PTSharpCore
             return new Vector(a.x / c, a.y / c, a.z / c, a.w);
         }
 
-        // Unary Minus
         public static Vector operator -(Vector v)
         {
             return new Vector(-v.x, -v.y, -v.z, v.w);
@@ -93,7 +88,7 @@ namespace PTSharpCore
         {
             var z = rand.NextDouble() * 2.0 - 1.0;
             var a = rand.NextDouble() * 2.0 * Math.PI;
-            var r = Math.Sqrt(1.0f - z * z);
+            var r = Math.Sqrt(1.0 - z * z);
             var x = Math.Sin(a);
             var y = Math.Cos(a);
             return new Vector(r * x, r * y, z);

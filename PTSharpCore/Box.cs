@@ -1,5 +1,6 @@
 using PTSharpCore;
 using System;
+using System.Threading;
 
 namespace PTSharpCore
 {
@@ -7,8 +8,8 @@ namespace PTSharpCore
     {
         internal Vector Min;
         internal Vector Max;
-        internal bool left;
-        internal bool right;
+        internal static ThreadLocal<bool> left = new();
+        internal static ThreadLocal<bool> right = new();
 
         internal Box() { }
 
@@ -86,9 +87,8 @@ namespace PTSharpCore
             {
                 (z1, z2) = (z2, z1);
             }
-            var t1 = Math.Max(Math.Max(x1, y1), z1);
-            var t2 = Math.Min(Math.Min(x2, y2), z2);
-            return (t1, t2);
+            
+            return (Math.Max(Math.Max(x1, y1), z1), Math.Min(Math.Min(x2, y2), z2));
         }
 
         public (bool, bool) Partition(Axis axis, double point)
@@ -96,19 +96,19 @@ namespace PTSharpCore
             switch (axis)
             {
                 case Axis.AxisX:
-                    left = Min.x <= point;
-                    right = Max.x >= point;
+                    left.Value = Min.x <= point;
+                    right.Value = Max.x >= point;
                     break;
                 case Axis.AxisY:
-                    left = Min.y <= point;
-                    right = Max.y >= point;
+                    left.Value = Min.y <= point;
+                    right.Value = Max.y >= point;
                     break;
                 case Axis.AxisZ:
-                    left = Min.z <= point;
-                    right = Max.z >= point;
+                    left.Value = Min.z <= point;
+                    right.Value = Max.z >= point;
                     break;
             }
-            return (left, right);
+            return (left.Value, right.Value);
         }
     }
 }

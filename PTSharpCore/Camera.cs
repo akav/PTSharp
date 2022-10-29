@@ -13,8 +13,7 @@ namespace PTSharpCore
         public double apertureRadius;
         public double fovy;
         public double theta;
-
-
+        
         public Camera() { }
 
         public static Camera LookAt(Vector eye, Vector center, Vector up, double fovy)
@@ -41,24 +40,21 @@ namespace PTSharpCore
             double aspect = w / (double)h;
             var px = ((x + u - 0.5) / (w - 1.0)) * 2 - 1;
             var py = ((y + v - 0.5) / (h - 1.0)) * 2 - 1;
-            Vector d = new Vector();
-            d = d.Add(this.u.MulScalar(-px * aspect));
-            d = d.Add(this.v.MulScalar(-py));
-            d = d.Add(this.w.MulScalar(m));
-            d = d.Normalize();
+            
+            Vector d = new Vector().Add(this.u.MulScalar(-px * aspect)).Add(this.v.MulScalar(-py)).Add(this.w.MulScalar(m)).Normalize();
+
             var p = this.p;
+            
             if (apertureRadius > 0)
             {
                 var focalPoint = this.p.Add(d.MulScalar(focalDistance));
-                var angle = rand.NextDouble() * 2.0f * Math.PI;
+                var angle = rand.NextDouble() * 2.0 * Math.PI;
                 var radius = rand.NextDouble() * apertureRadius;
-                p = p.Add(this.u.MulScalar(Math.Cos(angle) * radius));
-                p = p.Add(this.v.MulScalar(Math.Sin(angle) * radius));
+                p = p.Add(this.u.MulScalar(Math.Cos(angle) * radius)).Add(this.v.MulScalar(Math.Sin(angle) * radius));
                 d = focalPoint.Sub(p).Normalize();
             }
+            
             return new Ray(p, d);
-        }
-
-        
+        }        
     }
 }

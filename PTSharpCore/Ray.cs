@@ -16,14 +16,15 @@ namespace PTSharpCore
 
         internal Vector Position(double t) => Origin.Add(Direction.MulScalar(t));
 
-        internal Ray Reflect(Ray i) => new Ray(Origin, Direction.Reflect(i.Direction));
+        public Ray Reflect(Ray i) => new Ray(Origin, Direction.Reflect(i.Direction));
 
         public Ray Refract(Ray i, double n1, double n2) => new Ray(Origin, Direction.Refract(i.Direction, n1, n2));
 
         public double Reflectance(Ray i, double n1, double n2) => Direction.Reflectance(i.Direction, n1, n2);
 
-        public Ray WeightedBounce(double u, double v, Random rand)
+        public Ray WeightedBounce(double u, double v)
         {
+            var rand = ConcurrentRandom.Instance;
             var radius = Math.Sqrt(u);
             var theta = 2 * Math.PI * v;
             var s = Direction.Cross(Vector.RandomUnitVector(rand)).Normalize();
@@ -81,7 +82,7 @@ namespace PTSharpCore
             }
             else
             {
-                return (n.WeightedBounce(u, v, rand), false, 1 - p);
+                return (n.WeightedBounce(u, v), false, 1 - p);
             }
         }
     }

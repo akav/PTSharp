@@ -52,7 +52,7 @@ namespace PTSharpCore
             return true;
         }
 
-        Vector[] PoissonDisc(double x1, double y1, double x2, double y2, double r, int n)
+        Vector[] PoissonDisc(double x1, double y1, double x2, double y2, double r, int n, Random rand)
         {
             Vector[] result;
             var x = x1 + (x2 - x1) / 2;
@@ -67,14 +67,14 @@ namespace PTSharpCore
             {
                 // Need non-negative random integers
                 // must be a non-negative pseudo-random number in [0,n).
-                int index = Random.Shared.Next(active.Length);
+                int index = ConcurrentRandom.Instance.Next(active.Length);
                 Vector point = active.ElementAt(index);
                 bool ok = false;
 
                 for (int i = 0; i < n; i++)
                 {
-                    double a = Random.Shared.NextDouble() * 2 * Math.PI;
-                    double d = Random.Shared.NextDouble() * r + r;
+                    double a = rand.NextDouble() * 2 * Math.PI;
+                    double d = rand.NextDouble() * r + r;
                     x = point.x + Math.Cos(a) * d;
                     y = point.y + Math.Sin(a) * d;
                     if (x < x1 || y < y1 || x > x2 || y > y2)

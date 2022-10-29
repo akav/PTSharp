@@ -33,7 +33,9 @@ namespace PTSharpCore
         {
             var n = Min.Sub(r.Origin).Div(r.Direction);
             var f = Max.Sub(r.Origin).Div(r.Direction);
+            
             (n, f) = (n.Min(f), n.Max(f));
+
             var t0 = Math.Max(Math.Max(n.x, n.y), n.z);
             var t1 = Math.Min(Math.Min(f.x, f.y), f.z);
 
@@ -41,6 +43,7 @@ namespace PTSharpCore
             {
                 return new Hit(this, t0, null);
             }
+
             return Hit.NoHit;
         }
 
