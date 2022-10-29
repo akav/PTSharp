@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace PTSharpCore
 {
-    class Box
+    public class Box
     {
         internal Vector Min;
         internal Vector Max;

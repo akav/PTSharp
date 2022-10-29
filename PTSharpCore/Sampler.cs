@@ -115,8 +115,8 @@ namespace PTSharpCore
                 {
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
-                        var fu = (u + rand.NextDouble()) / n;
-                        var fv = (v + rand.NextDouble()) / n;
+                        var fu = (u + Random.Shared.NextDouble()) / n;
+                        var fv = (v + Random.Shared.NextDouble()) / n;
                         
                         (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode, rand);
 
@@ -128,7 +128,7 @@ namespace PTSharpCore
                         if (p > 0 && reflected)
                         {
                             // specular
-                            var indirect = sample(scene, newRay, reflected, 1, Interlocked.Increment(ref depth), rand);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared);
                             var tinted = indirect.Mix(material.Color.Mul(indirect), material.Tint);
                             result = result.Add(tinted.MulScalar(p));
                         }
@@ -136,7 +136,7 @@ namespace PTSharpCore
                         if (p > 0 && !reflected)
                         {
                             // diffuse
-                            var indirect = sample(scene, newRay, reflected, 1, Interlocked.Increment(ref depth), rand);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared);
                             var direct = Colour.Black;
 
                             if (DirectLighting)

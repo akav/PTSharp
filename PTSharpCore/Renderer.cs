@@ -247,8 +247,8 @@ namespace PTSharpCore
                         var y = index / w;
                         var fu = Random.Shared.NextDouble();
                         var fv = Random.Shared.NextDouble();
-                        rayBuffer.TryAdd((x, y), camera.CastRay(x, y, w, h, fu, fv, rand));
-                        buf.AddSample(x, y, sampler.Sample(scene, rayBuffer[(x, y)], rand));
+                        rayBuffer.TryAdd((x, y), camera.CastRay(x, y, w, h, fu, fv, Random.Shared));
+                        buf.AddSample(x, y, sampler.Sample(scene, rayBuffer[(x, y)], Random.Shared));
                     });
                 }
             }
