@@ -27,7 +27,7 @@ namespace PTSharpCore
 
         public void AddSample(Colour sample)
         {
-            Interlocked.Increment(ref Samples);
+            Samples++;
             if (Samples.Equals(1))
             {
                 M = sample;
@@ -124,13 +124,10 @@ namespace PTSharpCore
             
             if (channel == Channel.SamplesChannel)
             {  
-                for (int y = 0; y < H; y++)
+                foreach (var p in Pixels)
                 {
-                    for (int x = 0; x < W; x++)
-                    {
-                        maxSamples = Math.Max(maxSamples, Pixels[(x, y)].Samples);//Pixels[y * W + x].Samples);
-                    }
-                }
+                    maxSamples = Math.Max(maxSamples,p.Value.Samples); //Pixels[(x, y)].Samples);//Pixels[y * W + x].Samples);
+                }   
             }
 
             for (int y = 0; y < H; y++)

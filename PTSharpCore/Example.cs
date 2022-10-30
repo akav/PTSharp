@@ -9,8 +9,6 @@ using System.IO;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
-using static Microsoft.FSharp.Core.ByRefKinds;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace PTSharpCore
 {
@@ -476,6 +474,7 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(fn * 2, fn * 2, fn * 2), new Vector(0, 0, fn / 4), new Vector(0, 0, 1), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
+            renderer.FireflySamples = 128;
             renderer.IterativeRender("qbert.png", 1000); 
         }
 
@@ -517,7 +516,7 @@ namespace PTSharpCore
             scene.Add(Cube.NewCube(new Vector(-1000, -1, -1000), new Vector(1000, 0, 1000), Material.GlossyMaterial(Colour.HexColor(0xFFFFFF), 1.4F, Util.Radians(20))));
             scene.Add(Sphere.NewSphere(new Vector(0, 5, 0), 1, Material.LightMaterial(Colour.White, 25)));
             var camera = Camera.LookAt(new Vector(0, 3, 6), new Vector(0, 1, 0), new Vector(0, 1, 0), 30);
-            var sampler = DefaultSampler.NewSampler(16, 16);
+            var sampler = DefaultSampler.NewSampler(128, 8);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
             renderer.FireflySamples = 32;
             renderer.IterativeRender("materialspheres.png", 100);

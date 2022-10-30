@@ -1,4 +1,4 @@
-using NativeInteropEx;
+using STLDotNet6.Formats.StereoLithography;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -6,6 +6,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+
 
 namespace PTSharpCore
 {
@@ -36,11 +37,11 @@ namespace PTSharpCore
         struct STLTriangle
         {
             // 4 * 3 * 4 byte + 2 byte = 50 byte
-            public  STLVector Normal;
-            public  STLVector A;
-            public  STLVector B;
-            public  STLVector C;
-            public  ushort AttributeByteCount;
+            public STLVector Normal;
+            public STLVector A;
+            public STLVector B;
+            public STLVector C;
+            public ushort AttributeByteCount;
 
             public STLTriangle(
                 STLVector normalVec,
@@ -76,10 +77,10 @@ namespace PTSharpCore
                     new STLVector(0, 0, 1),
                     new STLVector(1, 0, 0)),
         };
-    
+
         public static Mesh Load(String filePath, Material material)
         {
-          
+
             byte[] buffer = new byte[80];
             FileInfo fi = new(filePath);
             BinaryReader reader;
@@ -90,7 +91,7 @@ namespace PTSharpCore
                 Console.WriteLine("Loading STL:" + filePath);
                 size = fi.Length;
                 bool isReadOnly = fi.IsReadOnly;
-                
+
                 using (reader = new BinaryReader(File.Open(filePath, FileMode.Open)))
                 {
                     buffer = reader.ReadBytes(80);
@@ -99,11 +100,13 @@ namespace PTSharpCore
                     string code = reader.ReadByte().ToString() + reader.ReadByte().ToString();
                     reader.BaseStream.Close();
 
-                    //Console.WriteLine("Code = " + code);
+                    Console.WriteLine("Code = " + code);
                     if (code.Equals("00") || code.Equals("10181") || code.Equals("8689") || code.Equals("19593"))
                     {
                         return LoadSTLB(filePath, material);
-                    } else {
+                    }
+                    else
+                    {
                         return LoadSTLA(filePath, material);
                     }
                 }
@@ -212,14 +215,14 @@ namespace PTSharpCore
                             line = file.ReadLine();
                             counter++;
                         }
-                        
+
                         if (line.Contains("endloop"))
                         {
                             //Console.WriteLine("End loop");
                             line = file.ReadLine();
                             counter++;
                         }
-                        
+
                         if (line.Contains("endfacet"))
                         {
                             //Console.WriteLine("End facet");
@@ -251,26 +254,40 @@ namespace PTSharpCore
             return Mesh.NewMesh(triangles.ToArray());
         }
 
-       public static Mesh LoadSTLB(String filename, Material material)
+        public static Mesh LoadSTLB(String filename, Material material)
         {
             string header;
             STLTriangle[] mesh;
-
-            using (var br = new BinaryReader(File.OpenRead(filename), Encoding.ASCII))
-            {
-                header = Encoding.ASCII.GetString(br.ReadBytes(80));
-                var triCount = br.ReadUInt32();
-                mesh = br.BaseStream.ReadUnmanagedStructRange<STLTriangle>((int)triCount);
-            }
-
             List<Triangle> tlist = new List<Triangle>();
 
-            foreach (STLTriangle m in mesh)
+            try
             {
-                Triangle t = new Triangle(new Vector(m.A.x, m.A.y, m.A.z), new Vector(m.B.x, m.B.y, m.B.z), new Vector(m.C.x, m.C.y, m.C.z), material);
-                t.FixNormals();
-                tlist.Add(t);
+                STLDocument? stlBinary = null;
+
+                using (Stream stream = File.Open(filename, FileMode.Open))
+                {
+                    using (BinaryReader reader = new BinaryReader(stream))
+                    {
+                        {
+                            stlBinary = STLDocument.Read(reader);
+                        }
+                    }
+                }
+
+                foreach (var facet in stlBinary.Facets)
+                {
+                    Triangle t = new Triangle(new Vector(facet.Vertices[0].X, facet.Vertices[0].Y, facet.Vertices[0].Z),
+                                              new Vector(facet.Vertices[1].X, facet.Vertices[1].Y, facet.Vertices[1].Z),
+                                              new Vector(facet.Vertices[2].X, facet.Vertices[2].Y, facet.Vertices[2].Z), material);
+                    t.FixNormals();
+                    tlist.Add(t);
+                }
             }
+            catch (Exception ex)
+            {
+                ex.ToString();
+            }
+
             return Mesh.NewMesh(tlist.ToArray());
         }
     }

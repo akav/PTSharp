@@ -31,13 +31,16 @@ namespace PTSharpCore
 
         Hit IShape.Intersect(Ray r)
         {
-            var n = Min.Sub(r.Origin).Div(r.Direction);
-            var f = Max.Sub(r.Origin).Div(r.Direction);
-            
-            (n, f) = (n.Min(f), n.Max(f));
+            //var n = Min.Sub(r.Origin).Div(r.Direction);
+            //var f = Max.Sub(r.Origin).Div(r.Direction);
 
-            var t0 = Math.Max(Math.Max(n.x, n.y), n.z);
-            var t1 = Math.Min(Math.Min(f.x, f.y), f.z);
+            (var n, var f) = (Min.Sub(r.Origin).Div(r.Direction), Max.Sub(r.Origin).Div(r.Direction));
+            (n,f) = (n.Min(f), n.Max(f));
+
+            //var t0 = Math.Max(Math.Max(n.x, n.y), n.z);
+            //var t1 = Math.Min(Math.Min(f.x, f.y), f.z);
+
+            (var t0, var t1) = (Math.Max(Math.Max(n.x, n.y), n.z), Math.Min(Math.Min(f.x, f.y), f.z));
 
             if (t0 > 0 && t0 < t1)
             {

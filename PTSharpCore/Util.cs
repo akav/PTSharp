@@ -23,7 +23,7 @@ namespace PTSharpCore
             var m1 = Math.Sin(theta);
             var m2 = Math.Cos(theta);
             var a = v * 2 * Math.PI;
-            var q = Vector.RandomUnitVector(rand);
+            var q = Vector.RandomUnitVector(Random.Shared);
             var s = direction.Cross(q);
             var t = direction.Cross(s);
             var d = new Vector().Add(s.MulScalar(m1 * Math.Cos(a))).Add(t.MulScalar(m1 * Math.Sin(a))).Add(direction.MulScalar(m2)).Normalize();

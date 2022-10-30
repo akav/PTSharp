@@ -26,7 +26,7 @@ namespace PTSharpCore
 
         public HitInfo Info(Ray r)
         {
-            if (HitInfo != null)
+            if (HitInfo is not null)
                 return HitInfo;
             
             var shape = Shape;
@@ -34,6 +34,7 @@ namespace PTSharpCore
             var normal = shape.NormalAt(position);
             var material = Material.MaterialAt(shape, position);
             var inside = false;
+            
             if (normal.Dot(r.Direction) > 0)
             {
                 normal = normal.Negate();
@@ -48,7 +49,9 @@ namespace PTSharpCore
                         break;
                 }
             }
+            
             Ray ray = new Ray(position, normal);
+            
             return new HitInfo(shape, position, normal, ray, material, inside);
         }
     }

@@ -1,3 +1,4 @@
+using ILGPU.Algorithms.Random;
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -93,12 +94,37 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector RandomUnitVector(Random rand)
         {
-            var z = rand.NextDouble() * 2.0 - 1.0;
-            var a = rand.NextDouble() * 2.0 * Math.PI;
+            var z = Random.Shared.NextDouble() * 2.0 - 1.0;
+            var a = Random.Shared.NextDouble() * 2.0 * Math.PI;
             var r = Math.Sqrt(1.0 - z * z);
             var x = Math.Sin(a);
             var y = Math.Cos(a);
             return new Vector(r * x, r * y, z);
+
+            /*for(; ; ) 
+            {
+                double x, y, z;
+
+                if(rand is null) 
+                {
+                    x = rand.NextDouble() * 2 - 1;
+                    y = rand.NextDouble() * 2 - 1;
+                    z = rand.NextDouble() * 2 - 1;
+                }
+                else
+                {
+                    x = Random.Shared.NextDouble() * 2 - 1;
+                    y = Random.Shared.NextDouble() * 2 - 1;
+                    z = Random.Shared.NextDouble() * 2 - 1;
+                }
+
+                if(x * x + y * y + z * z > 1)
+                {
+                    continue;
+                }
+
+                return new Vector(x, y, z).Normalize();
+            }*/
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

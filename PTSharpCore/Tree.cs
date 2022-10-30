@@ -135,6 +135,7 @@ namespace PTSharpCore
             internal Hit IntersectShapes(Ray r)
             {
                 Hit hit = Hit.NoHit;
+
                 foreach (var shape in Shapes)
                 {
                     Hit h = shape.Intersect(r);
@@ -276,8 +277,8 @@ namespace PTSharpCore
                 (var l, var r) = Partition(best, bestAxis, bestPoint);
                 Axis = bestAxis;
                 Point = bestPoint;
-                Left = NewNode(l);
-                Right = NewNode(r);
+                
+                (Left, Right) = (NewNode(l), NewNode(r));
                 Left.Split(depth + 1);
                 Right.Split(depth + 1);
                 Shapes = null; // only needed at leaf nodes

@@ -77,7 +77,7 @@ namespace PTSharpCore
             // Stop watch timer 
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            
+
             // Random Number Generator from on Math.Numerics
             var rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
 
@@ -137,7 +137,6 @@ namespace PTSharpCore
 
                         if (FireflySamples > 0)
                         {
-
                             if (PBuffer.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
                             {
                                 for (int e = 0; e < FireflySamples; e++)
@@ -163,13 +162,26 @@ namespace PTSharpCore
         {
             view[index] = rng.NextDouble();
         }
-                
-        public void RenderParallel(Accelerator a, Device dev)
+
+        //public void RenderParallel(Accelerator a, Device dev)
+        public void RenderParallel()
         {
             Scene scene = Scene;
             Camera camera = Camera;
             Sampler sampler = Sampler;
+
+            //ThreadLocal<Sampler> sampler = new ThreadLocal<Sampler>(() =>
+            //{
+            //    return Sampler;
+            //});
+
             Buffer buf = PBuffer;
+
+            //ThreadLocal<Buffer> buf = new ThreadLocal<Buffer>(() =>
+            //{
+            //   return PBuffer;
+            //});
+
             (int w, int h) = (buf.W, buf.H);
             int spp = SamplesPerPixel;
             int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
@@ -199,19 +211,19 @@ namespace PTSharpCore
             po.MaxDegreeOfParallelism = Environment.ProcessorCount;
 
             var numbers = Enumerable.Range(0, w * h).ToList();
-            
+
             // Experiment:
             // Use ILGPU to generate an array of random numbers
-            using var rng = RNG.Create<XorShift64Star>(a, rand);
-            var rngView = rng.GetView(a.WarpSize);
-            using var bufferfu = a.Allocate1D<double>(w*h);
-            var kernelfu = a.LoadAutoGroupedStreamKernel<Index1D, RNGView<XorShift64Star>, ArrayView1D<double, Stride1D.Dense>>(MyRandomKernel);
-            kernelfu((int)bufferfu.Length, rngView, bufferfu.View);
+            //using var rng = RNG.Create<XorShift64Star>(a, rand);
+            //var rngView = rng.GetView(a.WarpSize);
+            //using var bufferfu = a.Allocate1D<double>(w * h);
+            //var kernelfu = a.LoadAutoGroupedStreamKernel<Index1D, RNGView<XorShift64Star>, ArrayView1D<double, Stride1D.Dense>>(MyRandomKernel);
+            //kernelfu((int)bufferfu.Length, rngView, bufferfu.View);
 
-            ThreadLocal<double[]> fuRandomValues = new ThreadLocal<double[]>(() =>
-            {
-                return bufferfu.GetAsArray1D();
-            });
+            //ThreadLocal<double[]> fuRandomValues = new ThreadLocal<double[]>(() =>
+            //{
+            //    return bufferfu.GetAsArray1D();
+            //});
 
             Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
 
@@ -226,8 +238,8 @@ namespace PTSharpCore
                           {
                               var fu = (u + 0.5) / sppRoot;
                               var fv = (v + 0.5) / sppRoot;
-                              Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                              Colour sample = sampler.Sample(scene, ray, rand);
+                              var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                              var sample = sampler.Sample(scene, ray, rand);
                               buf.AddSample(x, y, sample);
                           }
                       }
@@ -237,7 +249,7 @@ namespace PTSharpCore
             {
                 //Random subsampling
                 ConcurrentDictionary<(int, int), Ray> rayBuffer = new ConcurrentDictionary<(int, int), Ray>();
-                ThreadLocal<Colour> colourLocal = new();                
+                ThreadLocal<Colour> colourLocal = new();
 
                 for (int j = 0; j < spp; j++)
                 {
@@ -247,8 +259,10 @@ namespace PTSharpCore
                         var y = index / w;
                         var fu = Random.Shared.NextDouble();
                         var fv = Random.Shared.NextDouble();
-                        rayBuffer.TryAdd((x, y), camera.CastRay(x, y, w, h, fu, fv, Random.Shared));
-                        buf.AddSample(x, y, sampler.Sample(scene, rayBuffer[(x, y)], Random.Shared));
+                        var c = sampler.Sample(scene, camera.CastRay(x, y, w, h, fu, fv, Random.Shared), Random.Shared);
+                        buf.AddSample(x, y, c);
+                        //rayBuffer.TryAdd((x, y), camera.CastRay(x, y, w, h, fu, fv, Random.Shared));
+                        //buf.AddSample(x, y, sampler.Sample(scene, rayBuffer[(x, y)], Random.Shared));
                     });
                 }
             }
@@ -288,7 +302,7 @@ namespace PTSharpCore
                   });
             }
             Console.WriteLine("time elapsed:" + sw.Elapsed);
-            
+
             sw.Stop();
         }
 
@@ -297,11 +311,11 @@ namespace PTSharpCore
             iterations = iter;
             System.Drawing.Bitmap finalrender = null;
 
-            using Context context = Context.Create(builder => builder.Default().EnableAlgorithms());
-            Device dev = context.GetPreferredDevice(preferCPU: false);
-            using var accelerator = dev.CreateAccelerator(context);
+            //using Context context = Context.Create(builder => builder.Default().EnableAlgorithms());
+            //Device dev = context.GetPreferredDevice(preferCPU: false);
+            //using var accelerator = dev.CreateAccelerator(context);
             //Console.WriteLine($"Performing operations on {accelerator}\n");
-            
+
             for (int i = 1; i < iterations; i++)
             {
                 Console.WriteLine("Iterations " + i + " of " + iterations);
@@ -311,14 +325,15 @@ namespace PTSharpCore
                 }
                 else
                 {
-                    RenderParallel(accelerator, dev);
+                    //RenderParallel(accelerator, dev);
+                    RenderParallel();
                 }
                 this.pathTemplate = pathTemplate;
                 finalrender = PBuffer.Image(Channel.ColorChannel);
                 finalrender.Save(pathTemplate);
             }
 
-            accelerator.Dispose();
+            //accelerator.Dispose();
             return PBuffer.Image(Channel.ColorChannel);
         }
 

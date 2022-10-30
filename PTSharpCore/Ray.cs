@@ -24,21 +24,17 @@ namespace PTSharpCore
 
         public Ray WeightedBounce(double u, double v)
         {
-            var rand = ConcurrentRandom.Instance;
+            //var rand = ConcurrentRandom.Instance;
             var radius = Math.Sqrt(u);
             var theta = 2 * Math.PI * v;
-            var s = Direction.Cross(Vector.RandomUnitVector(rand)).Normalize();
+            var s = Direction.Cross(Vector.RandomUnitVector(Random.Shared)).Normalize();
             var t = Direction.Cross(s);
-            var d = new Vector();
-            d = d.Add(s.MulScalar(radius * Math.Cos(theta)));
-            d = d.Add(t.MulScalar(radius * Math.Sin(theta)));
-            d = d.Add(Direction.MulScalar(Math.Sqrt(1 - u)));
-            return new Ray(Origin, d);
+            return new Ray(Origin, new Vector().Add(s.MulScalar(radius * Math.Cos(theta))).Add(t.MulScalar(radius * Math.Sin(theta))).Add(Direction.MulScalar(Math.Sqrt(1 - u))));
         }
 
         public Ray ConeBounce(double theta, double u, double v, Random rand)
         {
-            return new Ray(Origin, Util.Cone(Direction, theta, u, v, rand));
+            return new Ray(Origin, Util.Cone(Direction, theta, u, v, Random.Shared));
         }
 
         public (Ray, bool, double) Bounce(HitInfo info, double u, double v, BounceType bounceType, Random rand)
@@ -46,8 +42,7 @@ namespace PTSharpCore
             var n = info.Ray;
             var material = info.material;
             
-            var n1 = 1.0;
-            var n2 = material.Index;
+            var (n1, n2) = (1.0, material.Index);
             
             if (info.inside)
             {
@@ -59,7 +54,7 @@ namespace PTSharpCore
             switch (bounceType)
             {
                 case BounceType.BounceTypeAny:
-                    reflect = rand.NextDouble() < p;
+                    reflect = Random.Shared.NextDouble() < p;
                     break;
                 case BounceType.BounceTypeDiffuse:
                     reflect = false;
@@ -71,8 +66,7 @@ namespace PTSharpCore
 
             if (reflect)
             {
-                var reflected = n.Reflect(this);
-                return (reflected.ConeBounce(material.Gloss, u, v, rand), true, p);
+                return (n.Reflect(this).ConeBounce(material.Gloss, u, v, rand), true, p);
             }
             else if (material.Transparent)
             {

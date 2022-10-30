@@ -179,12 +179,19 @@ namespace PTSharpCore
             var u = new Vector(x01, x11, x21);
             var b = new Vector(x02, x12, x22);
             var t = new Vector(x03, x13, x23);
-            var xa = r.MulScalar(box.Min.x);
-            var xb = r.MulScalar(box.Max.x);
-            var ya = u.MulScalar(box.Min.y);
-            var yb = u.MulScalar(box.Max.y);
-            var za = b.MulScalar(box.Min.z);
-            var zb = b.MulScalar(box.Max.z);
+            
+            //var xa = r.MulScalar(box.Min.Value.x);
+            //var xb = r.MulScalar(box.Max.Value.x);
+            //var ya = u.MulScalar(box.Min.Value.y);
+            //var yb = u.MulScalar(box.Max.Value.y);
+            //var za = b.MulScalar(box.Min.Value.z);
+            //var zb = b.MulScalar(box.Max.Value.z);
+
+            (var xa, var xb) = ((r.MulScalar(box.Min.x)), (r.MulScalar(box.Max.x)));
+            (var ya, var yb) = ((u.MulScalar(box.Min.y)), (u.MulScalar(box.Max.y)));
+            (var za, var zb) = ((b.MulScalar(box.Min.z)), (b.MulScalar(box.Max.z)));
+
+
             (xa, xb) = (xa.Min(xb), xa.Max(xb));
             (ya, yb) = (ya.Min(yb), ya.Max(yb));
             (za, zb) = (za.Min(zb), za.Max(zb));
