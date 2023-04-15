@@ -8,12 +8,14 @@ using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
-    class Mesh : IShape
+    public class Mesh : IShape
     {
         public Triangle[] Triangles;
         Box box;
         Tree tree;
-        
+        public Colour Color { get; set; }
+        public Vector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         Mesh() { }
         
         internal Mesh(Triangle[] triangles_, Box box_, Tree tree_)
@@ -260,6 +262,6 @@ namespace PTSharpCore
             {
                 t.Material = material;
             }
-        }
+        }       
     }
 }

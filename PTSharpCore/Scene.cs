@@ -7,19 +7,22 @@ namespace PTSharpCore
     public class Scene
     {
         public Colour Color;
-        internal ITexture Texture = null;
-        internal double TextureAngle = 0;
-        private Tree tree;
-        internal int rays = 0;
+        public ITexture Texture = null;
+        public double TextureAngle = 0;
+        public Tree tree;
+        public int rays = 0;
+        public Colour BackgroundColor;
 
-        internal IShape[] Shapes; 
-        internal IShape[] Lights;
+        public IShape[] Shapes;
+        public IShape[] Lights;
+        public IShape[] PhysicalLights;
 
         public Scene() 
         {
-            Shapes = Array.Empty<IShape>(); // new IShape[0];
-            Lights = Array.Empty<IShape>(); //new IShape[0];
-            Color = new Colour();                                            
+            Shapes = Array.Empty<IShape>(); 
+            Lights = Array.Empty<IShape>(); 
+            Color = new Colour();
+            BackgroundColor = new Colour(0.1, 0.1, 0.1);
         }
 
         internal void Add(IShape p)
@@ -50,7 +53,6 @@ namespace PTSharpCore
         internal Hit Intersect(Ray r)
         {
             Interlocked.Increment(ref rays);
-            //rays++;
             return tree.Intersect(r);
         }
     }

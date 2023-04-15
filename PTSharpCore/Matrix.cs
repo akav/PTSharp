@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -7,49 +8,38 @@ namespace PTSharpCore
     
     public class Matrix
     {
-        public double x00, x01, x02, x03;
-        public double x10, x11, x12, x13;
-        public double x20, x21, x22, x23;
-        public double x30, x31, x32, x33;
+        public double M11, M12, M13, M14;
+        public double M21, M22, M23, M24;
+        public double M31, M32, M33, M34;
+        public double M41, M42, M43, M44;
 
         public Matrix(double x00, double x01, double x02, double x03,
                       double x10, double x11, double x12, double x13,
                       double x20, double x21, double x22, double x23,
                       double x30, double x31, double x32, double x33)
         {
-            this.x00 = x00; this.x01 = x01; this.x02 = x02; this.x03 = x03;
-            this.x10 = x10; this.x11 = x11; this.x12 = x12; this.x13 = x13;
-            this.x20 = x20; this.x21 = x21; this.x22 = x22; this.x23 = x23;
-            this.x30 = x30; this.x31 = x31; this.x32 = x32; this.x33 = x33;
+            this.M11 = x00; this.M12 = x01; this.M13 = x02; this.M14 = x03;
+            this.M21 = x10; this.M22 = x11; this.M23 = x12; this.M24 = x13;
+            this.M31 = x20; this.M32 = x21; this.M33 = x22; this.M34 = x23;
+            this.M41 = x30; this.M42 = x31; this.M43 = x32; this.M44 = x33;
         }
 
-        public Matrix()
-        {
-        }
+        public Matrix() {}
 
         internal static Matrix Identity = new Matrix(1, 0, 0, 0,
                                                      0, 1, 0, 0,
                                                      0, 0, 1, 0,
-                                                     0, 0, 0, 1);
+                                                     0, 0, 0, 1);       
 
+        internal Matrix Translate(Vector v) => new Matrix(1, 0, 0, v.X,
+            0, 1, 0, v.Y,
+            0, 0, 1, v.Z,
+            0, 0, 0, 1);       
 
-        
-
-        internal Matrix Translate(Vector v) => new Matrix(1, 0, 0, v.x,
-                              0, 1, 0, v.y,
-                              0, 0, 1, v.z,
-                              0, 0, 0, 1);
-
-        
-
-        internal Matrix Scale(Vector v) => new Matrix(v.x, 0, 0, 0,
-                              0, v.y, 0, 0,
-                              0, 0, v.z, 0,
-                              0, 0, 0, 1);
-
-
-
-        
+        internal Matrix Scale(Vector v) => new Matrix(v.X, 0, 0, 0,
+            0, v.Y, 0, 0,
+            0, 0, v.Z, 0,
+            0, 0, 0, 1);                
 
         internal Matrix Rotate(Vector v, double a)
         {
@@ -57,14 +47,11 @@ namespace PTSharpCore
             var s = Math.Sin(a);
             var c = Math.Cos(a);
             var m = 1 - c;
-            return new Matrix(m * v.x * v.x + c, m * v.x * v.y + v.z * s, m * v.z * v.x - v.y * s, 0,
-                              m * v.x * v.y - v.z * s, m * v.y * v.y + c, m * v.y * v.z + v.x * s, 0,
-                              m * v.z * v.x + v.y * s, m * v.y * v.z - v.x * s, m * v.z * v.z + c, 0,
+            return new Matrix(m * v.X * v.X + c, m * v.X * v.Y + v.Z * s, m * v.Z * v.X - v.Y * s, 0,
+                              m * v.X * v.Y - v.Z * s, m * v.Y * v.Y + c, m * v.Y * v.Z + v.X * s, 0,
+                              m * v.Z * v.X + v.Y * s, m * v.Y * v.Z - v.X * s, m * v.Z * v.Z + c, 0,
                               0, 0, 0, 1);
-        }
-
-
-        
+        }       
 
         internal Matrix Frustum(double l, double r, double b, double t, double n, double f)
         {
@@ -76,10 +63,7 @@ namespace PTSharpCore
                               0, t1 / t3, (t + b) / t3, 0,
                               0, 0, (-f - n) / t4, (-t1 * f) / t4,
                               0, 0, -1, 0);
-        }
-
-
-        
+        }       
 
         internal Matrix Orthographic(double l, double r, double b, double t, double n, double f)
         {
@@ -87,42 +71,32 @@ namespace PTSharpCore
                               0, 2 / (t - b), 0, -(t + b) / (t - b),
                               0, 0, -2 / (f - n), -(f + n) / (f - n),
                               0, 0, 0, 1);
-        }
-
-
-        
+        }       
 
         internal Matrix Perspective(double fovy, double aspect, double near, double far)
         {
             double ymax = near * Math.Tan(fovy * Math.PI / 360);
             double xmax = ymax * aspect;
             return Frustum(-xmax, xmax, -ymax, ymax, near, far);
-        }
+        }       
 
-
-        
-
-        internal Matrix LookAtMatrix(Vector eye, Vector center, Vector up)
+        public Matrix LookAtMatrix(Vector eye, Vector center, Vector up)
         {
             up = up.Normalize();
             var f = center.Sub(eye).Normalize();
             var s = f.Cross(up).Normalize();
             var u = s.Cross(f);
 
-            var m = new Matrix(s.x, u.x, f.x, 0,
-                               s.y, u.y, f.y, 0,
-                               s.z, u.z, f.z, 0,
+            var m = new Matrix(s.X, u.X, f.X, 0,
+                               s.Y, u.Y, f.Y, 0,
+                               s.Z, u.Z, f.Z, 0,
                                0, 0, 0, 1);
 
             return m.Transpose().Inverse().Translate(m, eye);
         }
 
-
-        
         internal Matrix Translate(Matrix m, Vector v) => new Matrix().Translate(v).Mul(m);
-
-
-        
+                
         public Matrix Scale(Matrix m, Vector v) => Scale(v).Mul(m);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -132,40 +106,40 @@ namespace PTSharpCore
         public Matrix Mul(Matrix b)
         {
             Matrix m = new Matrix();
-            m.x00 = x00 * b.x00 + x01 * b.x10 + x02 * b.x20 + x03 * b.x30;
-            m.x10 = x10 * b.x00 + x11 * b.x10 + x12 * b.x20 + x13 * b.x30;
-            m.x20 = x20 * b.x00 + x21 * b.x10 + x22 * b.x20 + x23 * b.x30;
-            m.x30 = x30 * b.x00 + x31 * b.x10 + x32 * b.x20 + x33 * b.x30;
-            m.x01 = x00 * b.x01 + x01 * b.x11 + x02 * b.x21 + x03 * b.x31;
-            m.x11 = x10 * b.x01 + x11 * b.x11 + x12 * b.x21 + x13 * b.x31;
-            m.x21 = x20 * b.x01 + x21 * b.x11 + x22 * b.x21 + x23 * b.x31;
-            m.x31 = x30 * b.x01 + x31 * b.x11 + x32 * b.x21 + x33 * b.x31;
-            m.x02 = x00 * b.x02 + x01 * b.x12 + x02 * b.x22 + x03 * b.x32;
-            m.x12 = x10 * b.x02 + x11 * b.x12 + x12 * b.x22 + x13 * b.x32;
-            m.x22 = x20 * b.x02 + x21 * b.x12 + x22 * b.x22 + x23 * b.x32;
-            m.x32 = x30 * b.x02 + x31 * b.x12 + x32 * b.x22 + x33 * b.x32;
-            m.x03 = x00 * b.x03 + x01 * b.x13 + x02 * b.x23 + x03 * b.x33;
-            m.x13 = x10 * b.x03 + x11 * b.x13 + x12 * b.x23 + x13 * b.x33;
-            m.x23 = x20 * b.x03 + x21 * b.x13 + x22 * b.x23 + x23 * b.x33;
-            m.x33 = x30 * b.x03 + x31 * b.x13 + x32 * b.x23 + x33 * b.x33;
+            m.M11 = M11 * b.M11 + M12 * b.M21 + M13 * b.M31 + M14 * b.M41;
+            m.M21 = M21 * b.M11 + M22 * b.M21 + M23 * b.M31 + M24 * b.M41;
+            m.M31 = M31 * b.M11 + M32 * b.M21 + M33 * b.M31 + M34 * b.M41;
+            m.M41 = M41 * b.M11 + M42 * b.M21 + M43 * b.M31 + M44 * b.M41;
+            m.M12 = M11 * b.M12 + M12 * b.M22 + M13 * b.M32 + M14 * b.M42;
+            m.M22 = M21 * b.M12 + M22 * b.M22 + M23 * b.M32 + M24 * b.M42;
+            m.M32 = M31 * b.M12 + M32 * b.M22 + M33 * b.M32 + M34 * b.M42;
+            m.M42 = M41 * b.M12 + M42 * b.M22 + M43 * b.M32 + M44 * b.M42;
+            m.M13 = M11 * b.M13 + M12 * b.M23 + M13 * b.M33 + M14 * b.M43;
+            m.M23 = M21 * b.M13 + M22 * b.M23 + M23 * b.M33 + M24 * b.M43;
+            m.M33 = M31 * b.M13 + M32 * b.M23 + M33 * b.M33 + M34 * b.M43;
+            m.M43 = M41 * b.M13 + M42 * b.M23 + M43 * b.M33 + M44 * b.M43;
+            m.M14 = M11 * b.M14 + M12 * b.M24 + M13 * b.M34 + M14 * b.M44;
+            m.M24 = M21 * b.M14 + M22 * b.M24 + M23 * b.M34 + M24 * b.M44;
+            m.M34 = M31 * b.M14 + M32 * b.M24 + M33 * b.M34 + M34 * b.M44;
+            m.M44 = M41 * b.M14 + M42 * b.M24 + M43 * b.M34 + M44 * b.M44;
             return m;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector MulPosition(Vector b)
         {
-            var x = x00 * b.x + x01 * b.y + x02 * b.z + x03;
-            var y = x10 * b.x + x11 * b.y + x12 * b.z + x13;
-            var z = x20 * b.x + x21 * b.y + x22 * b.z + x23;
+            var x = M11 * b.X + M12 * b.Y + M13 * b.Z + M14;
+            var y = M21 * b.X + M22 * b.Y + M23 * b.Z + M24;
+            var z = M31 * b.X + M32 * b.Y + M33 * b.Z + M34;
 
             return new Vector(x, y, z);
         }
 
         public Vector MulDirection(Vector b)
         {
-            var x = x00 * b.x + x01 * b.y + x02 * b.z;
-            var y = x10 * b.x + x11 * b.y + x12 * b.z;
-            var z = x20 * b.x + x21 * b.y + x22 * b.z;
+            var x = M11 * b.X + M12 * b.Y + M13 * b.Z;
+            var y = M21 * b.X + M22 * b.Y + M23 * b.Z;
+            var z = M31 * b.X + M32 * b.Y + M33 * b.Z;
             return new Vector(x, y, z).Normalize();
         }
 
@@ -175,23 +149,14 @@ namespace PTSharpCore
 
         public Box MulBox(Box box)
         {
-            var r = new Vector(x00, x10, x20);
-            var u = new Vector(x01, x11, x21);
-            var b = new Vector(x02, x12, x22);
-            var t = new Vector(x03, x13, x23);
-            
-            //var xa = r.MulScalar(box.Min.Value.x);
-            //var xb = r.MulScalar(box.Max.Value.x);
-            //var ya = u.MulScalar(box.Min.Value.y);
-            //var yb = u.MulScalar(box.Max.Value.y);
-            //var za = b.MulScalar(box.Min.Value.z);
-            //var zb = b.MulScalar(box.Max.Value.z);
-
-            (var xa, var xb) = ((r.MulScalar(box.Min.x)), (r.MulScalar(box.Max.x)));
-            (var ya, var yb) = ((u.MulScalar(box.Min.y)), (u.MulScalar(box.Max.y)));
-            (var za, var zb) = ((b.MulScalar(box.Min.z)), (b.MulScalar(box.Max.z)));
-
-
+            var r = new Vector(M11, M21, M31);
+            var u = new Vector(M12, M22, M32);
+            var b = new Vector(M13, M23, M33);
+            var t = new Vector(M14, M24, M34);
+        
+            (var xa, var xb) = ((r.MulScalar(box.Min.X)), (r.MulScalar(box.Max.X)));
+            (var ya, var yb) = ((u.MulScalar(box.Min.Y)), (u.MulScalar(box.Max.Y)));
+            (var za, var zb) = ((b.MulScalar(box.Min.Z)), (b.MulScalar(box.Max.Z)));
             (xa, xb) = (xa.Min(xb), xa.Max(xb));
             (ya, yb) = (ya.Min(yb), ya.Max(yb));
             (za, zb) = (za.Min(zb), za.Max(zb));
@@ -199,49 +164,56 @@ namespace PTSharpCore
             var max = xb.Add(yb).Add(zb).Add(t);
             return new Box(min, max);
         }
-
-
-        public Matrix Transpose() => new Matrix(x00, x10, x20, x30, x01, x11, x21, x31, x02, x12, x22, x32, x03, x13, x23, x33);
+        public Matrix Transpose() => new Matrix(M11, M21, M31, M41, M12, M22, M32, M42, M13, M23, M33, M43, M14, M24, M34, M44);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double Determinant()
         {
-            return (x00 * x11 * x22 * x33 - x00 * x11 * x23 * x32 +
-                    x00 * x12 * x23 * x31 - x00 * x12 * x21 * x33 +
-                    x00 * x13 * x21 * x32 - x00 * x13 * x22 * x31 -
-                    x01 * x12 * x23 * x30 + x01 * x12 * x20 * x33 -
-                    x01 * x13 * x20 * x32 + x01 * x13 * x22 * x30 -
-                    x01 * x10 * x22 * x33 + x01 * x10 * x23 * x32 +
-                    x02 * x13 * x20 * x31 - x02 * x13 * x21 * x30 +
-                    x02 * x10 * x21 * x33 - x02 * x10 * x23 * x31 +
-                    x02 * x11 * x23 * x30 - x02 * x11 * x20 * x33 -
-                    x03 * x10 * x21 * x32 + x03 * x10 * x22 * x31 -
-                    x03 * x11 * x22 * x30 + x03 * x11 * x20 * x32 -
-                    x03 * x12 * x20 * x31 + x03 * x12 * x21 * x30);
+            return (M11 * M22 * M33 * M44 - M11 * M22 * M34 * M43 +
+                    M11 * M23 * M34 * M42 - M11 * M23 * M32 * M44 +
+                    M11 * M24 * M32 * M43 - M11 * M24 * M33 * M42 -
+                    M12 * M23 * M34 * M41 + M12 * M23 * M31 * M44 -
+                    M12 * M24 * M31 * M43 + M12 * M24 * M33 * M41 -
+                    M12 * M21 * M33 * M44 + M12 * M21 * M34 * M43 +
+                    M13 * M24 * M31 * M42 - M13 * M24 * M32 * M41 +
+                    M13 * M21 * M32 * M44 - M13 * M21 * M34 * M42 +
+                    M13 * M22 * M34 * M41 - M13 * M22 * M31 * M44 -
+                    M14 * M21 * M32 * M43 + M14 * M21 * M33 * M42 -
+                    M14 * M22 * M33 * M41 + M14 * M22 * M31 * M43 -
+                    M14 * M23 * M31 * M42 + M14 * M23 * M32 * M41);
         }
-
-
         public Matrix Inverse()
         {
             Matrix m = new Matrix();
             double d = Determinant();
-            m.x00 = (x12 * x23 * x31 - x13 * x22 * x31 + x13 * x21 * x32 - x11 * x23 * x32 - x12 * x21 * x33 + x11 * x22 * x33) / d;
-            m.x01 = (x03 * x22 * x31 - x02 * x23 * x31 - x03 * x21 * x32 + x01 * x23 * x32 + x02 * x21 * x33 - x01 * x22 * x33) / d;
-            m.x02 = (x02 * x13 * x31 - x03 * x12 * x31 + x03 * x11 * x32 - x01 * x13 * x32 - x02 * x11 * x33 + x01 * x12 * x33) / d;
-            m.x03 = (x03 * x12 * x21 - x02 * x13 * x21 - x03 * x11 * x22 + x01 * x13 * x22 + x02 * x11 * x23 - x01 * x12 * x23) / d;
-            m.x10 = (x13 * x22 * x30 - x12 * x23 * x30 - x13 * x20 * x32 + x10 * x23 * x32 + x12 * x20 * x33 - x10 * x22 * x33) / d;
-            m.x11 = (x02 * x23 * x30 - x03 * x22 * x30 + x03 * x20 * x32 - x00 * x23 * x32 - x02 * x20 * x33 + x00 * x22 * x33) / d;
-            m.x12 = (x03 * x12 * x30 - x02 * x13 * x30 - x03 * x10 * x32 + x00 * x13 * x32 + x02 * x10 * x33 - x00 * x12 * x33) / d;
-            m.x13 = (x02 * x13 * x20 - x03 * x12 * x20 + x03 * x10 * x22 - x00 * x13 * x22 - x02 * x10 * x23 + x00 * x12 * x23) / d;
-            m.x20 = (x11 * x23 * x30 - x13 * x21 * x30 + x13 * x20 * x31 - x10 * x23 * x31 - x11 * x20 * x33 + x10 * x21 * x33) / d;
-            m.x21 = (x03 * x21 * x30 - x01 * x23 * x30 - x03 * x20 * x31 + x00 * x23 * x31 + x01 * x20 * x33 - x00 * x21 * x33) / d;
-            m.x22 = (x01 * x13 * x30 - x03 * x11 * x30 + x03 * x10 * x31 - x00 * x13 * x31 - x01 * x10 * x33 + x00 * x11 * x33) / d;
-            m.x23 = (x03 * x11 * x20 - x01 * x13 * x20 - x03 * x10 * x21 + x00 * x13 * x21 + x01 * x10 * x23 - x00 * x11 * x23) / d;
-            m.x30 = (x12 * x21 * x30 - x11 * x22 * x30 - x12 * x20 * x31 + x10 * x22 * x31 + x11 * x20 * x32 - x10 * x21 * x32) / d;
-            m.x31 = (x01 * x22 * x30 - x02 * x21 * x30 + x02 * x20 * x31 - x00 * x22 * x31 - x01 * x20 * x32 + x00 * x21 * x32) / d;
-            m.x32 = (x02 * x11 * x30 - x01 * x12 * x30 - x02 * x10 * x31 + x00 * x12 * x31 + x01 * x10 * x32 - x00 * x11 * x32) / d;
-            m.x33 = (x01 * x12 * x20 - x02 * x11 * x20 + x02 * x10 * x21 - x00 * x12 * x21 - x01 * x10 * x22 + x00 * x11 * x22) / d;
+            m.M11 = (M23 * M34 * M42 - M24 * M33 * M42 + M24 * M32 * M43 - M22 * M34 * M43 - M23 * M32 * M44 + M22 * M33 * M44) / d;
+            m.M12 = (M14 * M33 * M42 - M13 * M34 * M42 - M14 * M32 * M43 + M12 * M34 * M43 + M13 * M32 * M44 - M12 * M33 * M44) / d;
+            m.M13 = (M13 * M24 * M42 - M14 * M23 * M42 + M14 * M22 * M43 - M12 * M24 * M43 - M13 * M22 * M44 + M12 * M23 * M44) / d;
+            m.M14 = (M14 * M23 * M32 - M13 * M24 * M32 - M14 * M22 * M33 + M12 * M24 * M33 + M13 * M22 * M34 - M12 * M23 * M34) / d;
+            m.M21 = (M24 * M33 * M41 - M23 * M34 * M41 - M24 * M31 * M43 + M21 * M34 * M43 + M23 * M31 * M44 - M21 * M33 * M44) / d;
+            m.M22 = (M13 * M34 * M41 - M14 * M33 * M41 + M14 * M31 * M43 - M11 * M34 * M43 - M13 * M31 * M44 + M11 * M33 * M44) / d;
+            m.M23 = (M14 * M23 * M41 - M13 * M24 * M41 - M14 * M21 * M43 + M11 * M24 * M43 + M13 * M21 * M44 - M11 * M23 * M44) / d;
+            m.M24 = (M13 * M24 * M31 - M14 * M23 * M31 + M14 * M21 * M33 - M11 * M24 * M33 - M13 * M21 * M34 + M11 * M23 * M34) / d;
+            m.M31 = (M22 * M34 * M41 - M24 * M32 * M41 + M24 * M31 * M42 - M21 * M34 * M42 - M22 * M31 * M44 + M21 * M32 * M44) / d;
+            m.M32 = (M14 * M32 * M41 - M12 * M34 * M41 - M14 * M31 * M42 + M11 * M34 * M42 + M12 * M31 * M44 - M11 * M32 * M44) / d;
+            m.M33 = (M12 * M24 * M41 - M14 * M22 * M41 + M14 * M21 * M42 - M11 * M24 * M42 - M12 * M21 * M44 + M11 * M22 * M44) / d;
+            m.M34 = (M14 * M22 * M31 - M12 * M24 * M31 - M14 * M21 * M32 + M11 * M24 * M32 + M12 * M21 * M34 - M11 * M22 * M34) / d;
+            m.M41 = (M23 * M32 * M41 - M22 * M33 * M41 - M23 * M31 * M42 + M21 * M33 * M42 + M22 * M31 * M43 - M21 * M32 * M43) / d;
+            m.M42 = (M12 * M33 * M41 - M13 * M32 * M41 + M13 * M31 * M42 - M11 * M33 * M42 - M12 * M31 * M43 + M11 * M32 * M43) / d;
+            m.M43 = (M13 * M22 * M41 - M12 * M23 * M41 - M13 * M21 * M42 + M11 * M23 * M42 + M12 * M21 * M43 - M11 * M22 * M43) / d;
+            m.M44 = (M12 * M23 * M31 - M13 * M22 * M31 + M13 * M21 * M32 - M11 * M23 * M32 - M12 * M21 * M33 + M11 * M22 * M33) / d;
             return m;
+        }
+        public static Vector Transform(Vector position, Matrix matrix)
+        {
+            // Multiply the position by the transformation matrix to compute the transformed position
+            var x = position.X * matrix.M11 + position.Y * matrix.M21 + position.Z * matrix.M31 + matrix.M41;
+            var y = position.X * matrix.M12 + position.Y * matrix.M22 + position.Z * matrix.M32 + matrix.M42;
+            var z = position.X * matrix.M13 + position.Y * matrix.M23 + position.Z * matrix.M33 + matrix.M43;
+            var w = position.X * matrix.M14 + position.Y * matrix.M24 + position.Z * matrix.M34 + matrix.M44;
+
+            // Return the transformed position, dividing by the fourth component if necessary
+            return new Vector(x / w, y / w, z / w);
         }
     }
 };

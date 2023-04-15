@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace PTSharpCore
 {
@@ -24,8 +25,8 @@ namespace PTSharpCore
 
         Vector normalize(Vector v)
         {
-            var i = Math.Floor(v.x / size);
-            var j = Math.Floor(v.y / size);
+            var i = Math.Floor(v.X / size);
+            var j = Math.Floor(v.Y / size);
             return new Vector(i, j, 0);
         }
 
@@ -33,15 +34,15 @@ namespace PTSharpCore
         {
             Vector n = normalize(v);
 
-            for (double i = n.x - 2; i < n.x + 3; i++)
+            for (double i = n.X - 2; i < n.X + 3; i++)
             {
-                for (double j = n.y - 2; j < n.y + 3; j++)
+                for (double j = n.Y - 2; j < n.Y + 3; j++)
                 {
                     if(cells.ContainsKey(new Vector(i, j, 0)))
                     {
                         Vector m = cells[new Vector(i, j, 0)];
 
-                        if(Math.Sqrt(Math.Pow(m.x - v.x, 2) + Math.Pow(m.y - v.y, 2)) < r)
+                        if(Math.Sqrt(Math.Pow(m.X - v.X, 2) + Math.Pow(m.Y - v.Y, 2)) < r)
                         {
                             return false;
                         }
@@ -67,7 +68,7 @@ namespace PTSharpCore
             {
                 // Need non-negative random integers
                 // must be a non-negative pseudo-random number in [0,n).
-                int index = ConcurrentRandom.Instance.Next(active.Length);
+                int index = Random.Shared.Next(active.Length);
                 Vector point = active.ElementAt(index);
                 bool ok = false;
 
@@ -75,8 +76,8 @@ namespace PTSharpCore
                 {
                     double a = rand.NextDouble() * 2 * Math.PI;
                     double d = rand.NextDouble() * r + r;
-                    x = point.x + Math.Cos(a) * d;
-                    y = point.y + Math.Sin(a) * d;
+                    x = point.X + Math.Cos(a) * d;
+                    y = point.Y + Math.Sin(a) * d;
                     if (x < x1 || y < y1 || x > x2 || y > y2)
                     {
                         continue;

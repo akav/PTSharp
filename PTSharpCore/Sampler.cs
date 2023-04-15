@@ -1,6 +1,9 @@
+using ILGPU.Algorithms.Random;
+using Microsoft.VisualBasic;
 using System;
 using System.Numerics;
 using System.Threading;
+using static ILGPU.IR.Analyses.Uniforms;
 
 namespace PTSharpCore
 {
@@ -42,7 +45,7 @@ namespace PTSharpCore
         {
             return sample(scene, ray, true, FirstHitSamples, 0, rand);
         }
-
+        
         public void SetSpecularMode(SpecularMode s)
         {
             SpecularMode = s;
@@ -52,8 +55,8 @@ namespace PTSharpCore
         {
             LightMode = l;
         }
-
-        Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand)
+       
+        Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand, bool russianRoulette = false, double minReflectance = 0.05)
         {
             if (depth > MaxBounces)
             {
@@ -110,7 +113,7 @@ namespace PTSharpCore
                         if (p > 0 && reflected)
                         {
                             // specular
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared, russianRoulette, minReflectance);
                             var tinted = indirect.Mix(material.Color.Mul(indirect), material.Tint);
                             result = result.Add(tinted.MulScalar(p));
                         }
@@ -118,7 +121,7 @@ namespace PTSharpCore
                         if (p > 0 && !reflected)
                         {
                             // diffuse
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared, russianRoulette, minReflectance);
                             var direct = Colour.Black;
 
                             if (DirectLighting)
@@ -129,6 +132,17 @@ namespace PTSharpCore
                         }
                     }
                 }
+            }
+
+            if (russianRoulette && depth >= 2)
+            {
+                // Russian Roulette termination
+                var probability = Math.Max(result.r, Math.Max(result.g, result.b));
+                if (Random.Shared.NextDouble() > probability)
+                {
+                    return result.DivScalar(probability);
+                }
+                return result.DivScalar(probability * (1 - minReflectance));
             }
 
             return result.DivScalar(n * n);
@@ -159,8 +173,8 @@ namespace PTSharpCore
             b = b.Normalize();
             var axis = a.Cross(b).Normalize();
             var angle = AngleBetween(a, b);
-            var quaternion = Quaternion.CreateFromAxisAngle(new Vector3((float)axis.x, (float)axis.y, (float)axis.z), (float)angle);
-            var v = Vector3.Transform(new Vector3((float)p.x, (float)p.y, (float)p.z), quaternion);
+            var quaternion = Quaternion.CreateFromAxisAngle(new Vector3((float)axis.X, (float)axis.Y, (float)axis.Z), (float)angle);
+            var v = Vector3.Transform(new Vector3((float)p.X, (float)p.Y, (float)p.Z), quaternion);
             return new Vector(v.X, v.Y, v.Z);
         }
 
@@ -169,8 +183,8 @@ namespace PTSharpCore
             if (scene.Texture != null)
             {
                 var d = ray.Direction;
-                var u = Math.Atan2(d.z, d.x) + scene.TextureAngle;
-                var v = Math.Atan2(d.y, new Vector(d.x, 0, d.z).Length());
+                var u = Math.Atan2(d.Z, d.X) + scene.TextureAngle;
+                var v = Math.Atan2(d.Y, new Vector(d.X, 0, d.Z).Length());
                 u = (u + Math.PI) / (2 * Math.PI);
                 v = (v + Math.PI / 2) / Math.PI;
                 return scene.Texture.Sample(u, v);
@@ -178,7 +192,7 @@ namespace PTSharpCore
             return scene.Color;
         }
 
-        Colour sampleLights(Scene scene, Ray n, Random rand)
+        /*Colour sampleLights(Scene scene, Ray n, Random rand)
         {
             var nLights = scene.Lights.Length;
 
@@ -202,8 +216,33 @@ namespace PTSharpCore
                 var light = scene.Lights[Random.Shared.Next(nLights)];
                 return sampleLight(scene, n, light, rand).MulScalar((double)nLights);
             }
-        }
+        }*/
 
+        Colour sampleLights(Scene scene, Ray n, Random rand)
+        {
+            var nLights = scene.Lights.Length;
+
+            if (nLights == 0)
+            {
+                return Colour.Black;
+            }
+
+            if (LightMode == LightMode.LightModeAll)
+            {
+                Colour result = new Colour();
+                foreach (var light in scene.Lights)
+                {
+                    result = result.Add(sampleLight(scene, n, light, rand));
+                }
+                return result.DivScalar(nLights);
+            }
+            else
+            {
+                // pick a random light
+                var lightIndex = Random.Shared.Next(nLights);
+                return sampleLight(scene, n, scene.Lights[lightIndex], rand).MulScalar((double)nLights);
+            }
+        }
         Colour sampleLight(Scene scene, Ray n, IShape light, Random rand)
         {
             Vector center;

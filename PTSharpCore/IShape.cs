@@ -1,6 +1,6 @@
 ﻿namespace PTSharpCore
 {
-    internal interface IShape
+    public interface IShape
     {
         void Compile();
         Box BoundingBox();
@@ -8,5 +8,6 @@
         Vector UVector(Vector uv);
         Vector NormalAt(Vector normal);
         Material MaterialAt(Vector v);
+        
     }
 }

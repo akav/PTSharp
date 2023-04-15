@@ -59,25 +59,25 @@ namespace PTSharpCore
 
         public Box Extend(Box b) => new Box(Min.Min(b.Min), Max.Max(b.Max));
 
-        public bool Contains(Vector b) => Min.x <= b.x && Max.x >= b.x &&
-                                     Min.y <= b.y && Max.y >= b.y &&
-                                     Min.z <= b.z && Max.z >= b.z;
+        public bool Contains(Vector b) => Min.X <= b.X && Max.X >= b.X &&
+                                     Min.Y <= b.Y && Max.Y >= b.Y &&
+                                     Min.Z <= b.Z && Max.Z >= b.Z;
 
         public bool Intersects(Box b) =>  
-            ! (Min.x > b.Max.x 
-            || Max.x < b.Min.x 
-            || Min.y > b.Max.y 
-            || Max.y < b.Min.y 
-            || Min.z > b.Max.z 
-            || Max.z < b.Min.z);
+            ! (Min.X > b.Max.X 
+            || Max.X < b.Min.X 
+            || Min.Y > b.Max.Y 
+            || Max.Y < b.Min.Y 
+            || Min.Z > b.Max.Z 
+            || Max.Z < b.Min.Z);
 
         public (double, double) Intersect(Ray r)
         {
-            (var x1, var y1, var z1) = (((Min.x - r.Origin.x) / r.Direction.x), ((Min.y - r.Origin.y) / r.Direction.y), 
-                ((Min.z - r.Origin.z) / r.Direction.z));
+            (var x1, var y1, var z1) = (((Min.X - r.Origin.X) / r.Direction.X), ((Min.Y - r.Origin.Y) / r.Direction.Y), 
+                ((Min.Z - r.Origin.Z) / r.Direction.Z));
 
-            (var x2, var y2, var z2) = (((Max.x - r.Origin.x) / r.Direction.x), 
-                ((Max.y - r.Origin.y) / r.Direction.y), ((Max.z - r.Origin.z) / r.Direction.z));
+            (var x2, var y2, var z2) = (((Max.X - r.Origin.X) / r.Direction.X), 
+                ((Max.Y - r.Origin.Y) / r.Direction.Y), ((Max.Z - r.Origin.Z) / r.Direction.Z));
 
             if (x1 > x2)
             {
@@ -100,16 +100,16 @@ namespace PTSharpCore
             switch (axis)
             {
                 case Axis.AxisX:
-                    left = Min.x <= point;
-                    right = Max.x >= point;
+                    left = Min.X <= point;
+                    right = Max.X >= point;
                     break;
                 case Axis.AxisY:
-                    left = Min.y <= point;
-                    right = Max.y >= point;
+                    left = Min.Y <= point;
+                    right = Max.Y >= point;
                     break;
                 case Axis.AxisZ:
-                    left = Min.z <= point;
-                    right = Max.z >= point;
+                    left = Min.Z <= point;
+                    right = Max.Z >= point;
                     break;
             }
             return (left, right);

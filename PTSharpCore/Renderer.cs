@@ -1,16 +1,11 @@
 using MathNet.Numerics.Random;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ILGPU;
-using ILGPU.Runtime;
-using ILGPU.Runtime.OpenCL;
-using ILGPU.Algorithms.Random;
-using ILGPU.Runtime.Cuda;
-using ILGPU.Algorithms;
 using System.Collections.Concurrent;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace PTSharpCore
 {
@@ -40,13 +35,14 @@ namespace PTSharpCore
             r.Camera = camera;
             r.Sampler = sampler;
             r.PBuffer = new Buffer(w, h);
-            r.SamplesPerPixel = 1;
-            r.StratifiedSampling = false;
+            r.SamplesPerPixel = 2;
             r.AdaptiveSamples = 0;
+            r.StratifiedSampling = false;
             r.AdaptiveThreshold = 1;
             r.AdaptiveExponent = 1;
             r.FireflySamples = 0;
             r.FireflyThreshold = 1;
+
             if (multithreaded)
                 r.NumCPU = Environment.ProcessorCount;
             else
@@ -68,10 +64,8 @@ namespace PTSharpCore
             Sampler sampler = Sampler;
             Buffer buf = PBuffer;
             (int w, int h) = (buf.W, buf.H);
-
             int spp = SamplesPerPixel;
             int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
-
             scene.Compile();
 
             // Stop watch timer 
@@ -132,7 +126,6 @@ namespace PTSharpCore
                                 Colour sample = sampler.Sample(scene, ray, rand);
                                 buf.AddSample(x, y, sample);
                             }
-
                         }
 
                         if (FireflySamples > 0)
@@ -157,31 +150,12 @@ namespace PTSharpCore
             Console.WriteLine("time elapsed:" + sw.Elapsed);
             sw.Stop();
         }
-
-        public static void MyRandomKernel(Index1D index, RNGView<XorShift64Star> rng, ArrayView1D<double, Stride1D.Dense> view)
-        {
-            view[index] = rng.NextDouble();
-        }
-
-        //public void RenderParallel(Accelerator a, Device dev)
         public void RenderParallel()
         {
             Scene scene = Scene;
             Camera camera = Camera;
             Sampler sampler = Sampler;
-
-            //ThreadLocal<Sampler> sampler = new ThreadLocal<Sampler>(() =>
-            //{
-            //    return Sampler;
-            //});
-
             Buffer buf = PBuffer;
-
-            //ThreadLocal<Buffer> buf = new ThreadLocal<Buffer>(() =>
-            //{
-            //   return PBuffer;
-            //});
-
             (int w, int h) = (buf.W, buf.H);
             int spp = SamplesPerPixel;
             int sppRoot = (int)(Math.Sqrt(SamplesPerPixel));
@@ -193,7 +167,7 @@ namespace PTSharpCore
             sw.Start();
 
             // Random Number Generator from on Math.Numerics
-            var rand = Random.Shared; //new SystemRandomSource(sw.Elapsed.Milliseconds, true);
+            var rand = Random.Shared;
 
             // Frame resolution
             int totalPixels = h * w;
@@ -206,70 +180,79 @@ namespace PTSharpCore
             // ParallelOptions for Parallel.For
             ParallelOptions po = new ParallelOptions();
             po.CancellationToken = cts.Token;
-
-            // Set number of cores/threads
             po.MaxDegreeOfParallelism = Environment.ProcessorCount;
-
-            var numbers = Enumerable.Range(0, w * h).ToList();
-
-            // Experiment:
-            // Use ILGPU to generate an array of random numbers
-            //using var rng = RNG.Create<XorShift64Star>(a, rand);
-            //var rngView = rng.GetView(a.WarpSize);
-            //using var bufferfu = a.Allocate1D<double>(w * h);
-            //var kernelfu = a.LoadAutoGroupedStreamKernel<Index1D, RNGView<XorShift64Star>, ArrayView1D<double, Stride1D.Dense>>(MyRandomKernel);
-            //kernelfu((int)bufferfu.Length, rngView, bufferfu.View);
-
-            //ThreadLocal<double[]> fuRandomValues = new ThreadLocal<double[]>(() =>
-            //{
-            //    return bufferfu.GetAsArray1D();
-            //});
 
             Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
 
             if (StratifiedSampling)
             {
-                _ = Parallel.For(0, w * h, po, (i, loopState) =>
-                  {
-                      int y = i / w, x = i % w;
-                      for (int u = 0; u < sppRoot; u++)
-                      {
-                          for (int v = 0; v < sppRoot; v++)
-                          {
-                              var fu = (u + 0.5) / sppRoot;
-                              var fv = (v + 0.5) / sppRoot;
-                              var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                              var sample = sampler.Sample(scene, ray, rand);
-                              buf.AddSample(x, y, sample);
-                          }
-                      }
-                  });
+                Parallel.For(0, w * h, po, (i, loopState) =>
+                {
+                    int y = i / w, x = i % w;
+                    for (int u = 0; u < sppRoot; u++)
+                    {
+                        for (int v = 0; v < sppRoot; v++)
+                        {
+                            var fu = (u + 0.5) / sppRoot;
+                            var fv = (v + 0.5) / sppRoot;
+                            var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
+                            var sample = sampler.Sample(scene, ray, rand);
+                            buf.AddSample(x, y, sample);
+                        }
+                    }
+                });
             }
             else
             {
-                //Random subsampling
-                ConcurrentDictionary<(int, int), Ray> rayBuffer = new ConcurrentDictionary<(int, int), Ray>();
-                ThreadLocal<Colour> colourLocal = new();
+                int tile_size = 32;
+                int num_tiles_x = (w + tile_size - 1) / tile_size;
+                int num_tiles_y = (h + tile_size - 1) / tile_size;
+                var partitioner = Partitioner.Create(0, num_tiles_x * num_tiles_y);
 
-                for (int j = 0; j < spp; j++)
+                Parallel.ForEach(partitioner, (range, state) =>
                 {
-                    Parallel.For(0, w * h, po, (index) =>
+                    for (int tile_index = range.Item1; tile_index < range.Item2; tile_index++)
                     {
-                        var x = index % w;
-                        var y = index / w;
-                        var fu = Random.Shared.NextDouble();
-                        var fv = Random.Shared.NextDouble();
-                        var c = sampler.Sample(scene, camera.CastRay(x, y, w, h, fu, fv, Random.Shared), Random.Shared);
-                        buf.AddSample(x, y, c);
-                        //rayBuffer.TryAdd((x, y), camera.CastRay(x, y, w, h, fu, fv, Random.Shared));
-                        //buf.AddSample(x, y, sampler.Sample(scene, rayBuffer[(x, y)], Random.Shared));
-                    });
-                }
-            }
+                        int tile_x = tile_index % num_tiles_x;
+                        int tile_y = tile_index / num_tiles_x;
+                        int x_start = tile_x * tile_size;
+                        int y_start = tile_y * tile_size;
+                        int x_end = Math.Min(x_start + tile_size, w);
+                        int y_end = Math.Min(y_start + tile_size, h);
 
+                        for (int y = y_start; y < y_end; y++)
+                        {
+                            for (int x = x_start; x < x_end; x++)
+                            {
+                                // Render the tile at the current coordinates, using the current resolution
+                                Colour c = new Colour(0, 0, 0);
+                                c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
+
+                                // Average the color over the number of samples
+                                c /= spp;
+                                buf.AddSample(x, y, c);
+
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                            }
+                        }
+
+                        // Check if there are more tiles than processors and, if so, yield the thread to the scheduler
+                        if (num_tiles_x * num_tiles_y > Environment.ProcessorCount * 2)
+                        {
+                            if (tile_index % Environment.ProcessorCount == 0)
+                            {
+                                Thread.Yield();
+                            }
+                        }
+                    }
+                });
+            }
             if (AdaptiveSamples > 0)
             {
-                _ = Parallel.For(0, w * h, po, (i, loopState) =>
+                Parallel.For(0, w * h, po, (i, loopState) =>
                   {
                       int y = i / w, x = i % w;
                       double v = buf.StandardDeviation(x, y).MaxComponent();
@@ -302,7 +285,6 @@ namespace PTSharpCore
                   });
             }
             Console.WriteLine("time elapsed:" + sw.Elapsed);
-
             sw.Stop();
         }
 
@@ -310,11 +292,6 @@ namespace PTSharpCore
         {
             iterations = iter;
             System.Drawing.Bitmap finalrender = null;
-
-            //using Context context = Context.Create(builder => builder.Default().EnableAlgorithms());
-            //Device dev = context.GetPreferredDevice(preferCPU: false);
-            //using var accelerator = dev.CreateAccelerator(context);
-            //Console.WriteLine($"Performing operations on {accelerator}\n");
 
             for (int i = 1; i < iterations; i++)
             {
@@ -325,15 +302,12 @@ namespace PTSharpCore
                 }
                 else
                 {
-                    //RenderParallel(accelerator, dev);
                     RenderParallel();
                 }
                 this.pathTemplate = pathTemplate;
                 finalrender = PBuffer.Image(Channel.ColorChannel);
                 finalrender.Save(pathTemplate);
             }
-
-            //accelerator.Dispose();
             return PBuffer.Image(Channel.ColorChannel);
         }
 

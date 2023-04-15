@@ -1,6 +1,6 @@
 ﻿namespace PTSharpCore
 {
-    interface ITexture
+    public interface ITexture
     {
         Colour Sample(double u, double v);
         Vector NormalSample(double u, double v);

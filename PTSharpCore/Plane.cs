@@ -8,6 +8,8 @@ namespace PTSharpCore
         Vector Normal;
         Material Material;
         Box box;
+        public Colour Color { get; set; }
+        public Vector Position { get; set; }
 
         Plane() { }
 
@@ -59,6 +61,6 @@ namespace PTSharpCore
         Vector IShape.NormalAt(Vector a)
         {
             return Normal;
-        }
+        }        
     }
 }

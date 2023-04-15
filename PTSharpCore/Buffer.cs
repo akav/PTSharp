@@ -27,7 +27,7 @@ namespace PTSharpCore
 
         public void AddSample(Colour sample)
         {
-            Samples++;
+            Interlocked.Increment(ref Samples);
             if (Samples.Equals(1))
             {
                 M = sample;
@@ -55,8 +55,7 @@ namespace PTSharpCore
     class Buffer
     {
         public int W, H;
-        ConcurrentDictionary<(int,int), Pixel> Pixels;
-        //Pixel[] Pixels;
+        public ConcurrentDictionary<(int,int), Pixel> Pixels;
 
         public Buffer() { }
 
@@ -65,7 +64,6 @@ namespace PTSharpCore
             W = width;
             H = height;
             Pixels = new ConcurrentDictionary<(int,int),Pixel>();
-            //Pixels = new Pixel[W * H]; 
 
             for (int y = 0; y < H; y++)
             {
@@ -74,10 +72,6 @@ namespace PTSharpCore
                     Pixels[(x, y)] = new Pixel(0, new Colour(0,0,0), new Colour(0,0,0));
                 }
             }
-            //for (int i = 0; i < W * H; i++)
-            //{
-            //    Pixels[i] = new Pixel(0, new Colour(0,0,0), new Colour(0,0,0));
-            //}
         }
         
         public Buffer(int width, int height, ConcurrentDictionary<(int, int), Pixel> pbuffer)
@@ -87,13 +81,6 @@ namespace PTSharpCore
             Pixels = pbuffer;
         }
 
-        /*public Buffer(int width, int height, Pixel[] Pixels)
-        {
-            W = width;
-            H = height;
-            this.Pixels = Pixels;
-        }*/
-
         public Buffer Copy()
         {
             return new Buffer(W, H, Pixels);
@@ -101,20 +88,16 @@ namespace PTSharpCore
 
         public void AddSample(int x, int y, Colour sample)
         {
-            //this.Pixels[y * W + x].AddSample(sample);
             Pixels[(x,y)].AddSample(sample); 
-            //Pixel v;
-            //Pixels.TryGetValue((x, y), out v);//.AddSample(sample);
-            //v.AddSample(sample);
         }
 
-        public int Samples(int x, int y) => Pixels[(x, y)].Samples;//Pixels[y * W + x].Samples;
+        public int Samples(int x, int y) => Pixels[(x, y)].Samples;
 
-        public Colour Color(int x, int y) => Pixels[(x, y)].Color();//Pixels[y * W + x].Color();
+        public Colour Color(int x, int y) => Pixels[(x, y)].Color();
 
-        public Colour Variance(int x, int y) => Pixels[(x, y)].Variance();//Pixels[y * W + x].Variance();
+        public Colour Variance(int x, int y) => Pixels[(x, y)].Variance();
 
-        public Colour StandardDeviation(int x, int y) => Pixels[(x, y)].StandardDeviation();//Pixels[y * W + x].StandardDeviation();
+        public Colour StandardDeviation(int x, int y) => Pixels[(x, y)].StandardDeviation();
 
         public Bitmap Image(Channel channel)
         {
@@ -126,7 +109,7 @@ namespace PTSharpCore
             {  
                 foreach (var p in Pixels)
                 {
-                    maxSamples = Math.Max(maxSamples,p.Value.Samples); //Pixels[(x, y)].Samples);//Pixels[y * W + x].Samples);
+                    maxSamples = Math.Max(maxSamples,p.Value.Samples); 
                 }   
             }
 
@@ -138,16 +121,15 @@ namespace PTSharpCore
                     switch (channel)
                     {
                         case Channel.ColorChannel:
-                            pixelColor = Pixels[(x, y)].Color().Pow(1.0 / 2.2);//Pixels[y * W + x].Color().Pow(1 / 2.2f);
+                            pixelColor = Pixels[(x, y)].Color().Pow(1.0 / 2.2);
                             break;
                         case Channel.VarianceChannel:
-                            pixelColor = Pixels[(x, y)].Variance();//Pixels[y * W + x].Variance();
+                            pixelColor = Pixels[(x, y)].Variance();
                             break;
                         case Channel.StandardDeviationChannel:
-                            pixelColor = Pixels[(x, y)].StandardDeviation();//Pixels[y * W + x].StandardDeviation();
+                            pixelColor = Pixels[(x, y)].StandardDeviation();
                             break;
                         case Channel.SamplesChannel:
-                            //double p = (double)(Pixels[y * W + x].Samples / maxSamples);
                             double p = (double)(Pixels[(x,y)].Samples / maxSamples);
                             pixelColor = new Colour(p, p, p);
                             break;

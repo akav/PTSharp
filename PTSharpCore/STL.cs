@@ -256,13 +256,11 @@ namespace PTSharpCore
 
         public static Mesh LoadSTLB(String filename, Material material)
         {
-            string header;
-            STLTriangle[] mesh;
             List<Triangle> tlist = new List<Triangle>();
 
             try
             {
-                STLDocument? stlBinary = null;
+                STLDocument stlBinary; 
 
                 using (Stream stream = File.Open(filename, FileMode.Open))
                 {

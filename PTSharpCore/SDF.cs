@@ -1,9 +1,5 @@
-using PTSharpCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
@@ -17,6 +13,8 @@ namespace PTSharpCore
     {
         SDF SDF;
         Material Material;
+        public Colour Color { get; set; }
+        public Vector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         SDFShape(SDF sdf, Material material)
         {
@@ -85,7 +83,7 @@ namespace PTSharpCore
         Vector IShape.NormalAt(Vector p)
         {
             double e = 0.0001;
-            (var x, var y, var z) = (p.x, p.y, p.z);
+            (var x, var y, var z) = (p.X, p.Y, p.Z);
 
             var n = new Vector(Evaluate(new Vector(x - e, y, z)) - Evaluate(new Vector(x + e, y, z)),
                                Evaluate(new Vector(x, y - e, z)) - Evaluate(new Vector(x, y + e, z)),
@@ -106,7 +104,7 @@ namespace PTSharpCore
         public double Evaluate(Vector p)
         {
             return SDF.Evaluate(p);
-        }
+        }       
     }
 
     internal class SphereSDF : SDF
@@ -152,9 +150,9 @@ namespace PTSharpCore
 
         double SDF.Evaluate(Vector p)
         {
-            double x = p.x;
-            double y = p.y;
-            double z = p.z;
+            double x = p.X;
+            double y = p.Y;
+            double z = p.Z;
 
             if (x < 0)
                 x = -x;
@@ -163,9 +161,9 @@ namespace PTSharpCore
             if (z < 0)
                 z = -z;
 
-            x -= Size.x / 2;
-            y -= Size.y / 2;
-            z -= Size.z / 2;
+            x -= Size.X / 2;
+            y -= Size.Y / 2;
+            z -= Size.Z / 2;
 
             double a = x;
             if (y > a)
@@ -186,7 +184,7 @@ namespace PTSharpCore
 
         Box SDF.BoundingBox()
         {
-            (var x, var y, var z) = (Size.x / 2, Size.y / 2, Size.z / 2);
+            (var x, var y, var z) = (Size.X / 2, Size.Y / 2, Size.Z / 2);
             return new Box(new Vector(-x, -y, -z), new Vector(x, y, z));
         }
     }
@@ -222,8 +220,8 @@ namespace PTSharpCore
 
         double SDF.Evaluate(Vector p)
         {
-            double x = Math.Sqrt(p.x * p.x + p.z * p.z);
-            double y = p.y;
+            double x = Math.Sqrt(p.X * p.X + p.Z * p.Z);
+            double y = p.Y;
 
             if (x < 0)
                 x = -x;
@@ -303,7 +301,7 @@ namespace PTSharpCore
 
         double SDF.Evaluate(Vector p)
         {
-            Vector q = new Vector(new Vector(p.x, p.y, 0).LengthN(MajorExponent) - MajorRadius, p.z, 0);
+            Vector q = new Vector(new Vector(p.X, p.Y, 0).LengthN(MajorExponent) - MajorRadius, p.Z, 0);
             return q.LengthN(MinorExponent) - MinRadius;
         }
 

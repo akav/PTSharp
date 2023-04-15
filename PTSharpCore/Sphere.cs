@@ -12,6 +12,8 @@ namespace PTSharpCore
         internal double Radius;
         internal Material Material;
         internal Box Box;
+        public Colour Color { get; set; }
+        public Vector Position { get; set; }
 
         Sphere(Vector center_, double radius_, Material material_, Box box_)
         {
@@ -20,11 +22,16 @@ namespace PTSharpCore
             Material = material_;
             Box = box_;
         }
-        
+
+        public Sphere()
+        {
+
+        }
+
         internal static Sphere NewSphere(Vector center, double radius, Material material) 
         {
-            var min = new Vector(center.x - radius, center.y - radius, center.z - radius);
-            var max = new Vector(center.x + radius, center.y + radius, center.z + radius);
+            var min = new Vector(center.X - radius, center.Y - radius, center.Z - radius);
+            var max = new Vector(center.X + radius, center.Y + radius, center.Z + radius);
             var box = new Box(min, max);
             return new Sphere(center, radius, material, box);
         }
@@ -58,8 +65,8 @@ namespace PTSharpCore
 
         Vector IShape.UVector(Vector p) {
             p = p.Sub(Center);
-            var u = Math.Atan2(p.y, p.x);
-            var v = Math.Atan2(p.y, new Vector(p.x, 0, p.y).Length());
+            var u = Math.Atan2(p.Y, p.X);
+            var v = Math.Atan2(p.Y, new Vector(p.X, 0, p.Y).Length());
             u = 1 - (u + Math.PI) / (2 * Math.PI);
             v = (v + Math.PI / 2) / Math.PI;
             return new Vector(u, v, 0);            

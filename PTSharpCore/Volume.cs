@@ -27,7 +27,7 @@ namespace PTSharpCore
         double[] Data;
         VolumeWindow[] Windows;
         Box Box;
-
+                
         public Volume() { }
 
         Volume(int W, int H, int D, double ZScale, double[] Data, VolumeWindow[] Windows, Box Box)
@@ -120,7 +120,7 @@ namespace PTSharpCore
         
         internal int Sign(Vector a)
         {
-            double s = Sample(a.x, a.y, a.z);
+            double s = Sample(a.X, a.Y, a.Z);
             int i = 0;
             foreach (VolumeWindow window in Windows)
             {
@@ -146,9 +146,9 @@ namespace PTSharpCore
         Vector IShape.NormalAt(Vector p)
         {
             double eps = 0.001F;
-            Vector n = new Vector(Sample(p.x - eps, p.y, p.z) - Sample(p.x + eps, p.y, p.z),
-                                  Sample(p.x, p.y - eps, p.z) - Sample(p.x, p.y + eps, p.z),
-                                  Sample(p.x, p.y, p.z - eps) - Sample(p.x, p.y, p.z + eps));
+            Vector n = new Vector(Sample(p.X - eps, p.Y, p.Z) - Sample(p.X + eps, p.Y, p.Z),
+                                  Sample(p.X, p.Y - eps, p.Z) - Sample(p.X, p.Y + eps, p.Z),
+                                  Sample(p.X, p.Y, p.Z - eps) - Sample(p.X, p.Y, p.Z + eps));
             return n.Normalize();
         }
 
@@ -156,7 +156,7 @@ namespace PTSharpCore
         {
             double be = 1e9F;
             Material bm = new Material();
-            double s = Sample(p.x, p.y, p.z);
+            double s = Sample(p.X, p.Y, p.Z);
 
             foreach(var window in Windows)
             {
@@ -202,6 +202,26 @@ namespace PTSharpCore
                 sign = s;
             }
             return Hit.NoHit;
+        }
+
+        public Colour ComputeContribution(Vector position, Vector normal, Material material, Scene scene)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Colour ComputeDirectLighting(Vector position, Vector normal, Material material, Scene scene)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Colour ComputeIndirectLighting(Vector position, Vector normal, Material material, Scene scene)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Vector DirectionFrom(Vector position)
+        {
+            throw new NotImplementedException();
         }
     }
 }

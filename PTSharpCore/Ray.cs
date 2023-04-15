@@ -44,7 +44,7 @@ namespace PTSharpCore
             
             var (n1, n2) = (1.0, material.Index);
             
-            if (info.inside)
+            if (info.Inside)
             {
                 (n1, n2) = (n2, n1);
             }

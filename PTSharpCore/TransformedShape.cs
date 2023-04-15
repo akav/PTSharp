@@ -11,7 +11,9 @@ namespace PTSharpCore
         public IShape Shape;
         private Matrix Matrix;
         private Matrix Inverse;
-        
+        public Colour Color { get; set; }
+        public Vector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         TransformedShape() { }
 
         internal TransformedShape(IShape s, Matrix m, Matrix im)

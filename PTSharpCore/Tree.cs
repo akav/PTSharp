@@ -76,16 +76,16 @@ namespace PTSharpCore
                     case Axis.AxisNone:
                         return IntersectShapes(r);
                     case Axis.AxisX:
-                        tsplit = (Point - r.Origin.x) / r.Direction.x;
-                        leftFirst = (r.Origin.x < Point) || (r.Origin.x == Point && r.Direction.x <= 0);
+                        tsplit = (Point - r.Origin.X) / r.Direction.X;
+                        leftFirst = (r.Origin.X < Point) || (r.Origin.X == Point && r.Direction.X <= 0);
                         break;
                     case Axis.AxisY:
-                        tsplit = (Point - r.Origin.y) / r.Direction.y;
-                        leftFirst = (r.Origin.y < Point) || (r.Origin.y == Point && r.Direction.y <= 0);
+                        tsplit = (Point - r.Origin.Y) / r.Direction.Y;
+                        leftFirst = (r.Origin.Y < Point) || (r.Origin.Y == Point && r.Direction.Y <= 0);
                         break;
                     case Axis.AxisZ:
-                        tsplit = (Point - r.Origin.z) / r.Direction.z;
-                        leftFirst = (r.Origin.z < Point) || (r.Origin.z == Point && r.Direction.z <= 0);
+                        tsplit = (Point - r.Origin.Z) / r.Direction.Z;
+                        leftFirst = (r.Origin.Z < Point) || (r.Origin.Z == Point && r.Direction.Z <= 0);
                         break;
                 }
 
@@ -231,12 +231,12 @@ namespace PTSharpCore
 
                 foreach (var shape in Shapes) {
                     Box box = shape.BoundingBox();
-                    xs.Add(box.Min.x); 
-                    xs.Add(box.Max.x); 
-                    ys.Add(box.Min.y); 
-                    ys.Add(box.Max.y); 
-                    zs.Add(box.Min.z); 
-                    zs.Add(box.Max.z); 
+                    xs.Add(box.Min.X); 
+                    xs.Add(box.Max.X); 
+                    ys.Add(box.Min.Y); 
+                    ys.Add(box.Max.Y); 
+                    zs.Add(box.Min.Z); 
+                    zs.Add(box.Max.Z); 
                 }
 
                 xs.AsParallel().AsOrdered();

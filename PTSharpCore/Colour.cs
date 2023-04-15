@@ -33,6 +33,16 @@ namespace PTSharpCore
             return new Colour(c1.r + c2.r, c1.g + c2.g, c1.b + c2.b);
         }
 
+        public static Colour operator +(Colour c1, double c2)
+        {
+            return new Colour(c1.r + c2, c1.g + c2, c1.b + c2);
+        }
+
+        public static Colour operator +(double c1, Colour c2)
+        {
+            return new Colour(c1 + c2.r, c1 + c2.g, c1 + c2.b);
+        }
+
         public static Colour operator -(Colour c1, Colour c2)
         {
             return new Colour(c1.r - c2.r, c1.g - c2.g, c1.b - c2.b);
@@ -58,6 +68,11 @@ namespace PTSharpCore
             return new Colour(c1.r / c, c1.g / c, c1.b / c);
         }
 
+        public static Colour operator /(Colour c1, Colour c2)
+        {
+            return new Colour(c1.r / c2.r, c1.g / c2.g, c1.b / c2.b);
+        }
+
         public static Colour operator -(Colour c1)
         {
             return new Colour(-c1.r, -c1.g, -c1.b);
@@ -68,6 +83,16 @@ namespace PTSharpCore
             return new Colour(c1.r, c1.g, c1.b);
         }
 
+        public Vector ToVector()
+        {
+            return new Vector(r, g, b);
+        }
+
+        public double Luminance()
+        {
+            // Calculate the luminance using the sRGB luminance coefficients
+            return 0.2126 * this.r + 0.7152 * this.g + 0.0722 * this.b;
+        }
         public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
         public static Colour HexColor(int x)
