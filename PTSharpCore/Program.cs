@@ -1,13 +1,11 @@
-﻿using MathNet.Numerics;
-using System;
-using Silk.NET.Input;
-using Silk.NET.OpenGL;
-using Silk.NET.Windowing;
+﻿using Silk.NET.Input;
 using Silk.NET.Maths;
+using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
-using ILGPU.IR.Values;
-using Window = Silk.NET.Windowing.Window;
+using Silk.NET.Windowing;
+using System;
 using System.Threading.Tasks;
+using Window = Silk.NET.Windowing.Window;
 
 namespace PTSharpCore
 {
@@ -64,7 +62,8 @@ namespace PTSharpCore
             window.Load += OnLoad;
             window.Render += OnRender;
             window.Closing += OnClose;
-            window.Run();           
+            window.Run();
+            //Example.Teapot(1920, 1080);
         }
 
         private static void KeyDown(IKeyboard arg1, Key arg2, int arg3)
@@ -97,7 +96,7 @@ namespace PTSharpCore
                 );
 
             // Start rendering
-            Task.Factory.StartNew(() => Example.example2(Width, Height));
+            Task.Factory.StartNew(() => Example.Suzanne(Width, Height));
         }
 
         private static void OnClose()
@@ -112,14 +111,14 @@ namespace PTSharpCore
             Ebo.Dispose();
             Vao.Dispose();
             Shader.Dispose();
-            
+
             //Remember to dispose the texture.
             Texture.Dispose();
         }
 
         private static unsafe void OnRender(double obj)
         {
-            controller.Update((float)2);            
+            controller.Update((float)2);
             Gl.Clear((uint)ClearBufferMask.ColorBufferBit);
             Vao.Bind();
             Shader.Use();

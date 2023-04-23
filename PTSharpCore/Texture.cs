@@ -82,17 +82,17 @@ namespace PTSharpCore
         public int Width;
         public int Height;
         public Colour[] Data;
-        
+
         internal static IDictionary<string, ITexture> textures = new Dictionary<string, ITexture>();
 
-        ColorTexture()
+        internal ColorTexture()
         {
             Width = 0;
             Height = 0;
             Data = Array.Empty<Colour>();//new Colour[] { };
         }
-        
-        ColorTexture(int width, int height, Colour[] data)
+
+        internal ColorTexture(int width, int height, Colour[] data)
         {
             Width = width;
             Height = height;
@@ -116,7 +116,7 @@ namespace PTSharpCore
         }
         internal static ITexture LoadTexture(String path)
         {
-            Console.WriteLine("IMG: "+path);
+            Console.WriteLine("IMG: " + path);
             Bitmap image = Util.LoadImage(path);
             if (image == null)
             {
@@ -139,19 +139,19 @@ namespace PTSharpCore
             int xMax = (int)boundsF.Width;
 
             Colour[] imgdata = new Colour[xMax * yMax];
-            
+
             for (int y = 0; y < yMax; y++)
             {
                 for (int x = 0; x < xMax; x++)
                 {
                     int index = y * xMax + x;
                     System.Drawing.Color pixelcolor = image.GetPixel(x, y);
-                    imgdata[index] = new Colour((double)(pixelcolor.R)  / 255, (double)(pixelcolor.G) / 255, (double)(pixelcolor.B) / 255).Pow(2.2F); 
+                    imgdata[index] = new Colour((double)(pixelcolor.R) / 255, (double)(pixelcolor.G) / 255, (double)(pixelcolor.B) / 255).Pow(2.2F);
                 }
             }
             return new ColorTexture(xMax, yMax, imgdata);
         }
-        
+
         ITexture ITexture.Pow(double a)
         {
             for (int i = 0; i < Data.Length; i++)
@@ -172,15 +172,15 @@ namespace PTSharpCore
 
         Colour BilinearSample(double u, double v)
         {
-            if(u == 1)
+            if (u == 1)
             {
                 u -= Util.EPS;
             }
-            if(v == 1)
+            if (v == 1)
             {
                 v -= Util.EPS;
             }
-            var w = (double)Width -1;
+            var w = (double)Width - 1;
             var h = (double)Height - 1;
             (var X, var x) = Util.Modf(u * w);
             (var Y, var y) = Util.Modf(v * h);

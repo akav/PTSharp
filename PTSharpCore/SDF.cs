@@ -75,7 +75,7 @@ namespace PTSharpCore
             return Hit.NoHit;
         }
 
-        Vector IShape.UVector(Vector uv)
+        Vector IShape.UV(Vector uv)
         {
             return new Vector();
         }
@@ -104,7 +104,7 @@ namespace PTSharpCore
         public double Evaluate(Vector p)
         {
             return SDF.Evaluate(p);
-        }       
+        }
     }
 
     internal class SphereSDF : SDF

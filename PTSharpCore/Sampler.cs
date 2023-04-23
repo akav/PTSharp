@@ -1,9 +1,6 @@
-using ILGPU.Algorithms.Random;
-using Microsoft.VisualBasic;
 using System;
 using System.Numerics;
 using System.Threading;
-using static ILGPU.IR.Analyses.Uniforms;
 
 namespace PTSharpCore
 {
@@ -45,7 +42,7 @@ namespace PTSharpCore
         {
             return sample(scene, ray, true, FirstHitSamples, 0, rand);
         }
-        
+
         public void SetSpecularMode(SpecularMode s)
         {
             SpecularMode = s;
@@ -55,7 +52,7 @@ namespace PTSharpCore
         {
             LightMode = l;
         }
-       
+
         Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand, bool russianRoulette = false, double minReflectance = 0.05)
         {
             if (depth > MaxBounces)
@@ -103,7 +100,9 @@ namespace PTSharpCore
                 {
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
-                        (var newRay, var reflected, var p) = ray.Bounce(info, ((double)u + Random.Shared.NextDouble()) / (double)n, ((float)v + Random.Shared.NextDouble()) / (double)n, mode, Random.Shared);
+                        var fu = (u + Random.Shared.NextDouble()) / n;
+                        var fv = (v + Random.Shared.NextDouble()) / n;
+                        (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode, Random.Shared);
 
                         if (mode.Equals(BounceType.BounceTypeAny))
                         {
@@ -113,7 +112,8 @@ namespace PTSharpCore
                         if (p > 0 && reflected)
                         {
                             // specular
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared, russianRoulette, minReflectance);
+                            var inc_depth = Interlocked.Increment(ref depth);
+                            var indirect = sample(scene, newRay, reflected, 1, inc_depth, Random.Shared, russianRoulette, minReflectance);
                             var tinted = indirect.Mix(material.Color.Mul(indirect), material.Tint);
                             result = result.Add(tinted.MulScalar(p));
                         }
@@ -121,7 +121,8 @@ namespace PTSharpCore
                         if (p > 0 && !reflected)
                         {
                             // diffuse
-                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared, russianRoulette, minReflectance);
+                            var inc_depth = Interlocked.Increment(ref depth);
+                            var indirect = sample(scene, newRay, reflected, 1, inc_depth, Random.Shared, russianRoulette, minReflectance);
                             var direct = Colour.Black;
 
                             if (DirectLighting)

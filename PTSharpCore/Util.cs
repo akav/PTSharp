@@ -10,9 +10,9 @@ namespace PTSharpCore
         public static double EPS = 1e-9;
 
         public static double Radians(double degrees) => degrees * Math.PI / 180;
-        
+
         public static double Degrees(double radians) => radians * 180 / Math.PI;
-        
+
         public static Vector Cone(Vector direction, double theta, double u, double v, Random rand)
         {
             if (theta < Util.EPS)
@@ -29,7 +29,7 @@ namespace PTSharpCore
             var d = new Vector().Add(s.MulScalar(m1 * Math.Cos(a))).Add(t.MulScalar(m1 * Math.Sin(a))).Add(direction.MulScalar(m2)).Normalize();
             return d;
         }
-        
+
         public static Mesh CreateMesh(Material material)
         {
             var mesh = STL.Load("models/cylinder.stl", material);
@@ -49,15 +49,15 @@ namespace PTSharpCore
         {
             var material = Material.GlossyMaterial(Colour.HexColor(color), 1.3F, Radians(20));
             var mesh = STL.Load("models/toybrick.stl", material);
-	        mesh.SmoothNormalsThreshold(Radians(20));
-            mesh.FitInside(new Box(new Vector(), new Vector(2, 4, 10)), new Vector( 0, 0, 0 ));
-	        return mesh;
+            mesh.SmoothNormalsThreshold(Radians(20));
+            mesh.FitInside(new Box(new Vector(), new Vector(2, 4, 10)), new Vector(0, 0, 0));
+            return mesh;
         }
         public static Bitmap LoadImage(String path)
         {
             try
             {
-                Bitmap image1 = new Bitmap(path); 
+                Bitmap image1 = new Bitmap(path);
                 return image1;
             }
             catch (System.IO.FileNotFoundException)
@@ -67,13 +67,13 @@ namespace PTSharpCore
                 return null;
             }
         }
-        
+
         void SavePNG(String path, Bitmap bitmap)
         {
             try
             {
-                if(bitmap != null)
-                bitmap.Save(path);
+                if (bitmap != null)
+                    bitmap.Save(path);
             }
             catch (System.IO.FileNotFoundException)
             {
@@ -81,7 +81,7 @@ namespace PTSharpCore
                     "Please check the path.");
             }
         }
-        
+
         internal static double Median(double[] items)
         {
             var n = items.Length;
@@ -89,13 +89,16 @@ namespace PTSharpCore
             {
 
                 return 0;
-            } else if (n%2 == 1)
+            }
+            else if (n % 2 == 1)
             {
                 return items[items.Length / 2];
-            } else { 
+            }
+            else
+            {
                 var a = items[items.Length / 2 - 1];
                 var b = items[items.Length / 2];
-               return (a + b) / 2;
+                return (a + b) / 2;
             }
         }
 
@@ -111,7 +114,7 @@ namespace PTSharpCore
             double ret = x - Math.Truncate(x);
             return x;
         }
-        
+
         internal static double Clamp(double x, double lo, double hi)
         {
             if (x < lo)
@@ -120,7 +123,7 @@ namespace PTSharpCore
                 return hi;
             return x;
         }
-        
+
         internal static int ClampInt(int x, int lo, int hi)
         {
             if (x < lo)
@@ -134,18 +137,18 @@ namespace PTSharpCore
         {
             return x.ToString();
         }
-        
+
         double[] ParseFloats(String[] items)
         {
             List<double> result = new List<double>(items.Length);
-            foreach(String item in items)
+            foreach (String item in items)
             {
                 double f = double.Parse(item);
                 result.Add(f);
             }
             return result.ToArray();
         }
-        
+
         int[] ParseInts(String[] items)
         {
             List<int> result = new List<int>(items.Length);

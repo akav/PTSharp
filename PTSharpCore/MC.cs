@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace PTSharpCore
 {
-    class MC 
-    {   
+    class MC
+    {
         internal static Mesh NewSDFMesh(SDF sdf, Box box, double step)
         {
             var min = box.Min;
@@ -19,9 +18,9 @@ namespace PTSharpCore
             List<Triangle> triangles = new();
             for (int x = 0; x < nx - 1; x++)
             {
-                for(int y = 0; y < ny - 1; y++)
+                for (int y = 0; y < ny - 1; y++)
                 {
-                    for(int z = 0; z < nz - 1; z++)
+                    for (int z = 0; z < nz - 1; z++)
                     {
                         (var x0, var y0, var z0) = (x * sx + min.X, y * sy + min.Y, z * sz + min.Z);
                         (var x1, var y1, var z1) = (x0 + sx, y0 + sy, z0 + sz);
@@ -38,8 +37,8 @@ namespace PTSharpCore
                         };
 
                         double[] v = new double[8];
-        
-                        for(int i = 0; i < 8; i++)
+
+                        for (int i = 0; i < 8; i++)
                         {
                             v[i] = sdf.Evaluate(p[i]);
                         }
@@ -47,11 +46,12 @@ namespace PTSharpCore
                         if (mcPolygonize(p, v, 0) == null)
                         {
                             continue;
-                        } else
+                        }
+                        else
                         {
                             triangles.AddRange(mcPolygonize(p, v, 0));
                         }
-                        
+
                         /*switch (mcPolygonize(p, v, 0))
                         {
                             case null:
@@ -65,7 +65,7 @@ namespace PTSharpCore
             }
             return Mesh.NewMesh(triangles.ToArray());
         }
-        
+
         static Triangle[] mcPolygonize(Vector[] p, double[] v, double x)
         {
             int index = 0;
@@ -91,11 +91,11 @@ namespace PTSharpCore
                     points[i] = mcInterpolate(p[a], p[b], v[a], v[b], x);
                 }
             }
-            
+
             var table = triangleTable[index];
             var count = table.Length / 3;
             Triangle[] result = new Triangle[count];
-            
+
             for (int i = 0; i < count; i++)
             {
                 Triangle triangle = new()
@@ -109,25 +109,25 @@ namespace PTSharpCore
             }
             return result;
         }
-        
+
         static Vector mcInterpolate(Vector p1, Vector p2, double v1, double v2, double x)
         {
             if (Math.Abs(x - v1) < Util.EPS)
                 return p1;
-            
+
             if (Math.Abs(x - v2) < Util.EPS)
                 return p2;
-            
+
             if (Math.Abs(v1 - v2) < Util.EPS)
                 return p1;
-            
+
             var t = (x - v1) / (v2 - v1);
-            
+
             return new Vector(p1.X + t * (p2.X - p1.X), p1.Y + t * (p2.Y - p1.Y), p1.Z + t * (p2.Z - p1.Z));
         }
 
         static readonly int[][] pairTable =  {
-            new int[] {0, 1}, new int[] {1, 2}, new int[] {2, 3}, new int[] {3, 0}, 
+            new int[] {0, 1}, new int[] {1, 2}, new int[] {2, 3}, new int[] {3, 0},
             new int[] {4, 5}, new int[] {5, 6}, new int[] {6, 7}, new int[] {7, 4},
             new int[] {0, 4}, new int[] {1, 5}, new int[] {2, 6}, new int[] {3, 7}
         };
@@ -168,8 +168,8 @@ namespace PTSharpCore
             0x070c, 0x0605, 0x050f, 0x0406, 0x030a, 0x0203, 0x0109, 0x0000
         };
 
-        static readonly int[][] triangleTable = new int[][] 
-        {   
+        static readonly int[][] triangleTable = new int[][]
+        {
             new int[] {},
             new int[] {0, 8, 3},
             new int[] {0, 1, 9},

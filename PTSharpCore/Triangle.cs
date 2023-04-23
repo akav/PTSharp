@@ -1,18 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 
 namespace PTSharpCore
-{   
+{
     public class Triangle : IShape
     {
         internal Material Material;
         public Vector V1, V2, V3;
         public Vector N1, N2, N3;
         public Vector T1, T2, T3;
-        
+
         internal Triangle() { }
 
         internal Triangle(Vector v1, Vector v2, Vector v3)
@@ -22,7 +18,7 @@ namespace PTSharpCore
             V3 = v3;
         }
 
-        internal Triangle (Vector v1, Vector v2, Vector v3, Material Material)
+        internal Triangle(Vector v1, Vector v2, Vector v3, Material Material)
         {
             V1 = v1;
             V2 = v2;
@@ -36,6 +32,23 @@ namespace PTSharpCore
             t.V1 = v1;
             t.V2 = v2;
             t.V3 = v3;
+            t.T1 = t1;
+            t.T2 = t2;
+            t.T3 = t3;
+            t.Material = material;
+            t.FixNormals();
+            return t;
+        }
+
+        internal static Triangle NewTriangle(Vector v1, Vector v2, Vector v3, Vector n1, Vector n2, Vector n3, Vector t1, Vector t2, Vector t3, Material material)
+        {
+            Triangle t = new Triangle();
+            t.V1 = v1;
+            t.V2 = v2;
+            t.V3 = v3;
+            t.N1 = n1;
+            t.N2 = n2;
+            t.N3 = n3;
             t.T1 = t1;
             t.T2 = t2;
             t.T3 = t3;
@@ -78,7 +91,7 @@ namespace PTSharpCore
             var pz = r.Direction.X * e2y - r.Direction.Y * e2x;
             var det = e1x * px + e1y * py + e1z * pz;
 
-            if (det > -Util.EPS && det < Util.EPS) 
+            if (det > -Util.EPS && det < Util.EPS)
             {
                 return Hit.NoHit;
             }
@@ -89,7 +102,7 @@ namespace PTSharpCore
             var tz = r.Origin.Z - V1.Z;
             var u = (tx * px + ty * py + tz * pz) * inv;
 
-            if(u < 0 || u > 1)
+            if (u < 0 || u > 1)
             {
                 return Hit.NoHit;
             }
@@ -99,7 +112,7 @@ namespace PTSharpCore
             var qz = tx * e1y - ty * e1x;
             var v = (r.Direction.X * qx + r.Direction.Y * qy + r.Direction.Z * qz) * inv;
 
-            if((v < 0) || ((u + v) > 1))
+            if ((v < 0) || ((u + v) > 1))
             {
                 return Hit.NoHit;
 
@@ -107,14 +120,15 @@ namespace PTSharpCore
 
             var d = (e2x * qx + e2y * qy + e2z * qz) * inv;
 
-            if(d < Util.EPS) {
+            if (d < Util.EPS)
+            {
                 return Hit.NoHit;
             }
 
             return new Hit(this, d, null);
         }
 
-        Vector IShape.UVector(Vector p)
+        Vector IShape.UV(Vector p)
         {
             (var u, var v, var w) = Barycentric(p);
             var n = new Vector();
@@ -122,6 +136,11 @@ namespace PTSharpCore
             n = n.Add(T2.MulScalar(v));
             n = n.Add(T3.MulScalar(w));
             return new Vector(n.X, n.Y, 0);
+        }
+
+        Vector SetUV(Vector2 p)
+        {
+            return new Vector(p.X, p.Y, 0);
         }
 
         Material IShape.MaterialAt(Vector v) => Material;
@@ -135,7 +154,7 @@ namespace PTSharpCore
             n = n.Add(N3.MulScalar(w));
             n = n.Normalize();
 
-            if(Material.NormalTexture != null)
+            if (Material.NormalTexture != null)
             {
                 var b = new Vector();
                 b = b.Add(T1.MulScalar(u));
@@ -157,7 +176,7 @@ namespace PTSharpCore
                 n = matrix.MulDirection(ns);
             }
 
-            if(Material.BumpTexture != null)
+            if (Material.BumpTexture != null)
             {
                 var b = new Vector();
                 b = b.Add(T1.MulScalar(u));
@@ -176,8 +195,9 @@ namespace PTSharpCore
             n = n.Normalize();
             return n;
         }
-                
-        double Area() {
+
+        double Area()
+        {
             var e1 = V2.Sub(V1);
             var e2 = V3.Sub(V1);
             var n = e1.Cross(e2);
@@ -190,6 +210,7 @@ namespace PTSharpCore
             var e2 = V3.Sub(V1);
             return e1.Cross(e2).Normalize();
         }
+
         (double, double, double) Barycentric(Vector p)
         {
             var v0 = V2.Sub(V1);
@@ -206,11 +227,12 @@ namespace PTSharpCore
             var u = 1 - v - w;
             return (u, v, w);
         }
+
         public void FixNormals()
         {
             var n = Normal();
             var zero = new Vector();
-            
+
             if (N1.Equals(zero))
                 N1 = n;
 

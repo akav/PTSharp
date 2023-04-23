@@ -192,14 +192,13 @@ namespace PTSharpCore
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct Vector
     {
-        
         public static Vector ORIGIN = new Vector(0, 0, 0);
         public static Vector Zero = new Vector(0, 0, 0);
         public static Vector One = new Vector(1, 1, 1);
         public static Vector Up = new Vector(0, 1, 0);
 
         public double X, Y, Z, W;
-        
+
         public Vector(double x, double y, double z)
         {
             this.X = x;
@@ -281,6 +280,28 @@ namespace PTSharpCore
         public static Vector operator +(Vector v)
         {
             return v;
+        }
+
+        public static bool operator <(Vector a, Vector b)
+        {
+            return a.X < b.X && a.Y < b.Y && a.Z < b.Z;
+        }
+
+        public static bool operator >(Vector a, Vector b)
+        {
+            return a.X > b.X && a.Y > b.Y && a.Z > b.Z;
+        }
+
+        // Compare a Vector with an int using the '<' operator.
+        public static bool operator <(Vector v, int i)
+        {
+            return v.X < i && v.Y < i && v.Z < i;
+        }
+
+        // Compare a Vector with an int using the '>' operator.
+        public static bool operator >(Vector v, int i)
+        {
+            return v.X > i && v.Y > i && v.Z > i;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -402,9 +423,9 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Mod(Vector b)
         {
-            var x = this.X - b.X * Math.Floor(this.X / b.X);
-            var y = this.Y - b.Y * Math.Floor(this.Y / b.Y);
-            var z = this.Z - b.Z * Math.Floor(this.Z / b.Z);
+            var x = X - b.X * Math.Floor(X / b.X);
+            var y = Y - b.Y * Math.Floor(Y / b.Y);
+            var z = Z - b.Z * Math.Floor(Z / b.Z);
             return new Vector(x, y, z);
         }
 
@@ -424,7 +445,19 @@ namespace PTSharpCore
         public Vector Min(Vector b) => new Vector(Math.Min(X, b.X), Math.Min(Y, b.Y), Math.Min(Z, b.Z));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector Min(Vector a, Vector b)
+        {
+            return new Vector(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Min(a.Z, b.Z));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Max(Vector b) => new Vector(Math.Max(X, b.X), Math.Max(Y, b.Y), Math.Max(Z, b.Z));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector Max(Vector a, Vector b)
+        {
+            return new Vector(Math.Max(a.X, b.X), Math.Max(a.Y, b.Y), Math.Max(a.Z, b.Z));
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector MinAxis()

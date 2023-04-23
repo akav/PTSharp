@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 
 
@@ -260,7 +259,7 @@ namespace PTSharpCore
 
             try
             {
-                STLDocument stlBinary; 
+                STLDocument stlBinary;
 
                 using (Stream stream = File.Open(filename, FileMode.Open))
                 {

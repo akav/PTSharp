@@ -1,10 +1,7 @@
 using System;
-using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 
 namespace PTSharpCore
 {
@@ -13,29 +10,27 @@ namespace PTSharpCore
         public Triangle[] Triangles;
         Box box;
         Tree tree;
-        public Colour Color { get; set; }
-        public Vector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        Mesh() { }
         
+        public Mesh() { }
+
         internal Mesh(Triangle[] triangles_, Box box_, Tree tree_)
         {
             Triangles = triangles_;
             box = box_;
             tree = tree_;
         }
-        
+
         internal static Mesh NewMesh(Triangle[] triangles)
         {
             return new Mesh(triangles, null, null);
         }
-        
+
         void dirty()
         {
             box = null;
             tree = null;
         }
-        
+
         Mesh Copy()
         {
             Triangle[] triangle = new Triangle[Triangles.Length];
@@ -53,7 +48,7 @@ namespace PTSharpCore
             {
                 var shapes = new IShape[Triangles.Length];
 
-                for (int i=0; i<Triangles.Length; i++)
+                for (int i = 0; i < Triangles.Length; i++)
                 {
                     shapes[i] = Triangles[i];
                 }
@@ -67,7 +62,7 @@ namespace PTSharpCore
             {
                 List<IShape> shapes = new List<IShape>();
 
-                foreach(var triangle in Triangles)
+                foreach (var triangle in Triangles)
                 {
                     shapes.Add(triangle);
                 }
@@ -89,7 +84,7 @@ namespace PTSharpCore
         {
             return tree.Intersect(r);
         }
-        
+
         Box IShape.BoundingBox()
         {
             if (box is null)
@@ -106,18 +101,17 @@ namespace PTSharpCore
             }
             return box;
         }
-        
-        internal Box BoundingBox()
+
+        public Box BoundingBox()
         {
-            if (box is null)
+            if (box == null)
             {
                 var min = Triangles[0].V1;
                 var max = Triangles[0].V1;
-
-                foreach (Triangle t in Triangles)
+                foreach (var t in Triangles)
                 {
-                    min = min.Min(t.V1).Min(t.V2).Min(t.V3);
-                    max = max.Max(t.V1).Max(t.V2).Max(t.V3);
+                    min = Vector.Min(min, Vector.Min(t.V1, Vector.Min(t.V2, t.V3)));
+                    max = Vector.Max(max, Vector.Max(t.V1, Vector.Max(t.V2, t.V3)));
                 }
                 box = new Box(min, max);
             }
@@ -129,7 +123,7 @@ namespace PTSharpCore
             return tree.Intersect(r);
         }
 
-        Vector IShape.UVector(Vector p)
+        Vector IShape.UV(Vector p)
         {
             return new Vector();
         }
@@ -143,11 +137,11 @@ namespace PTSharpCore
         {
             return new Vector();
         }
-
-        Vector smoothNormalsThreshold(Vector normal, Vector[] normals, double threshold)
+                
+        private static Vector SmoothNormalsThreshold(Vector normal, List<Vector> normals, double threshold)
         {
-            Vector result = new Vector();
-            foreach (Vector x in normals)
+            var result = new Vector();
+            foreach (var x in normals)
             {
                 if (x.Dot(normal) >= threshold)
                 {
@@ -157,38 +151,42 @@ namespace PTSharpCore
             return result.Normalize();
         }
 
-        internal void SmoothNormalsThreshold(double radians)
+        public void SmoothNormalsThreshold(double radians)
         {
-            double threshold = Math.Cos(radians);
-            
-            List<Vector> NL1 = new List<Vector>();
-            List<Vector> NL2 = new List<Vector>();
-            List<Vector> NL3 = new List<Vector>();
-
-            Dictionary<Vector, Vector[]> lookup = new Dictionary<Vector, Vector[]>();
-            
-            foreach (Triangle t in Triangles)
+            var threshold = Math.Cos(radians);
+            var lookup = new Dictionary<Vector, List<Vector>>();
+            foreach (var t in Triangles)
             {
-                NL1.Add(t.N1);
-                NL2.Add(t.N2);
-                NL3.Add(t.N3);
+                if (!lookup.ContainsKey(t.V1))
+                {
+                    lookup[t.V1] = new List<Vector>();
+                }
+                lookup[t.V1].Add(t.N1);
 
-                lookup[t.V1] = NL1.ToArray();
-                lookup[t.V2] = NL2.ToArray();
-                lookup[t.V3] = NL3.ToArray();
+                if (!lookup.ContainsKey(t.V2))
+                {
+                    lookup[t.V2] = new List<Vector>();
+                }
+                lookup[t.V2].Add(t.N2);
+
+                if (!lookup.ContainsKey(t.V3))
+                {
+                    lookup[t.V3] = new List<Vector>();
+                }
+                lookup[t.V3].Add(t.N3);
             }
 
-            foreach (Triangle t in Triangles)
+            foreach (var t in Triangles)
             {
-                t.N1 = smoothNormalsThreshold(t.N1, lookup[t.V1], threshold);
-                t.N2 = smoothNormalsThreshold(t.N2, lookup[t.V2], threshold);
-                t.N3 = smoothNormalsThreshold(t.N3, lookup[t.V3], threshold);
+                t.N1 = SmoothNormalsThreshold(t.N1, lookup[t.V1], threshold);
+                t.N2 = SmoothNormalsThreshold(t.N2, lookup[t.V2], threshold);
+                t.N3 = SmoothNormalsThreshold(t.N3, lookup[t.V3], threshold);
             }
         }
 
         public void SmoothNormals()
         {
-            Dictionary<Vector, Vector> lookup = new Dictionary<Vector, Vector>();
+            var lookup = new ConcurrentDictionary<Vector, Vector>();
 
             foreach (var t in Triangles)
             {
@@ -204,7 +202,7 @@ namespace PTSharpCore
                 lookup[t.V3] = lookup[t.V3].Add(t.N3);
             }
 
-            Dictionary<Vector, Vector> lookup2 = new Dictionary<Vector, Vector>();
+            var lookup2 = new Dictionary<Vector, Vector>();
 
             foreach (KeyValuePair<Vector, Vector> p in lookup)
             {
@@ -217,6 +215,37 @@ namespace PTSharpCore
                 t.N2 = lookup2[t.V2];
                 t.N3 = lookup2[t.V3];
             }
+
+            /*var lookup = new Dictionary<Vector, Vector>();
+            foreach (var t in Triangles)
+            {
+                if (!lookup.ContainsKey(t.V1))
+                    lookup.Add(t.V1, t.N1);
+                else
+                    lookup[t.V1] += t.N1;
+
+                if (!lookup.ContainsKey(t.V2))
+                    lookup.Add(t.V2, t.N2);
+                else
+                    lookup[t.V2] += t.N2;
+
+                if (!lookup.ContainsKey(t.V3))
+                    lookup.Add(t.V3, t.N3);
+                else
+                    lookup[t.V3] += t.N3;
+            }
+
+            foreach (var k in lookup.Keys)
+            {
+                lookup[k] = lookup[k].Normalize();
+            }
+
+            foreach (var t in Triangles)
+            {
+                t.N1 = lookup[t.V1];
+                t.N2 = lookup[t.V2];
+                t.N3 = lookup[t.V3];
+            }*/
         }
 
         void UnitCube()
@@ -244,7 +273,7 @@ namespace PTSharpCore
 
         internal void Transform(Matrix matrix)
         {
-            foreach(Triangle t in Triangles)
+            foreach (Triangle t in Triangles)
             {
                 t.V1 = matrix.MulPosition(t.V1);
                 t.V2 = matrix.MulPosition(t.V2);
@@ -262,6 +291,6 @@ namespace PTSharpCore
             {
                 t.Material = material;
             }
-        }       
+        }
     }
 }

@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
@@ -10,15 +6,15 @@ namespace PTSharpCore
     {
         double func(double x, double y);
     }
-    
+
     class Function : Func
     {
         Func Funct;
         Box Box;
         Material Material;
         public Colour Color { get; set; }
-        
-        Function() {}
+
+        Function() { }
 
         Function(Func Function, Box Box, Material Material)
         {
@@ -26,12 +22,12 @@ namespace PTSharpCore
             this.Box = Box;
             this.Material = Material;
         }
-        
+
         static IShape NewFunction(Func function, Box box, Material material)
         {
             return new Function(function, box, material);
         }
-        
+
         void IShape.Compile() { }
 
         Box GetBoundingBox()
@@ -59,7 +55,7 @@ namespace PTSharpCore
             return Hit.NoHit;
         }
 
-        Vector IShape.UVector(Vector p)
+        Vector IShape.UV(Vector p)
         {
             double x1 = Box.Min.X;
             double x2 = Box.Max.X;

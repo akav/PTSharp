@@ -1,11 +1,11 @@
 using MathNet.Numerics.Random;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace PTSharpCore
 {
@@ -34,8 +34,8 @@ namespace PTSharpCore
             r.Scene = scene;
             r.Camera = camera;
             r.Sampler = sampler;
-            r.PBuffer = new Buffer(w, h);
-            r.SamplesPerPixel = 2;
+            r.PBuffer = Buffer.NewBuffer(w, h);
+            r.SamplesPerPixel = 1;
             r.AdaptiveSamples = 0;
             r.StratifiedSampling = false;
             r.AdaptiveThreshold = 1;
@@ -107,8 +107,12 @@ namespace PTSharpCore
                                 Colour c = new Colour(0, 0, 0);
                                 c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
                                 buf.AddSample(x, y, c);
-                            }
-
+                                //var offset = (y * w + x) * 4;
+                                //Span<byte> pixelSpan = Program.bitmap.AsSpan(offset, 4); // Convert array to Span
+                                //pixelSpan[0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                //pixelSpan[1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                //pixelSpan[2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                            }                           
                         }
                         // Adaptive Sampling
                         if (AdaptiveSamples > 0)
@@ -167,7 +171,7 @@ namespace PTSharpCore
             sw.Start();
 
             // Random Number Generator from on Math.Numerics
-            var rand = Random.Shared;
+            var rand = new SystemRandomSource(sw.Elapsed.Milliseconds, true);
 
             // Frame resolution
             int totalPixels = h * w;
@@ -204,14 +208,437 @@ namespace PTSharpCore
             }
             else
             {
+                /*
+                // Create a thread-safe buffer object to store the sample results
+                //PixelBuffer buf = new PixelBuffer(w, h);
+
+                // Process the pixels in parallel, ensuring order of processing
+                Parallel.For(0, w * h, (i) =>
+                {
+                    int x = i % w;
+                    int y = i / w;
+
+                    Colour c = new Colour(0, 0, 0);
+
+                    for (int p = 0; p < spp; p++)
+                    {
+                        // Render the pixel at the current coordinates, using the current resolution
+                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                    }
+
+                    // Average the color over the number of samples
+                    c /= spp;
+
+                    // Add the sample result to the buffer object in a thread-safe manner
+                    buf.AddSample(x, y, c);
+
+                    // Update the bitmap with the pixel color
+                    var offset = (y * w + x) * 4; // BGR
+                    Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                    Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                    Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                }); */
+
+
+                /*
+                // Shuffle the pixels
+                var pixels = new List<(int x, int y)>();
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        pixels.Add((x, y));
+                    }
+                }
+
+                var pixelSpan = pixels.ToArray(); // Convert List to Span
+
+                for (int i = pixelSpan.Length - 1; i > 0; i--)
+                {
+                    int j = rand.Next(0, i + 1);
+                    (pixelSpan[j], pixelSpan[i]) = (pixelSpan[i], pixelSpan[j]);
+                }
+
+                // Process the pixels in parallel
+                var processedPixels = new ConcurrentDictionary<(int x, int y), bool>();
+                var lockObject = new object();
+
+                Parallel.ForEach(pixelSpan, po, (pixel) =>
+                {
+                    int x = pixel.x;
+                    int y = pixel.y;
+
+                    Colour c = new Colour(0, 0, 0);
+
+                    for (int p = 0; p < spp; p++)
+                    {
+                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                    }
+
+                    c /= spp;
+
+                    lock (lockObject)
+                    {
+                        buf.AddSample(x, y, c);
+                    }
+
+                    var offset = (y * w + x) * 4;
+                    Span<byte> pixelSpan = Program.bitmap.AsSpan(offset, 4); // Convert array to Span
+                    pixelSpan[0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                    pixelSpan[1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                    pixelSpan[2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                });*/
+
+
+                /*
+                int tileWidth = w / 3; // divide the image into 3 tiles horizontally
+                int tileHeight = h / 4; // divide the image into 4 tiles vertically
+                var tasks = new List<Task>();
+                for (int ty = 0; ty < 4; ty++)
+                {
+                    for (int tx = 0; tx < 3; tx++)
+                    {
+                        int tileX = tx * tileWidth;
+                        int tileY = ty * tileHeight;
+                        int tileWidthActual = tx == 2 ? w - tileX : tileWidth; // handle last tile width
+                        int tileHeightActual = ty == 3 ? h - tileY : tileHeight; // handle last tile height
+                        var tileBuf = new Buffer(tileWidthActual, tileHeightActual);
+                        tasks.Add(Task.Run(() =>
+                        {
+                            for (int y = tileY; y < tileY + tileHeightActual; y++)
+                            {
+                                for (int x = tileX; x < tileX + tileWidthActual; x++)
+                                {
+                                    Colour c = new Colour(0, 0, 0);
+                                    for (int p = 0; p < spp; p++)
+                                    {
+                                        // Render the pixel at the current coordinates, using the current resolution
+                                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                                    }
+                                    // Average the color over the number of samples
+                                    c /= spp;
+                                    tileBuf.AddSample(x - tileX, y - tileY, c);
+                                    // Update the bitmap with the pixel color
+                                    var offset = (y * w + x) * 4; // BGR
+                                    Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                    Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                    Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                                }
+                            }
+                            // Combine the tile's color buffer into the main color buffer
+                            lock (buf)
+                            {
+                                buf.Combine(tileBuf, tileX, tileY);
+                            }
+                        }));
+                    }
+                }
+                Task.WaitAll(tasks.ToArray());*/
+
+
+                /*
+                // Shuffle the pixels
+                List<(int x, int y)> pixels = new List<(int x, int y)>();
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        pixels.Add((x, y));
+                    }
+                }
+                
+                for (int i = pixels.Count - 1; i > 0; i--)
+                {
+                    int j = rand.Next(0, i + 1);
+                    (int x1, int y1) temp = pixels[i];
+                    pixels[i] = pixels[j];
+                    pixels[j] = temp;
+                }
+
+                // Process the pixels in parallel
+                ConcurrentDictionary<(int x, int y), bool> processedPixels = new ConcurrentDictionary<(int x, int y), bool>();
+                // Create a lock object
+                object lockObject = new object();
+
+                // Process the pixels in parallel
+                Parallel.ForEach(pixels, po, (pixel) =>
+                {
+                    int x = pixel.x;
+                    int y = pixel.y;
+
+                    Colour c = new Colour(0, 0, 0);
+
+                    for (int p = 0; p < spp; p++)
+                    {
+                        // Render the pixel at the current coordinates, using the current resolution
+                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                    }
+
+                    // Average the color over the number of samples
+                    c /= spp;
+
+                    // Lock the buffer object to ensure thread safety
+                    lock (lockObject)
+                    {
+                        buf.AddSample(x, y, c);
+                    }
+
+                    // Update the bitmap with the pixel color
+                    var offset = (y * w + x) * 4; // BGR
+                    Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                    Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                    Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                });*/
+
+
+
+                /*
+                // Generate a list of pixel coordinates
+                List<(int, int)> pixel_coords = new List<(int, int)>();
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        pixel_coords.Add((x, y));
+                    }
+                }
+
+                // Shuffle the pixel coordinates
+                
+                for (int i = pixel_coords.Count - 1; i > 0; i--)
+                {
+                    int j = rand.Next(i + 1);
+                    (int, int) temp = pixel_coords[i];
+                    pixel_coords[i] = pixel_coords[j];
+                    pixel_coords[j] = temp;
+                }
+
+                // Render the pixels in a random order
+                foreach ((int x, int y) in pixel_coords)
+                {
+                    Colour c = new Colour(0, 0, 0);
+
+                    for (int p = 0; p < spp; p++)
+                    {
+                        // Render the pixel at the current coordinates, using the current resolution
+                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                    }
+
+                    // Average the color over the number of samples
+                    c /= spp;
+                    buf.AddSample(x, y, c);
+
+                    // Update the bitmap with the pixel color
+                    var offset = (y * w + x) * 4; // BGR
+                    Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                    Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                    Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                }*/
+
+
+
+
+                /*
+                // Set the number of samples per pixel
+                //int spp = 16;
+
+                // Set the maximum number of iterations
+                int max_iterations = 2;
+
+                // Create a buffer to hold the accumulated samples
+                //var buf = new Buffer(w, h, spp);
+
+                // Render the image progressively
+                for (int i = 0; i < max_iterations; i++)
+                {
+                    // Render each pixel in parallel using PLINQ
+                    ParallelEnumerable.Range(0, h).ForAll(y =>
+                    {
+                        for (int x = 0; x < w; x++)
+                        {
+                            // Generate a random offset for this sample
+                            var rand = new Random((x + y * w) * (i + 1));
+
+                            // Sample the color at this pixel
+                            Colour c = new Colour(0, 0, 0);
+
+                            for (int p = 0; p < spp; p++)
+                            {
+                                // Render the pixel using the current resolution
+                                c += sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                            }
+
+                            // Average the color over the number of samples
+                            c /= spp;
+
+                            // Add the sample to the buffer
+                            buf.AddSample(x, y, c);
+
+                            // Update the bitmap with the pixel color
+                            var offset = (y * w + x) * 4; // BGR
+                            Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                            Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                            Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                        }
+                    });
+
+                    // Show the current image
+                    //Program.ShowImage();
+                }*/
+
+
+
+                /*
                 int tile_size = 32;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
                 int num_tiles_y = (h + tile_size - 1) / tile_size;
-                var partitioner = Partitioner.Create(0, num_tiles_x * num_tiles_y);
 
-                Parallel.ForEach(partitioner, (range, state) =>
+                for (int tile_y = 0; tile_y < num_tiles_y; tile_y++)
                 {
-                    for (int tile_index = range.Item1; tile_index < range.Item2; tile_index++)
+                    for (int tile_x = 0; tile_x < num_tiles_x; tile_x++)
+                    {
+                        int x_start = tile_x * tile_size;
+                        int y_start = tile_y * tile_size;
+                        int x_end = Math.Min(x_start + tile_size, w);
+                        int y_end = Math.Min(y_start + tile_size, h);
+
+                        Parallel.For(y_start, y_end, y =>
+                        {
+                            for (int x = x_start; x < x_end; x++)
+                            {
+                                Colour c = new Colour(0, 0, 0);
+
+                                for (int p = 0; p < spp; p++)
+                                {
+                                    // Render the tile at the current coordinates, using the current resolution
+                                    c += sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                                }
+
+                                // Average the color over the number of samples
+                                c /= spp;
+                                buf.AddSample(x, y, c);
+
+                                // Update the bitmap with the pixel color
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                            }
+                        });
+                    }
+                }*/
+
+
+
+                /*
+                int tile_size = 32;
+                int num_tiles_x = (w + tile_size - 1) / tile_size;
+                int num_tiles_y = (h + tile_size - 1) / tile_size;
+
+                // Create a list of tile indices
+                List<int> tile_indices = new List<int>();
+                for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
+                {
+                    tile_indices.Add(tile_index);
+                }
+
+                // Create a partitioner that partitions the list of tile indices into chunks
+                var partitioner = Partitioner.Create(tile_indices, true);
+
+                // Process the tiles using Parallel.ForEach with work stealing
+                Parallel.ForEach(partitioner, (tile_index) =>
+                {
+                    int tile_x = tile_index % num_tiles_x;
+                    int tile_y = tile_index / num_tiles_x;
+                    int x_start = tile_x * tile_size;
+                    int y_start = tile_y * tile_size;
+                    int x_end = Math.Min(x_start + tile_size, w);
+                    int y_end = Math.Min(y_start + tile_size, h);
+
+                    // Render the tile
+                    for (int y = y_start; y < y_end; y++)
+                    {
+                        for (int x = x_start; x < x_end; x++)
+                        {
+                            // Render the tile at the current coordinates, using the current resolution
+                            Colour c = new Colour(0, 0, 0);
+                            c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
+
+                            // Average the color over the number of samples
+                            c /= spp;
+                            buf.AddSample(x, y, c);
+
+                            // Update the bitmap with the pixel color
+                            var offset = (y * w + x) * 4; // BGR
+                            Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                            Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                            Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                        }
+                    }
+                });*/
+
+                /*
+                int tile_size = 32;
+                int num_tiles_x = (w + tile_size - 1) / tile_size;
+                int num_tiles_y = (h + tile_size - 1) / tile_size;
+
+                for (spp = 1; spp <= 10; spp *= 2)
+                {
+                    List<Task> tasks = new List<Task>();
+
+                    for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
+                    {
+                        int tile_x = tile_index % num_tiles_x;
+                        int tile_y = tile_index / num_tiles_x;
+                        int x_start = tile_x * tile_size;
+                        int y_start = tile_y * tile_size;
+                        int x_end = Math.Min(x_start + tile_size, w);
+                        int y_end = Math.Min(y_start + tile_size, h);
+
+                        Task task = Task.Run(() =>
+                        {
+                            for (int y = y_start; y < y_end; y++)
+                            {
+                                for (int x = x_start; x < x_end; x++)
+                                {
+                                    // Render the tile at the current coordinates, using the current resolution and sample count
+                                    Colour c = new Colour(0, 0, 0);
+                                    for (int i = 0; i < spp; i++)
+                                    {
+                                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
+                                    }
+
+                                    // Average the color over the number of samples
+                                    c /= spp;
+                                    buf.AddSample(x, y, c);
+
+                                    // Update the bitmap with the new pixel value
+                                    var offset = (y * w + x) * 4; // BGR
+                                    Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                    Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                    Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                                }
+                            }
+                        });
+
+                        tasks.Add(task);
+                    }
+
+                    Task.WaitAll(tasks.ToArray());
+
+                    // Display the image after each pass
+                    //DisplayImage(Program.bitmap);
+                }*/
+
+
+                /*
+                int tile_size = 32;
+                int num_tiles_x = (w + tile_size - 1) / tile_size;
+                int num_tiles_y = (h + tile_size - 1) / tile_size;
+
+                Parallel.ForEach(Partitioner.Create(0, num_tiles_x * num_tiles_y), tile_range =>
+                {
+                    for (int tile_index = tile_range.Item1; tile_index < tile_range.Item2; tile_index++)
                     {
                         int tile_x = tile_index % num_tiles_x;
                         int tile_y = tile_index / num_tiles_x;
@@ -238,17 +665,162 @@ namespace PTSharpCore
                                 Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
                             }
                         }
+                    }
+                }); */
 
-                        // Check if there are more tiles than processors and, if so, yield the thread to the scheduler
-                        if (num_tiles_x * num_tiles_y > Environment.ProcessorCount * 2)
+                /*
+                int tile_size = 32;
+                int num_tiles_x = (w + tile_size - 1) / tile_size;
+                int num_tiles_y = (h + tile_size - 1) / tile_size;
+
+                List<Task> tasks = new List<Task>();
+
+                for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
+                {
+                    int tile_x = tile_index % num_tiles_x;
+                    int tile_y = tile_index / num_tiles_x;
+                    int x_start = tile_x * tile_size;
+                    int y_start = tile_y * tile_size;
+                    int x_end = Math.Min(x_start + tile_size, w);
+                    int y_end = Math.Min(y_start + tile_size, h);
+
+                    Task task = Task.Run(() =>
+                    {
+                        var pixels = buf.Pixels; // Store a local reference to the pixels array for this thread
+
+                        for (int y = y_start; y < y_end; y++)
                         {
-                            if (tile_index % Environment.ProcessorCount == 0)
+                            for (int x = x_start; x < x_end; x++)
                             {
-                                Thread.Yield();
+                                // Render the tile at the current coordinates, using the current resolution
+                                Colour c = new Colour(0, 0, 0);
+                                c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
+
+                                // Average the color over the number of samples
+                                c /= spp;
+                                buf.AddSample(x, y, c);
+
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
                             }
                         }
+                    });
+
+                    tasks.Add(task);
+                }
+
+                Task.WaitAll(tasks.ToArray());*/
+
+
+                /* 
+                 int tile_size = 32;
+                 int num_tiles_x = (w + tile_size - 1) / tile_size;
+                 int num_tiles_y = (h + tile_size - 1) / tile_size;
+                 var partitioner = Partitioner.Create(0, num_tiles_x * num_tiles_y);
+
+
+
+                     Parallel.ForEach(partitioner, po, (range, state) =>
+                     {
+                         for (int p = 0; p < spp; p++)
+                         {
+                             for (int tile_index = range.Item1; tile_index < range.Item2; tile_index++)
+                             {
+                                 int tile_x = tile_index % num_tiles_x;
+                                 int tile_y = tile_index / num_tiles_x;
+                                 int x_start = tile_x * tile_size;
+                                 int y_start = tile_y * tile_size;
+                                 int x_end = Math.Min(x_start + tile_size, w);
+                                 int y_end = Math.Min(y_start + tile_size, h);
+
+                                 for (int y = y_start; y < y_end; y++)
+                                 {
+                                     for (int x = x_start; x < x_end; x++)
+                                     {
+                                         // Render the tile at the current coordinates, using the current resolution
+                                         Colour c = new Colour(0, 0, 0);
+                                         c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
+                                         buf.AddSample(x, y, c);
+
+                                         var offset = (y * w + x) * 4; // BGR
+                                         Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                         Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                         Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                                     }
+                                 }
+
+                                 // Check if there are more tiles than processors and, if so, yield the thread to the scheduler
+                                 if (num_tiles_x * num_tiles_y > Environment.ProcessorCount * 2)
+                                 {
+                                     if (tile_index % Environment.ProcessorCount == 0)
+                                     {
+                                         Thread.Yield();
+                                     }
+                                 }
+                             }
+                         }
+                     });*/
+
+                // Generate a list of pixel coordinates
+                List<(int, int)> pixel_coords = new List<(int, int)>();
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        pixel_coords.Add((x, y));
                     }
-                });
+                }
+
+                // Shuffle the pixel coordinates
+                for (int i = pixel_coords.Count - 1; i > 0; i--)
+                {
+                    int j = rand.Next(i + 1);
+                    (int, int) temp = pixel_coords[i];
+                    pixel_coords[i] = pixel_coords[j];
+                    pixel_coords[j] = temp;
+                }
+
+                // Create a work-stealing scheduler with the number of worker threads equal to the number of processor cores
+                int concurrencyLevel = Environment.ProcessorCount;
+                var scheduler = new WorkStealingScheduler(concurrencyLevel);
+
+                // Create an array of tasks to render the pixels in parallel
+                Task[] tasks = new Task[pixel_coords.Count];
+                for (int i = 0; i < pixel_coords.Count; i++)
+                {
+                    (int x, int y) coords = pixel_coords[i];
+
+                    tasks[i] = Task.Factory.StartNew(() =>
+                    {
+                        Colour c = new Colour(0, 0, 0);
+
+                        for (int p = 0; p < spp; p++)
+                        {
+                            // Render the pixel at the current coordinates, using the current resolution
+                            c += sampler.Sample(scene, camera.CastRay(coords.x, coords.y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                        }
+
+                        // Average the color over the number of samples
+                        c /= spp;
+                        buf.AddSample(coords.x, coords.y, c);
+
+                        // Update the bitmap with the pixel color
+                        var offset = (coords.y * w + coords.x) * 4; // BGR
+                        Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(coords.x, coords.y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                        Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(coords.x, coords.y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                        Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(coords.x, coords.y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                    });
+                }
+
+                // Wait for all the tasks to complete
+                Task.WaitAll(tasks);
+
+                // Dispose the work-stealing scheduler
+                scheduler.Dispose();
+
+
             }
             if (AdaptiveSamples > 0)
             {

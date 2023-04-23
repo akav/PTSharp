@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 
 namespace PTSharpCore
 {
@@ -193,7 +192,7 @@ namespace PTSharpCore
         public Colour MulScalar(double b) => new(r * b, g * b, this.b * b);
 
         public Colour Add(Colour b) => new(this.r + b.r, this.g + b.g, this.b + b.b);
-        
+
         public Colour Sub(Colour b) => new(r - b.r, g - b.g, this.b - b.b);
 
         public Colour Mul(Colour b) => new(r * b.r, g * b.g, this.b * b.b);
@@ -209,5 +208,13 @@ namespace PTSharpCore
         public double MinComponent() => Math.Min(Math.Min(r, g), b);
 
         public double MaxComponent() => Math.Max(Math.Max(r, g), b);
+
+        public static int GetIntFromColor(double r, double g, double b)
+        {
+            int ri = Math.Max(0, Math.Min(255, (int)Math.Round(r * 255.0)));
+            int gi = Math.Max(0, Math.Min(255, (int)Math.Round(g * 255.0)));
+            int bi = Math.Max(0, Math.Min(255, (int)Math.Round(b * 255.0)));
+            return (ri << 16) | (gi << 8) | bi;
+        }
     }
 }

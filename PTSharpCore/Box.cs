@@ -1,6 +1,4 @@
-using PTSharpCore;
 using System;
-using System.Threading;
 
 namespace PTSharpCore
 {
@@ -63,20 +61,20 @@ namespace PTSharpCore
                                      Min.Y <= b.Y && Max.Y >= b.Y &&
                                      Min.Z <= b.Z && Max.Z >= b.Z;
 
-        public bool Intersects(Box b) =>  
-            ! (Min.X > b.Max.X 
-            || Max.X < b.Min.X 
-            || Min.Y > b.Max.Y 
-            || Max.Y < b.Min.Y 
-            || Min.Z > b.Max.Z 
+        public bool Intersects(Box b) =>
+            !(Min.X > b.Max.X
+            || Max.X < b.Min.X
+            || Min.Y > b.Max.Y
+            || Max.Y < b.Min.Y
+            || Min.Z > b.Max.Z
             || Max.Z < b.Min.Z);
 
         public (double, double) Intersect(Ray r)
         {
-            (var x1, var y1, var z1) = (((Min.X - r.Origin.X) / r.Direction.X), ((Min.Y - r.Origin.Y) / r.Direction.Y), 
+            (var x1, var y1, var z1) = (((Min.X - r.Origin.X) / r.Direction.X), ((Min.Y - r.Origin.Y) / r.Direction.Y),
                 ((Min.Z - r.Origin.Z) / r.Direction.Z));
 
-            (var x2, var y2, var z2) = (((Max.X - r.Origin.X) / r.Direction.X), 
+            (var x2, var y2, var z2) = (((Max.X - r.Origin.X) / r.Direction.X),
                 ((Max.Y - r.Origin.Y) / r.Direction.Y), ((Max.Z - r.Origin.Z) / r.Direction.Z));
 
             if (x1 > x2)
@@ -91,7 +89,7 @@ namespace PTSharpCore
             {
                 (z1, z2) = (z2, z1);
             }
-            
+
             return (Math.Max(Math.Max(x1, y1), z1), Math.Min(Math.Min(x2, y2), z2));
         }
 

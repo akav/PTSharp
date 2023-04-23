@@ -1,13 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
     public class Sphere : IShape
-    {   
+    {
         internal Vector Center;
         internal double Radius;
         internal Material Material;
@@ -28,7 +24,7 @@ namespace PTSharpCore
 
         }
 
-        internal static Sphere NewSphere(Vector center, double radius, Material material) 
+        internal static Sphere NewSphere(Vector center, double radius, Material material)
         {
             var min = new Vector(center.X - radius, center.Y - radius, center.Z - radius);
             var max = new Vector(center.X + radius, center.Y + radius, center.Z + radius);
@@ -41,7 +37,8 @@ namespace PTSharpCore
             return Box;
         }
 
-        Hit IShape.Intersect(Ray r) {
+        Hit IShape.Intersect(Ray r)
+        {
             Vector to = r.Origin.Sub(Center);
             double b = to.Dot(r.Direction);
             double c = to.Dot(to) - Radius * Radius;
@@ -63,17 +60,18 @@ namespace PTSharpCore
             return Hit.NoHit;
         }
 
-        Vector IShape.UVector(Vector p) {
+        Vector IShape.UV(Vector p)
+        {
             p = p.Sub(Center);
             var u = Math.Atan2(p.Y, p.X);
             var v = Math.Atan2(p.Y, new Vector(p.X, 0, p.Y).Length());
             u = 1 - (u + Math.PI) / (2 * Math.PI);
             v = (v + Math.PI / 2) / Math.PI;
-            return new Vector(u, v, 0);            
+            return new Vector(u, v, 0);
         }
-       
+
         void IShape.Compile() { }
-        
+
         Material IShape.MaterialAt(Vector v)
         {
             return Material;

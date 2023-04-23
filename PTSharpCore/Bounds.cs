@@ -135,7 +135,7 @@ namespace PTSharpCore
 
             return 2;
         }
-        
+
         public Bounds3<T> Union(Point3<T> p)
         {
             return new Bounds3<T>(

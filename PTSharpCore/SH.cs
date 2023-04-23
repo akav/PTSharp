@@ -10,7 +10,7 @@ namespace PTSharpCore
         Material NegativeMaterial;
         func harmonicFunction;
         Mesh mesh;
-       
+
         internal static IShape NewSphericalHarmonic(int l, int m, Material pm, Material nm)
         {
             var sh = new SphericalHarmonic();
@@ -54,7 +54,7 @@ namespace PTSharpCore
             return new Hit(this, hit.T, null);
         }
 
-        Vector IShape.UVector(Vector p)
+        Vector IShape.UV(Vector p)
         {
             return new Vector();
         }

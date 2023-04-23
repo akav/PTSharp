@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
@@ -27,7 +23,7 @@ namespace PTSharpCore
         double[] Data;
         VolumeWindow[] Windows;
         Box Box;
-                
+
         public Volume() { }
 
         Volume(int W, int H, int D, double ZScale, double[] Data, VolumeWindow[] Windows, Box Box)
@@ -40,15 +36,16 @@ namespace PTSharpCore
             this.Windows = Windows;
             this.Box = Box;
         }
-        
+
         public double Get(int x, int y, int z)
         {
-            if (x < 0 || y < 0 || z < 0 || x >= W || y >= H || z >= D) {
+            if (x < 0 || y < 0 || z < 0 || x >= W || y >= H || z >= D)
+            {
                 return 0;
             }
             return Data[x + y * W + z * W * H];
         }
-        
+
         internal static Volume NewVolume(Box box, Bitmap[] images, double sliceSpacing, VolumeWindow[] windows)
         {
             GraphicsUnit unit = GraphicsUnit.Pixel;
@@ -62,10 +59,10 @@ namespace PTSharpCore
             int zval = 0;
 
             foreach (var image in images)
-            { 
-                for(int y = 0; y < h; y++)
+            {
+                for (int y = 0; y < h; y++)
                 {
-                    for(int x = 0; x < w; x++)
+                    for (int x = 0; x < w; x++)
                     {
                         var r = image.GetPixel(x, y).R;
                         double f = (double)r / 65535;
@@ -77,7 +74,7 @@ namespace PTSharpCore
             }
             return new Volume(w, h, d, zs, data, windows, box);
         }
-        
+
         public double Sample(double x, double y, double z)
         {
             z /= ZScale;
@@ -90,14 +87,14 @@ namespace PTSharpCore
             int x1 = x0 + 1;
             int y1 = y0 + 1;
             int z1 = z0 + 1;
-            var v000 = Get(x0, y0, z0); 
-            var v001 = Get(x0, y0, z1); 
-            var v010 = Get(x0, y1, z0); 
-            var v011 = Get(x0, y1, z1); 
-            var v100 = Get(x1, y0, z0); 
-            var v101 = Get(x1, y0, z1); 
-            var v110 = Get(x1, y1, z0); 
-            var v111 = Get(x1, y1, z1); 
+            var v000 = Get(x0, y0, z0);
+            var v001 = Get(x0, y0, z1);
+            var v010 = Get(x0, y1, z0);
+            var v011 = Get(x0, y1, z1);
+            var v100 = Get(x1, y0, z0);
+            var v101 = Get(x1, y0, z1);
+            var v110 = Get(x1, y1, z0);
+            var v111 = Get(x1, y1, z1);
             x -= (double)x0;
             y -= (double)y0;
             z -= (double)z0;
@@ -117,7 +114,7 @@ namespace PTSharpCore
         }
 
         void IShape.Compile() { }
-        
+
         internal int Sign(Vector a)
         {
             double s = Sample(a.X, a.Y, a.Z);
@@ -128,7 +125,7 @@ namespace PTSharpCore
                 {
                     return i + 1;
                 }
-                
+
                 if (s > window.Hi)
                 {
                     continue;
@@ -138,7 +135,7 @@ namespace PTSharpCore
             return Windows.Length + 1;
         }
 
-        Vector IShape.UVector(Vector p)
+        Vector IShape.UV(Vector p)
         {
             return new Vector();
         }
@@ -158,7 +155,7 @@ namespace PTSharpCore
             Material bm = new Material();
             double s = Sample(p.X, p.Y, p.Z);
 
-            foreach(var window in Windows)
+            foreach (var window in Windows)
             {
                 if (s >= window.Lo && s <= window.Hi)
                 {

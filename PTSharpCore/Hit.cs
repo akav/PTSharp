@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace PTSharpCore
 {
     public class Hit
@@ -32,13 +26,13 @@ namespace PTSharpCore
         {
             if (HitInfo is not null)
                 return HitInfo;
-            
+
             var shape = Shape;
             var position = r.Position(T);
             var normal = shape.NormalAt(position);
-            var material = Material.MaterialAt(shape,position);
+            var material = Material.MaterialAt(shape, position);
             var inside = false;
-            
+
             if (normal.Dot(r.Direction) > 0)
             {
                 normal = normal.Negate();
@@ -53,9 +47,9 @@ namespace PTSharpCore
                         break;
                 }
             }
-            
+
             Ray ray = new Ray(position, normal);
-            
+
             return new HitInfo(shape, position, normal, ray, material, inside);
         }
     }

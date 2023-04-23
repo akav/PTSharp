@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 
 namespace PTSharpCore
 {
@@ -24,7 +23,6 @@ namespace PTSharpCore
 
         public Ray WeightedBounce(double u, double v)
         {
-            //var rand = ConcurrentRandom.Instance;
             var radius = Math.Sqrt(u);
             var theta = 2 * Math.PI * v;
             var s = Direction.Cross(Vector.RandomUnitVector(Random.Shared)).Normalize();
@@ -41,9 +39,9 @@ namespace PTSharpCore
         {
             var n = info.Ray;
             var material = info.material;
-            
+
             var (n1, n2) = (1.0, material.Index);
-            
+
             if (info.Inside)
             {
                 (n1, n2) = (n2, n1);
@@ -66,7 +64,8 @@ namespace PTSharpCore
 
             if (reflect)
             {
-                return (n.Reflect(this).ConeBounce(material.Gloss, u, v, rand), true, p);
+                var reflected = n.Reflect(this);
+                return (reflected.ConeBounce(material.Gloss, u, v, rand), true, p);
             }
             else if (material.Transparent)
             {

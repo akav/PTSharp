@@ -49,7 +49,7 @@ namespace PTSharpCore
             return new Hit(this, t, null);
         }
 
-        Vector IShape.UVector(Vector a)
+        Vector IShape.UV(Vector a)
         {
             return new Vector();
         }
@@ -61,6 +61,6 @@ namespace PTSharpCore
         Vector IShape.NormalAt(Vector a)
         {
             return Normal;
-        }        
+        }
     }
 }

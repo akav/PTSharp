@@ -1,11 +1,9 @@
 using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-    
+
     public class Matrix
     {
         public double M11, M12, M13, M14;
@@ -24,22 +22,22 @@ namespace PTSharpCore
             this.M41 = x30; this.M42 = x31; this.M43 = x32; this.M44 = x33;
         }
 
-        public Matrix() {}
+        public Matrix() { }
 
         internal static Matrix Identity = new Matrix(1, 0, 0, 0,
                                                      0, 1, 0, 0,
                                                      0, 0, 1, 0,
-                                                     0, 0, 0, 1);       
+                                                     0, 0, 0, 1);
 
         internal Matrix Translate(Vector v) => new Matrix(1, 0, 0, v.X,
             0, 1, 0, v.Y,
             0, 0, 1, v.Z,
-            0, 0, 0, 1);       
+            0, 0, 0, 1);
 
         internal Matrix Scale(Vector v) => new Matrix(v.X, 0, 0, 0,
             0, v.Y, 0, 0,
             0, 0, v.Z, 0,
-            0, 0, 0, 1);                
+            0, 0, 0, 1);
 
         internal Matrix Rotate(Vector v, double a)
         {
@@ -51,7 +49,7 @@ namespace PTSharpCore
                               m * v.X * v.Y - v.Z * s, m * v.Y * v.Y + c, m * v.Y * v.Z + v.X * s, 0,
                               m * v.Z * v.X + v.Y * s, m * v.Y * v.Z - v.X * s, m * v.Z * v.Z + c, 0,
                               0, 0, 0, 1);
-        }       
+        }
 
         internal Matrix Frustum(double l, double r, double b, double t, double n, double f)
         {
@@ -63,7 +61,7 @@ namespace PTSharpCore
                               0, t1 / t3, (t + b) / t3, 0,
                               0, 0, (-f - n) / t4, (-t1 * f) / t4,
                               0, 0, -1, 0);
-        }       
+        }
 
         internal Matrix Orthographic(double l, double r, double b, double t, double n, double f)
         {
@@ -71,14 +69,14 @@ namespace PTSharpCore
                               0, 2 / (t - b), 0, -(t + b) / (t - b),
                               0, 0, -2 / (f - n), -(f + n) / (f - n),
                               0, 0, 0, 1);
-        }       
+        }
 
         internal Matrix Perspective(double fovy, double aspect, double near, double far)
         {
             double ymax = near * Math.Tan(fovy * Math.PI / 360);
             double xmax = ymax * aspect;
             return Frustum(-xmax, xmax, -ymax, ymax, near, far);
-        }       
+        }
 
         public Matrix LookAtMatrix(Vector eye, Vector center, Vector up)
         {
@@ -96,7 +94,7 @@ namespace PTSharpCore
         }
 
         internal Matrix Translate(Matrix m, Vector v) => new Matrix().Translate(v).Mul(m);
-                
+
         public Matrix Scale(Matrix m, Vector v) => Scale(v).Mul(m);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -153,7 +151,7 @@ namespace PTSharpCore
             var u = new Vector(M12, M22, M32);
             var b = new Vector(M13, M23, M33);
             var t = new Vector(M14, M24, M34);
-        
+
             (var xa, var xb) = ((r.MulScalar(box.Min.X)), (r.MulScalar(box.Max.X)));
             (var ya, var yb) = ((u.MulScalar(box.Min.Y)), (u.MulScalar(box.Max.Y)));
             (var za, var zb) = ((b.MulScalar(box.Min.Z)), (b.MulScalar(box.Max.Z)));

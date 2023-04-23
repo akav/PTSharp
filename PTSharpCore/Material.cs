@@ -1,10 +1,9 @@
-using MathNet.Numerics;
 using MathNet.Numerics.Distributions;
 using System;
 using System.Numerics;
 
 namespace PTSharpCore
-{       
+{
     public struct Material
     {
         // Color of the material
@@ -44,6 +43,7 @@ namespace PTSharpCore
         public bool Transparent { get; set; }
 
         public IDistribution Distribution { get; set; }
+        public string MaterialName { get; }
 
         public Material(Colour color, ITexture texture, ITexture normaltexture, ITexture bumptexture, ITexture glosstexture, double b, double e, double i, double g, double tint, double r, Boolean t)
         {
@@ -59,6 +59,11 @@ namespace PTSharpCore
             Tint = tint;
             Reflectivity = r;
             Transparent = t;
+        }
+
+        public Material(string materialName) : this()
+        {
+            MaterialName = materialName;
         }
 
         public static Material DiffuseMaterial(Colour color)
@@ -99,7 +104,7 @@ namespace PTSharpCore
         internal static Material MaterialAt(IShape shape, Vector point)
         {
             var material = shape.MaterialAt(point);
-            var uv = shape.UVector(point);
+            var uv = shape.UV(point);
             if (material.Texture != null)
             {
                 material.Color = material.Texture.Sample(uv.X, uv.Y);
@@ -111,7 +116,7 @@ namespace PTSharpCore
             }
             return material;
         }
-        
+
         // Generates a random direction in the hemisphere centered around a given normal
         private Vector RandomDirection(Vector normal)
         {
@@ -129,7 +134,7 @@ namespace PTSharpCore
             return Transform(point, FromAxisAngle(normal, 0));
 
         }
-                
+
         public static Matrix4x4 FromAxisAngle(Vector axis, double angle)
         {
             // Normalize the axis
@@ -222,7 +227,7 @@ namespace PTSharpCore
             }
 
             return normal;
-        }       
+        }
     }
 };
 

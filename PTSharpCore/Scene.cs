@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 
 namespace PTSharpCore
@@ -17,10 +16,10 @@ namespace PTSharpCore
         public IShape[] Lights;
         public IShape[] PhysicalLights;
 
-        public Scene() 
+        public Scene()
         {
-            Shapes = Array.Empty<IShape>(); 
-            Lights = Array.Empty<IShape>(); 
+            Shapes = Array.Empty<IShape>();
+            Lights = Array.Empty<IShape>();
             Color = new Colour();
             BackgroundColor = new Colour(0.1, 0.1, 0.1);
         }
@@ -38,7 +37,7 @@ namespace PTSharpCore
 
         public void Compile()
         {
-            foreach(IShape shape in Shapes)
+            foreach (IShape shape in Shapes)
             {
                 shape.Compile();
             }
@@ -49,7 +48,7 @@ namespace PTSharpCore
         {
             return rays;
         }
-        
+
         internal Hit Intersect(Ray r)
         {
             Interlocked.Increment(ref rays);

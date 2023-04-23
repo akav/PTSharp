@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 
 namespace PTSharpCore
 {
@@ -9,7 +8,7 @@ namespace PTSharpCore
     {
         double r, size;
         Dictionary<Vector, Vector> cells;
-        
+
         Poisson(double r, double size, Dictionary<Vector, Vector> hmap)
         {
             this.r = r;
@@ -38,11 +37,11 @@ namespace PTSharpCore
             {
                 for (double j = n.Y - 2; j < n.Y + 3; j++)
                 {
-                    if(cells.ContainsKey(new Vector(i, j, 0)))
+                    if (cells.ContainsKey(new Vector(i, j, 0)))
                     {
                         Vector m = cells[new Vector(i, j, 0)];
 
-                        if(Math.Sqrt(Math.Pow(m.X - v.X, 2) + Math.Pow(m.Y - v.Y, 2)) < r)
+                        if (Math.Sqrt(Math.Pow(m.X - v.X, 2) + Math.Pow(m.Y - v.Y, 2)) < r)
                         {
                             return false;
                         }
@@ -62,8 +61,8 @@ namespace PTSharpCore
             var active = new Vector[] { v };
             var grid = newPoissonGrid(r);
             grid.insert(v);
-            result = new Vector[]{v};
-                        
+            result = new Vector[] { v };
+
             while (active.Length != 0)
             {
                 // Need non-negative random integers
@@ -96,11 +95,11 @@ namespace PTSharpCore
                     ok = true;
                     break;
                 }
-                
+
                 if (!ok)
                 {
                     Array.Resize(ref active, active.GetLength(0) + 1);
-                    active[active.GetLength(0) - 1] = active[index+1];
+                    active[active.GetLength(0) - 1] = active[index + 1];
                 }
             }
             return result;

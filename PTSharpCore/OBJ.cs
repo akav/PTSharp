@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
+using System.Buffers.Text;
+using System.Numerics;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace PTSharpCore
 {
     class OBJ
-    {
+    {   /*
         static Dictionary<string, Material> matList = new Dictionary<string, Material>();
 
         internal static Mesh Load(string path, Material parent)
@@ -162,19 +167,117 @@ namespace PTSharpCore
                 }
             }
             return Mesh.NewMesh(triangles.ToArray());
+        } */
+        
+        static Dictionary<string, Material> matList = new Dictionary<string, Material>();
+        
+        public static Mesh Load(string filePath, Material material)
+        {
+            var vertices = new List<Vector>();
+            var texCoords = new List<Vector>();
+            var normals = new List<Vector>();
+            var faces = new List<List<Tuple<int, int, int>>>();
+
+            var vertexRegex = new Regex("^v\\s+([-+]?\\d*\\.?\\d+)\\s+([-+]?\\d*\\.?\\d+)\\s+([-+]?\\d*\\.?\\d+)$");
+            var texCoordRegex = new Regex("^vt\\s+([-+]?\\d*\\.?\\d+)\\s+([-+]?\\d*\\.?\\d+)(\\s+([-+]?\\d*\\.?\\d+))?$");
+            var normalRegex = new Regex("^vn\\s+([-+]?\\d*\\.?\\d+)\\s+([-+]?\\d*\\.?\\d+)\\s+([-+]?\\d*\\.?\\d+)$");
+            var faceRegex = new Regex("^f\\s+(.*)$");
+
+            using (var reader = new StreamReader(filePath))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine().Trim();
+
+                    if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                    {
+                        continue;
+                    }
+
+                    var match = vertexRegex.Match(line);
+                    if (match.Success)
+                    {
+                        var x = float.Parse(match.Groups[1].Value);
+                        var y = float.Parse(match.Groups[2].Value);
+                        var z = float.Parse(match.Groups[3].Value);
+                        vertices.Add(new Vector(x, y, z));
+                        continue;
+                    }
+
+                    match = texCoordRegex.Match(line);
+                    if (match.Success)
+                    {
+                        var u = float.Parse(match.Groups[1].Value);
+                        var v = float.Parse(match.Groups[2].Value);
+                        var w = match.Groups.Count >= 4 && !string.IsNullOrEmpty(match.Groups[4].Value) ? float.Parse(match.Groups[4].Value) : 0f;
+                        texCoords.Add(new Vector(u, v, w));
+                        continue;
+                    }
+
+                    match = normalRegex.Match(line);
+                    if (match.Success)
+                    {
+                        var x = float.Parse(match.Groups[1].Value);
+                        var y = float.Parse(match.Groups[2].Value);
+                        var z = float.Parse(match.Groups[3].Value);
+                        normals.Add(new Vector(x, y, z));
+                        continue;
+                    }
+
+                    match = faceRegex.Match(line);
+                    if (match.Success)
+                    {
+                        var face = new List<Tuple<int, int, int>>();
+                        var vertexInfo = match.Groups[1].Value.Split(' ');
+
+                        foreach (var info in vertexInfo)
+                        {
+                            var indices = info.Split('/');
+
+                            var vertexIndex = int.Parse(indices[0]) - 1;
+                            var texCoordIndex = indices.Length > 1 && !string.IsNullOrEmpty(indices[1]) ? int.Parse(indices[1]) - 1 : -1;
+                            var normalIndex = indices.Length > 2 && !string.IsNullOrEmpty(indices[2]) ? int.Parse(indices[2]) - 1 : -1;
+
+                            face.Add(new Tuple<int, int, int>(vertexIndex, texCoordIndex, normalIndex));
+                        }
+
+                        faces.Add(face);
+                    }
+                }
+            }
+
+            var triangles = new Triangle[faces.Count];
+
+            for (int i = 0; i < faces.Count; i++)
+            {
+                var face = faces[i];
+                var v1 = vertices[face[0].Item1];
+                var v2 = vertices[face[1].Item1];
+                var v3 = vertices[face[2].Item1];
+                var t1 = face[0].Item2 >= 0 ? texCoords[face[0].Item2] : new Vector();
+                var t2 = face[1].Item2 >= 0 ? texCoords[face[1].Item2] : new Vector();
+                var t3 = face[2].Item2 >= 0 ? texCoords[face[2].Item2] : new Vector();
+                var n1 = face[0].Item3 >= 0 ? normals[face[0].Item3] : (v2.Sub(v1)).Cross(v3.Sub(v1)).Normalize();
+                var n2 = face[1].Item3 >= 0 ? normals[face[1].Item3] : (v3.Sub(v2)).Cross(v1.Sub(v2)).Normalize();
+                var n3 = face[2].Item3 >= 0 ? normals[face[2].Item3] : (v1.Sub(v3)).Cross(v2.Sub(v3)).Normalize();
+
+                Triangle t = Triangle.NewTriangle(v1, v2, v3, n1, n2, n3, t1, t2, t3, material);
+                t.FixNormals();
+                triangles[i] = t;
+            }
+
+            return Mesh.NewMesh(triangles);
         }
 
-        public static void LoadMTL(string path, Material parent) //, Dictionary<string, Material> materials)
+        public static void LoadMTL(string path, Material parent)
         {
             Console.WriteLine("Loading MTL:" + path);
             var parentCopy = parent;
             var material = parentCopy;
-
             if (!File.Exists(path))
             {
                 throw new FileNotFoundException("Unable to open \"" + path + "\", does not exist.");
             }
-
             using (StreamReader streamReader = new StreamReader(path))
             {
                 while (!streamReader.EndOfStream)
@@ -185,7 +288,6 @@ namespace PTSharpCore
                         case "newmtl":
                             parentCopy = parent;
                             material = parentCopy;
-                            //materials[words[0].Split(' ').ToString()] = material;
                             matList[words[1]] = material;
                             break;
                         case "Ke":
