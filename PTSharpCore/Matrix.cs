@@ -24,6 +24,11 @@ namespace PTSharpCore
             row2 = Vector256.Create(M21, M22, M23, M24);
             row3 = Vector256.Create(M31, M32, M33, M34);
             row4 = Vector256.Create(M41, M42, M43, M44);
+
+            this.M11 = M11; this.M12 = M12; this.M13 = M13; this.M14 = M14;
+            this.M21 = M21; this.M22 = M22; this.M23 = M23; this.M24 = M24;
+            this.M31 = M31; this.M32 = M32; this.M33 = M33; this.M34 = M34;
+            this.M41 = M41; this.M42 = M42; this.M43 = M43; this.M44 = M44;
         }
 
         public Matrix() { }
