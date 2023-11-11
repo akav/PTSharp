@@ -1,3 +1,4 @@
+using glTFLoader.Schema;
 using Silk.NET.Core.Contexts;
 using System;
 using System.Collections.Generic;
@@ -134,10 +135,10 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(-1.5, 4, 0), 0.5, Material.LightMaterial(Colour.White, 30)));
             var camera = Camera.LookAt(new Vector(0, 2, -5), new Vector(0, 0.25, 3), new Vector(0, 1, 0), 45);
             camera.SetFocus(new Vector(-0.75, 1, -1), 0.1);
-            DefaultSampler sampler = DefaultSampler.NewSampler(16, 16);
+            DefaultSampler sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
             Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
-            //renderer.FireflySamples = 128;
+            renderer.FireflySamples = 64;
             renderer.IterativeRender("example1.png", 500);
         }
 
@@ -259,7 +260,7 @@ namespace PTSharpCore
         {
             var scene = new Scene();
             var material = Material.GlossyMaterial(Colour.HexColor(0xB7CA79), 1.5, Util.Radians(20));
-            var mesh = OBJ.Load("models/dragon.obj", material);
+            var mesh = OBJ.LoadOBJ("models/dragon.obj", material);
             mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5, 0, 0.5));
             scene.Add(mesh);
             var floor = Material.GlossyMaterial(Colour.HexColor(0xD8CAA8), 1.2, Util.Radians(5));
@@ -366,7 +367,7 @@ namespace PTSharpCore
         {
             var scene = new Scene();
             var material = Material.GlossyMaterial(Colour.HexColor(0xF2EBC7), 1.5F, Util.Radians(0));
-            var mesh = OBJ.Load("models/bunny.obj", material);
+            var mesh = OBJ.LoadOBJ("models/bunny.obj", material);
             mesh.SmoothNormals();
             mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5F, 0, 0.5F));
             scene.Add(mesh);
@@ -377,8 +378,8 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(-1, 2, 3), new Vector(0, 0.75F, 0), new Vector(0, 1, 0), 50);
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SetSpecularMode(SpecularMode.SpecularModeFirst);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            renderer.FireflySamples = 32;
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, false);
+            //renderer.FireflySamples = 32;
             renderer.IterativeRender("bunny.png", 1000);
         }
 
@@ -470,7 +471,8 @@ namespace PTSharpCore
             var ball = Material.GlossyMaterial(Colour.HexColor(0xD90000), 1.4, Util.Radians(10));
             int n = 7;
             var fn = (double)n;
-            var rand = Random.Shared;
+            var rand = Random.Shared;            
+
             for (int z = 0; z < n; z++)
             {
                 for (int x = 0; x < n - z; x++)
@@ -479,7 +481,7 @@ namespace PTSharpCore
                     {
                         (var fx, var fy, var fz) = ((double)x, (double)y, (double)z);
                         scene.Add(Cube.NewCube(new Vector(fx, fy, fz), new Vector(fx + 1, fy + 1, fz + 1), cube));
-
+                        
                         if (x + y == n - z - 1)
                         {
                             if (rand.NextDouble() > 0.75)
@@ -495,7 +497,8 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(fn * 2, fn * 2, fn * 2), new Vector(0, 0, fn / 4), new Vector(0, 0, 1), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
-            renderer.FireflySamples = 128;
+            renderer.AdaptiveSamples = 16;
+            renderer.FireflySamples = 32;
             renderer.IterativeRender("qbert.png", 1000);
         }
 
@@ -622,13 +625,11 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(-2, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Sphere.NewSphere(new Vector(5, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Cube.NewCube(new Vector(-30, -1, -30), new Vector(30, 0, 30), Material.SpecularMaterial(Colour.HexColor(0xFCFAE1), 2)));
-            var mesh = OBJ.Load("models/teapot.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
+            var mesh = OBJ.LoadOBJ("models/teapot.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
             mesh.SmoothNormals();
             scene.Add(mesh);
             var camera = Camera.LookAt(new Vector(2, 5, -6), new Vector(0.5F, 1, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            //sampler.SpecularMode = SpecularMode.SpecularModeFirst;
-            //DefaultSampler.SpecularMode = SpecularMode.SpecularModeFirst;
             var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
             //renderer.FireflySamples = 64;
             renderer.IterativeRender("teapot.png", 1000);
@@ -640,13 +641,11 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(-2, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Sphere.NewSphere(new Vector(5, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Cube.NewCube(new Vector(-30, -1, -30), new Vector(30, 0, 30), Material.SpecularMaterial(Colour.HexColor(0xFCFAE1), 2)));
-            var mesh = OBJ.Load("models/debugcube.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
+            var mesh = OBJ.LoadOBJ("models/debugcube.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
             mesh.SmoothNormals();
             scene.Add(mesh);
             var camera = Camera.LookAt(new Vector(2, 5, -6), new Vector(0.5F, 1, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            //sampler.SpecularMode = SpecularMode.SpecularModeFirst;
-            //DefaultSampler.SpecularMode = SpecularMode.SpecularModeFirst;
             var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
             //renderer.FireflySamples = 64;
             renderer.IterativeRender("debugcube.png", 10);
@@ -677,7 +676,7 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(0.5, 1, 3), 1, Material.LightMaterial(Colour.White, 4)));
             scene.Add(Sphere.NewSphere(new Vector(1.5, 1, 3), 1, Material.LightMaterial(Colour.White, 4)));
             scene.Add(Cube.NewCube(new Vector(-5, -5, -2), new Vector(5, 5, -1), material));
-            var mesh = OBJ.Load("models/suzanne.obj", Material.SpecularMaterial(Colour.HexColor(0xEFC94C), 1.3));
+            var mesh = OBJ.LoadOBJ("models/suzanne.obj", Material.SpecularMaterial(Colour.HexColor(0xEFC94C), 1.3));
             scene.Add(mesh);
             var camera = Camera.LookAt(new Vector(1, -0.45F, 4), new Vector(1, -0.6F, 0.4F), new Vector(0, 1, 0), 40);
             var sampler = DefaultSampler.NewSampler(16, 8);
@@ -763,22 +762,22 @@ namespace PTSharpCore
             Material material;
             Mesh mesh;
             material = Material.DiffuseMaterial(Colour.White);
-            mesh = OBJ.Load("models/veach_scene/backdrop.obj", material);
+            mesh = OBJ.LoadOBJ("models/veach_scene/backdrop.obj", material);
             scene.Add(mesh);
             material = Material.MetallicMaterial(Colour.White, Util.Radians(20), 0);
-            mesh = OBJ.Load("models/veach_scene/bar0.obj", material);
+            mesh = OBJ.LoadOBJ("models/veach_scene/bar0.obj", material);
             scene.Add(mesh);
             material = Material.MetallicMaterial(Colour.White, Util.Radians(15), 0);
-            mesh = OBJ.Load("models/veach_scene/bar1.obj", material);
+            mesh = OBJ.LoadOBJ("models/veach_scene/bar1.obj", material);
             scene.Add(mesh);
             material = Material.MetallicMaterial(Colour.White, Util.Radians(10), 0);
-            mesh = OBJ.Load("models/veach_scene/bar2.obj", material);
+            mesh = OBJ.LoadOBJ("models/veach_scene/bar2.obj", material);
             scene.Add(mesh);
             material = Material.MetallicMaterial(Colour.White, Util.Radians(5), 0);
-            mesh = OBJ.Load("models/veach_scene/bar3.obj", material);
+            mesh = OBJ.LoadOBJ("models/veach_scene/bar3.obj", material);
             scene.Add(mesh);
             material = Material.MetallicMaterial(Colour.White, Util.Radians(0), 0);
-            mesh = OBJ.Load("models/veach_scene/bar4.obj", material);
+            mesh = OBJ.LoadOBJ("models/veach_scene/bar4.obj", material);
             scene.Add(Sphere.NewSphere(new Vector(3.7F, 4.281F, 0), 1.8F / 2, Material.LightMaterial(Colour.White, 3)));
             scene.Add(Sphere.NewSphere(new Vector(1.25F, 4.281F, 0), 0.6F / 2, Material.LightMaterial(Colour.White, 9)));
             scene.Add(Sphere.NewSphere(new Vector(-1.25F, 4.281F, 0), 0.2F / 2, Material.LightMaterial(Colour.White, 27)));

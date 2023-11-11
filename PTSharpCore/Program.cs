@@ -96,7 +96,7 @@ namespace PTSharpCore
                 );
 
             // Start rendering
-            Task.Factory.StartNew(() => Example.Suzanne(Width, Height));
+            Task.Factory.StartNew(() => Example.Qbert(Width, Height));
         }
 
         private static void OnClose()

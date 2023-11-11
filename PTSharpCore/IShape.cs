@@ -8,6 +8,5 @@
         Vector UV(Vector uv);
         Vector NormalAt(Vector normal);
         Material MaterialAt(Vector v);
-
     }
 }

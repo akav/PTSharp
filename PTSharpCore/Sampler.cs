@@ -1,3 +1,4 @@
+using ILGPU.Algorithms.Random;
 using System;
 using System.Numerics;
 using System.Threading;
@@ -17,6 +18,7 @@ namespace PTSharpCore
         bool SoftShadows;
         public LightMode LightMode;
         public SpecularMode SpecularMode;
+        private object lockObj = new();
 
         DefaultSampler(int FH, int MB, bool DL, bool SS, LightMode LM, SpecularMode SM)
         {
@@ -69,7 +71,7 @@ namespace PTSharpCore
 
             var info = hit.Info(ray);
             var material = info.material;
-            var result = new Colour(0, 0, 0);
+            var result = Colour.Black;
 
             if (material.Emittance > 0)
             {
@@ -83,7 +85,7 @@ namespace PTSharpCore
             var n = (int)Math.Sqrt(samples);
             BounceType ma, mb;
 
-            if (SpecularMode.Equals(SpecularMode.SpecularModeAll) || depth == 0 && SpecularMode.Equals(SpecularMode.SpecularModeFirst))
+            if (SpecularMode == SpecularMode.SpecularModeAll || (depth == 0 && SpecularMode == SpecularMode.SpecularModeFirst))
             {
                 ma = BounceType.BounceTypeDiffuse;
                 mb = BounceType.BounceTypeSpecular;
@@ -100,31 +102,23 @@ namespace PTSharpCore
                 {
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
-                        var fu = (u + Random.Shared.NextDouble()) / n;
-                        var fv = (v + Random.Shared.NextDouble()) / n;
-                        (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode, Random.Shared);
-
-                        if (mode.Equals(BounceType.BounceTypeAny))
+                        double fu = (u + rand.NextDouble()) / n;
+                        double fv = (v + rand.NextDouble()) / n;
+                        var (newRay, reflected, p) = ray.Bounce(info, fu, fv, mode, rand);
+                        if (mode == BounceType.BounceTypeAny)
                         {
                             p = 1;
                         }
-
                         if (p > 0 && reflected)
                         {
-                            // specular
-                            var inc_depth = Interlocked.Increment(ref depth);
-                            var indirect = sample(scene, newRay, reflected, 1, inc_depth, Random.Shared, russianRoulette, minReflectance);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
                             var tinted = indirect.Mix(material.Color.Mul(indirect), material.Tint);
                             result = result.Add(tinted.MulScalar(p));
                         }
-
                         if (p > 0 && !reflected)
                         {
-                            // diffuse
-                            var inc_depth = Interlocked.Increment(ref depth);
-                            var indirect = sample(scene, newRay, reflected, 1, inc_depth, Random.Shared, russianRoulette, minReflectance);
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
                             var direct = Colour.Black;
-
                             if (DirectLighting)
                             {
                                 direct = sampleLights(scene, info.Ray, rand);
@@ -134,18 +128,6 @@ namespace PTSharpCore
                     }
                 }
             }
-
-            if (russianRoulette && depth >= 2)
-            {
-                // Russian Roulette termination
-                var probability = Math.Max(result.r, Math.Max(result.g, result.b));
-                if (Random.Shared.NextDouble() > probability)
-                {
-                    return result.DivScalar(probability);
-                }
-                return result.DivScalar(probability * (1 - minReflectance));
-            }
-
             return result.DivScalar(n * n);
         }
 

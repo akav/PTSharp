@@ -1,99 +1,138 @@
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 
 namespace PTSharpCore
 {
-    public class Colour
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Colour
     {
-        public double r;
-        public double g;
-        public double b;
+        //public double r;
+        //public double g;
+        //public double b;
 
-        public Colour(Colour c)
+        Vector256<double> colourVector;
+
+        public double r
         {
-            r = c.r;
-            g = c.g;
-            b = c.b;
+            get { return colourVector.GetElement(0); }
+            set { colourVector = colourVector.WithElement(0, value); }
         }
 
-        public Colour(double R, double G, double B)
+        public double g
         {
-            r = R;
-            g = G;
-            b = B;
+            get { return colourVector.GetElement(1); }
+            set { colourVector = colourVector.WithElement(1, value); }
         }
 
+        public double b
+        {
+            get { return colourVector.GetElement(2); }
+            set { colourVector = colourVector.WithElement(2, value); }
+        }
+
+        public Colour(double R, double G, double B, double A = 1)
+        {
+            colourVector = Vector256.Create(R, G, B, A);
+        }
+
+        public Colour(Vector256<double> vector)
+        {
+            colourVector = vector;
+        }
+
+        public Colour(Colour c) : this(c.r, c.g, c.b) { }
+                
         public static Colour Black = new(0, 0, 0);
         public static Colour White = new(1, 1, 1);
 
         public Colour() { }
 
+        public Vector256<double> ToVector256()
+        {
+            return colourVector;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator +(Colour c1, Colour c2)
         {
-            return new Colour(c1.r + c2.r, c1.g + c2.g, c1.b + c2.b);
+            return new Colour(Avx2.Add(c1.colourVector, c2.colourVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator +(Colour c1, double c2)
         {
-            return new Colour(c1.r + c2, c1.g + c2, c1.b + c2);
+            var addVector = Vector256.Create(c2, c2, c2, 0.0);
+            return new Colour(Avx2.Add(c1.colourVector, addVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator +(double c1, Colour c2)
         {
-            return new Colour(c1 + c2.r, c1 + c2.g, c1 + c2.b);
+            var addVector = Vector256.Create(c1, c1, c1, 0.0);
+            return new Colour(Avx2.Add(c2.colourVector, addVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator -(Colour c1, Colour c2)
         {
-            return new Colour(c1.r - c2.r, c1.g - c2.g, c1.b - c2.b);
+            return new Colour(Avx2.Subtract(c1.colourVector, c2.colourVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator *(Colour c1, Colour c2)
         {
-            return new Colour(c1.r * c2.r, c1.g * c2.g, c1.b * c2.b);
+            return new Colour(Avx2.Multiply(c1.colourVector, c2.colourVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator *(double c, Colour c2)
         {
-            return new Colour(c * c2.r, c * c2.g, c * c2.b);
+            var mulVector = Vector256.Create(c, c, c, 0.0);
+            return new Colour(Avx2.Add(c2.colourVector, mulVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator *(Colour c1, double c)
         {
-            return new Colour(c * c1.r, c * c1.g, c * c1.b);
+            var mulVector = Vector256.Create(c, c, c, 0.0);
+            return new Colour(Avx2.Add(c1.colourVector, mulVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator /(Colour c1, double c)
         {
-            return new Colour(c1.r / c, c1.g / c, c1.b / c);
+            var mulVector = Vector256.Create(c, c, c, 0.0);
+            return new Colour(Avx2.Divide(c1.colourVector, mulVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator /(Colour c1, Colour c2)
         {
-            return new Colour(c1.r / c2.r, c1.g / c2.g, c1.b / c2.b);
+            return new Colour(Avx2.Divide(c1.colourVector, c2.colourVector));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour operator -(Colour c1)
         {
-            return new Colour(-c1.r, -c1.g, -c1.b);
+            return new Colour(Avx2.Subtract(Vector256<double>.Zero, c1.colourVector));
         }
-
-        public static Colour operator +(Colour c1)
-        {
-            return new Colour(c1.r, c1.g, c1.b);
-        }
-
+                
         public Vector ToVector()
         {
             return new Vector(r, g, b);
         }
-
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double Luminance()
         {
-            // Calculate the luminance using the sRGB luminance coefficients
             return 0.2126 * this.r + 0.7152 * this.g + 0.0722 * this.b;
         }
         public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour HexColor(int x)
         {
             var red = ((x >> 16) & 0xff) / 255.0f;
@@ -103,8 +142,10 @@ namespace PTSharpCore
             return color.Pow(2.2f);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour Pow(double b) => new Colour(Math.Pow(r, b), Math.Pow(g, b), Math.Pow(this.b, b));
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int getIntFromColor(double red, double green, double blue)
         {
             if (double.IsNaN(red))
@@ -120,6 +161,7 @@ namespace PTSharpCore
             return 255 << 24 | r << 16 | g << 8 | b;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Colour Kelvin(double K)
         {
             double red, green, blue;
@@ -182,6 +224,7 @@ namespace PTSharpCore
             return new Colour(red, green, blue);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour Mix(Colour b, double pct)
         {
             Colour a = MulScalar(1 - pct);
@@ -189,19 +232,48 @@ namespace PTSharpCore
             return a.Add(b);
         }
 
-        public Colour MulScalar(double b) => new(r * b, g * b, this.b * b);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Colour MulScalar(double b)
+        {
+            var mulVector = Vector256.Create(b, b, b, 0.0);
+            return new Colour(Avx2.Multiply(colourVector, mulVector));
+        }
 
-        public Colour Add(Colour b) => new(this.r + b.r, this.g + b.g, this.b + b.b);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Colour Add(Colour b)
+        {
+            return new Colour(Avx2.Add(colourVector, b.colourVector));
+        }
 
-        public Colour Sub(Colour b) => new(r - b.r, g - b.g, this.b - b.b);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Colour Sub(Colour b)
+        {
+            return new Colour(Avx2.Subtract(colourVector, b.colourVector));
+        }
 
-        public Colour Mul(Colour b) => new(r * b.r, g * b.g, this.b * b.b);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Colour Mul(Colour b) 
+        {
+            return new Colour(Avx2.Multiply(colourVector, b.colourVector));          
+        }
 
-        public Colour Div(Colour b) => new(r / b.r, g / b.g, this.b / b.b);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Colour Div(Colour b) 
+        {
+            return new Colour(Avx2.Divide(colourVector, b.colourVector));
+        }
 
-        public Colour DivScalar(double b) => new(r / b, g / b, this.b / b);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Colour DivScalar(double b)
+        {
+            var divVector = Vector256.Create(b, b, b, 0.0);
+            return new Colour(Avx2.Divide(colourVector, divVector));
+        }
 
-        public Colour Min(Colour b) => new(Math.Min(r, b.r), Math.Min(g, b.g), Math.Min(this.b, b.b));
+        public Colour Min(Colour b)
+        {
+            return new(Math.Min(r, b.r), Math.Min(g, b.g), Math.Min(this.b, b.b));
+        }
 
         public Colour Max(Colour b) => new(Math.Max(r, b.r), Math.Max(g, b.g), Math.Max(this.b, b.b));
 

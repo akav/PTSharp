@@ -60,12 +60,7 @@ namespace PTSharpCore
         {
             if (tree is null)
             {
-                List<IShape> shapes = new List<IShape>();
-
-                foreach (var triangle in Triangles)
-                {
-                    shapes.Add(triangle);
-                }
+                List<IShape> shapes = [.. Triangles];
 
                 tree = Tree.NewTree(shapes.ToArray());
             }
@@ -141,38 +136,35 @@ namespace PTSharpCore
         private static Vector SmoothNormalsThreshold(Vector normal, List<Vector> normals, double threshold)
         {
             var result = new Vector();
+            
             foreach (var x in normals)
             {
                 if (x.Dot(normal) >= threshold)
                 {
                     result = result.Add(x);
+                    
                 }
             }
-            return result.Normalize();
+            return normal.Normalize(); 
         }
 
         public void SmoothNormalsThreshold(double radians)
         {
-            var threshold = Math.Cos(radians);
-            var lookup = new Dictionary<Vector, List<Vector>>();
+            Double threshold = Math.Cos(radians);
+            Dictionary<Vector, List<Vector>> lookup = new Dictionary<Vector, List<Vector>>();
+
             foreach (var t in Triangles)
             {
                 if (!lookup.ContainsKey(t.V1))
-                {
                     lookup[t.V1] = new List<Vector>();
-                }
                 lookup[t.V1].Add(t.N1);
 
                 if (!lookup.ContainsKey(t.V2))
-                {
                     lookup[t.V2] = new List<Vector>();
-                }
                 lookup[t.V2].Add(t.N2);
 
                 if (!lookup.ContainsKey(t.V3))
-                {
                     lookup[t.V3] = new List<Vector>();
-                }
                 lookup[t.V3].Add(t.N3);
             }
 
@@ -186,58 +178,26 @@ namespace PTSharpCore
 
         public void SmoothNormals()
         {
-            var lookup = new ConcurrentDictionary<Vector, Vector>();
+            Dictionary<Vector, Vector> lookup = new Dictionary<Vector, Vector>();
 
-            foreach (var t in Triangles)
-            {
-                lookup[t.V1] = new Vector();
-                lookup[t.V2] = new Vector();
-                lookup[t.V3] = new Vector();
-            }
-
-            foreach (var t in Triangles)
-            {
-                lookup[t.V1] = lookup[t.V1].Add(t.N1);
-                lookup[t.V2] = lookup[t.V2].Add(t.N2);
-                lookup[t.V3] = lookup[t.V3].Add(t.N3);
-            }
-
-            var lookup2 = new Dictionary<Vector, Vector>();
-
-            foreach (KeyValuePair<Vector, Vector> p in lookup)
-            {
-                lookup2[p.Key] = lookup[p.Key].Normalize();
-            }
-
-            foreach (var t in Triangles)
-            {
-                t.N1 = lookup2[t.V1];
-                t.N2 = lookup2[t.V2];
-                t.N3 = lookup2[t.V3];
-            }
-
-            /*var lookup = new Dictionary<Vector, Vector>();
             foreach (var t in Triangles)
             {
                 if (!lookup.ContainsKey(t.V1))
-                    lookup.Add(t.V1, t.N1);
-                else
-                    lookup[t.V1] += t.N1;
+                    lookup[t.V1] = new Vector(); // Assuming Vector has a default constructor
+                lookup[t.V1] = lookup[t.V1].Add(t.N1);
 
                 if (!lookup.ContainsKey(t.V2))
-                    lookup.Add(t.V2, t.N2);
-                else
-                    lookup[t.V2] += t.N2;
+                    lookup[t.V2] = new Vector();
+                lookup[t.V2] = lookup[t.V2].Add(t.N2);
 
                 if (!lookup.ContainsKey(t.V3))
-                    lookup.Add(t.V3, t.N3);
-                else
-                    lookup[t.V3] += t.N3;
+                    lookup[t.V3] = new Vector();
+                lookup[t.V3] = lookup[t.V3].Add(t.N3);
             }
 
-            foreach (var k in lookup.Keys)
+            foreach (var key in new List<Vector>(lookup.Keys))
             {
-                lookup[k] = lookup[k].Normalize();
+                lookup[key] = lookup[key].Normalize();
             }
 
             foreach (var t in Triangles)
@@ -245,9 +205,8 @@ namespace PTSharpCore
                 t.N1 = lookup[t.V1];
                 t.N2 = lookup[t.V2];
                 t.N3 = lookup[t.V3];
-            }*/
+            }
         }
-
         void UnitCube()
         {
             FitInside(new Box(new Vector(0, 0, 0), new Vector(1, 1, 1)), new Vector(0, 0, 0));
@@ -265,9 +224,9 @@ namespace PTSharpCore
             var scale = box.Size().Div(BoundingBox().Size()).MinComponent();
             var extra = box.Size().Sub(BoundingBox().Size().MulScalar(scale));
             var matrix = Matrix.Identity;
-            matrix = matrix.Translate(BoundingBox().Min.Negate()).Mul(matrix);
-            matrix = matrix.Scale(new Vector(scale, scale, scale)).Mul(matrix);
-            matrix = matrix.Translate(box.Min.Add(extra.Mul(anchor))).Mul(matrix);
+            matrix = matrix.Translate(BoundingBox().Min.Negate()); //.Mul(matrix);
+            matrix = matrix.Scale(new Vector(scale, scale, scale)); //Mul(matrix);
+            matrix = matrix.Translate(box.Min.Add(extra.Mul(anchor))); //.Mul(matrix);
             Transform(matrix);
         }
 

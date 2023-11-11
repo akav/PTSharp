@@ -51,7 +51,7 @@ namespace PTSharpCore
 
         internal Hit Intersect(Ray r)
         {
-            Interlocked.Increment(ref rays);
+            ++rays;
             return tree.Intersect(r);
         }
     }

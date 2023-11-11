@@ -119,137 +119,55 @@ namespace PTSharpCore
 
         public static Mesh LoadSTLA(String filename, Material material)
         {
-            string line = null;
-            int counter = 0;
-
-            // Creating storage structures for storing facets, vertex and normals
-            List<Vector> facetnormal = new List<Vector>();
-            List<Vector> vertexes = new List<Vector>();
             List<Triangle> triangles = new List<Triangle>();
-            Vector[] varray;
-            Match match = null;
 
-            const string regex = @"\s*(facet normal|vertex)\s+(?<X>[^\s]+)\s+(?<Y>[^\s]+)\s+(?<Z>[^\s]+)";
-            const NumberStyles numberStyle = (NumberStyles.AllowExponent | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
-            StreamReader file = new StreamReader(filename);
-
-            // Reading text filled STL file   
-            try
+            using (var reader = new StreamReader(filename))
             {
-                // Checking to see if the file header has proper structure and that the file does contain something
-                if ((line = file.ReadLine()) != null && line.Contains("solid"))
+                string line;
+                Vector normal = new();
+                Vector[] vertices = new Vector[3];
+                int vertexCount = 0;
+
+                while ((line = reader.ReadLine()) != null)
                 {
-                    counter++;
-                    //While there are lines to be read in the file
-                    while ((line = file.ReadLine()) != null && !line.Contains("endsolid"))
+                    var tokens = line.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (tokens[0] == "facet" && tokens[1] == "normal")
                     {
-                        counter++;
-                        if (line.Contains("normal"))
+                        normal = new Vector(
+                            double.Parse(tokens[2], CultureInfo.InvariantCulture),
+                            double.Parse(tokens[3], CultureInfo.InvariantCulture),
+                            double.Parse(tokens[4], CultureInfo.InvariantCulture));
+                    }
+                    else if (tokens[0] == "vertex")
+                    {
+                        vertices[vertexCount] = new Vector(
+                            double.Parse(tokens[1], CultureInfo.InvariantCulture),
+                            double.Parse(tokens[2], CultureInfo.InvariantCulture),
+                            double.Parse(tokens[3], CultureInfo.InvariantCulture));
+                        vertexCount++;
+
+                        if (vertexCount == 3)
                         {
-                            match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
-                            //Reading facet
-                            //Console.WriteLine("Read facet on line " + counter);
-                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
-                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
-                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
-
-                            Vector f = new Vector(x, y, z);
-                            //Console.WriteLine("Added facet (x,y,z)"+ " "+x+" "+y+" "+z);
-                            facetnormal.Add(f);
-                        }
-
-                        line = file.ReadLine();
-                        counter++;
-
-                        // Checking if we are in the outer loop line
-                        if (line.Contains("outer loop"))
-                        {
-                            //Console.WriteLine("Outer loop");
-                            line = file.ReadLine();
-                            counter++;
-                        }
-
-                        if (line.Contains("vertex"))
-                        {
-                            match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
-                            //Console.WriteLine("Read vertex on line " + counter);
-                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
-                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
-                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
-
-                            Vector v = new Vector(x, y, z);
-                            //Console.WriteLine("Added vertex 1 (x,y,z)" + " " + x + " " + y + " " + z);
-                            vertexes.Add(v);
-                        }
-
-                        line = file.ReadLine();
-                        counter++;
-
-                        if (line.Contains("vertex"))
-                        {
-                            match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
-                            //Console.WriteLine("Read vertex on line " + counter);
-                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
-                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
-                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
-
-                            Vector v = new Vector(x, y, z);
-                            //Console.WriteLine("Added vertex 2 (x,y,z)" + " " + x + " " + y + " " + z);
-                            vertexes.Add(v);
-                            line = file.ReadLine();
-                            counter++;
-                        }
-
-                        if (line.Contains("vertex"))
-                        {
-                            match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
-                            //Console.WriteLine("Read vertex on line " + counter);
-                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
-                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
-                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
-
-                            Vector v = new Vector(x, y, z);
-                            //Console.WriteLine("Added vertex 3 (x,y,z)" + " " + x + " " + y + " " + z);
-                            vertexes.Add(v);
-                            line = file.ReadLine();
-                            counter++;
-                        }
-
-                        if (line.Contains("endloop"))
-                        {
-                            //Console.WriteLine("End loop");
-                            line = file.ReadLine();
-                            counter++;
-                        }
-
-                        if (line.Contains("endfacet"))
-                        {
-                            //Console.WriteLine("End facet");
-                            line = file.ReadLine();
-                            counter++;
-
-                            if (line.Contains("endsolid"))
+                            // Create triangle and add to list
+                            Triangle triangle = new Triangle
                             {
-                                varray = vertexes.ToArray();
-                                for (int i = 0; i < varray.Length; i += 3)
-                                {
-                                    Triangle t = new Triangle(varray[i + 0], varray[i + 1], varray[i + 2], material);
-                                    t.FixNormals();
-                                    triangles.Add(t);
-                                }
-                                break;
-                            }
+                                V1 = vertices[0],
+                                V2 = vertices[1],
+                                V3 = vertices[2],
+                                N1 = normal,
+                                N2 = normal,
+                                N3 = normal,
+                                Material = material
+                            };
+                            triangle.FixNormals();
+                            triangles.Add(triangle);
+                            vertexCount = 0;
                         }
                     }
                 }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine("The file could not be read:");
-                Console.WriteLine(e.Message);
-                return null;
-            }
-            file.Close();
+
             return Mesh.NewMesh(triangles.ToArray());
         }
 

@@ -1,4 +1,6 @@
+using MathNet.Numerics.LinearAlgebra;
 using System.Numerics;
+using TinyEmbree;
 
 namespace PTSharpCore
 {
@@ -36,7 +38,6 @@ namespace PTSharpCore
             t.T2 = t2;
             t.T3 = t3;
             t.Material = material;
-            t.FixNormals();
             return t;
         }
 
@@ -80,47 +81,49 @@ namespace PTSharpCore
 
         Hit IShape.Intersect(Ray r)
         {
-            var e1x = V2.X - V1.X;
-            var e1y = V2.Y - V1.Y;
-            var e1z = V2.Z - V1.Z;
-            var e2x = V3.X - V1.X;
-            var e2y = V3.Y - V1.Y;
-            var e2z = V3.Z - V1.Z;
-            var px = r.Direction.Y * e2z - r.Direction.Z * e2y;
-            var py = r.Direction.Z * e2x - r.Direction.X * e2z;
-            var pz = r.Direction.X * e2y - r.Direction.Y * e2x;
-            var det = e1x * px + e1y * py + e1z * pz;
+            const double EPS = 1e-9;
 
-            if (det > -Util.EPS && det < Util.EPS)
+            double e1x = V2.X - V1.X;
+            double e1y = V2.Y - V1.Y;
+            double e1z = V2.Z - V1.Z;
+            double e2x = V3.X - V1.X;
+            double e2y = V3.Y - V1.Y;
+            double e2z = V3.Z - V1.Z;
+
+            double px = r.Direction.Y * e2z - r.Direction.Z * e2y;
+            double py = r.Direction.Z * e2x - r.Direction.X * e2z;
+            double pz = r.Direction.X * e2y - r.Direction.Y * e2x;
+
+            double det = e1x * px + e1y * py + e1z * pz;
+
+            if (det > -EPS && det < EPS)
             {
-                return Hit.NoHit;
+                return Hit.NoHit; // Define NoHit appropriately
             }
 
-            var inv = 1 / det;
-            var tx = r.Origin.X - V1.X;
-            var ty = r.Origin.Y - V1.Y;
-            var tz = r.Origin.Z - V1.Z;
-            var u = (tx * px + ty * py + tz * pz) * inv;
+            double inv = 1 / det;
+            double tx = r.Origin.X - V1.X;
+            double ty = r.Origin.Y - V1.Y;
+            double tz = r.Origin.Z - V1.Z;
 
+            double u = (tx * px + ty * py + tz * pz) * inv;
             if (u < 0 || u > 1)
             {
                 return Hit.NoHit;
             }
 
-            var qx = ty * e1z - tz * e1y;
-            var qy = tz * e1x - tx * e1z;
-            var qz = tx * e1y - ty * e1x;
-            var v = (r.Direction.X * qx + r.Direction.Y * qy + r.Direction.Z * qz) * inv;
+            double qx = ty * e1z - tz * e1y;
+            double qy = tz * e1x - tx * e1z;
+            double qz = tx * e1y - ty * e1x;
 
-            if ((v < 0) || ((u + v) > 1))
+            double v = (r.Direction.X * qx + r.Direction.Y * qy + r.Direction.Z * qz) * inv;
+            if (v < 0 || u + v > 1)
             {
                 return Hit.NoHit;
-
             }
 
-            var d = (e2x * qx + e2y * qy + e2z * qz) * inv;
-
-            if (d < Util.EPS)
+            double d = (e2x * qx + e2y * qy + e2z * qz) * inv;
+            if (d < EPS)
             {
                 return Hit.NoHit;
             }
@@ -154,29 +157,31 @@ namespace PTSharpCore
             n = n.Add(N3.MulScalar(w));
             n = n.Normalize();
 
-            if (Material.NormalTexture != null)
+            if (Material.NormalTexture is not null)
             {
                 var b = new Vector();
                 b = b.Add(T1.MulScalar(u));
                 b = b.Add(T2.MulScalar(v));
                 b = b.Add(T3.MulScalar(w));
                 var ns = Material.NormalTexture.NormalSample(b.X, b.Y);
-                var dv1 = V2.Sub(V1);
-                var dv2 = V3.Sub(V1);
-                var dt1 = T2.Sub(T1);
-                var dt2 = T3.Sub(T1);
-                var T = dv1.MulScalar(dt2.Y).Sub(dv2.MulScalar(dt1.Y)).Normalize();
-                var B = dv2.MulScalar(dt1.X).Sub(dv1.MulScalar(dt2.X)).Normalize();
+                var dv1 = V2 - V1;
+                var dv2 = V3 - V1;
+                var dt1 = T2 - T1;
+                var dt2 = T3 - T1;
+                var T = (dv1.MulScalar(dt2.Y) - dv2.MulScalar(dt1.Y)).Normalize();
+                var B = (dv2.MulScalar(dt1.X) - dv1.MulScalar(dt2.X)).Normalize();
                 var N = T.Cross(B);
 
-                var matrix = new Matrix(T.X, B.X, N.X, 0,
-                                        T.Y, B.Y, N.Y, 0,
-                                        T.Z, B.Z, N.Z, 0,
-                                        0, 0, 0, 1);
+                var matrix = new Matrix(
+                    T.X, B.X, N.X, 0,
+                    T.Y, B.Y, N.Y, 0,
+                    T.Z, B.Z, N.Z, 0,
+                    0, 0, 0, 1);
+
                 n = matrix.MulDirection(ns);
             }
 
-            if (Material.BumpTexture != null)
+            if (Material.BumpTexture is not null)
             {
                 var b = new Vector();
                 b = b.Add(T1.MulScalar(u));
@@ -206,41 +211,47 @@ namespace PTSharpCore
 
         Vector Normal()
         {
-            var e1 = V2.Sub(V1);
-            var e2 = V3.Sub(V1);
+            var e1 = V2 - V1;
+            var e2 = V3 - V1;
             return e1.Cross(e2).Normalize();
         }
 
-        (double, double, double) Barycentric(Vector p)
+        public (double, double, double) Barycentric(Vector p)
         {
-            var v0 = V2.Sub(V1);
-            var v1 = V3.Sub(V1);
-            var v2 = p.Sub(V1);
-            var d00 = v0.Dot(v0);
-            var d01 = v0.Dot(v1);
-            var d11 = v1.Dot(v1);
-            var d20 = v2.Dot(v0);
-            var d21 = v2.Dot(v1);
-            var d = d00 * d11 - d01 * d01;
-            var v = (d11 * d20 - d01 * d21) / d;
-            var w = (d00 * d21 - d01 * d20) / d;
-            var u = 1 - v - w;
-            return (u, v, w);
+            double detT = Determinant(V1, V2, V3);
+            double lambda1 = Determinant(p, V2, V3) / detT;
+            double lambda2 = Determinant(p, V3, V1) / detT;
+            double lambda3 = 1 - lambda1 - lambda2;
+            return (lambda1, lambda2, lambda3);
+        }
+
+        private double Determinant(Vector a, Vector b, Vector c)
+        {
+            return 
+                a.X * (b.Y * c.Z - c.Y * b.Z) - 
+                a.Y * (b.X * c.Z - c.X * b.Z) + 
+                a.Z * (b.X * c.Y - c.X * b.Y);
         }
 
         public void FixNormals()
         {
             var n = Normal();
-            var zero = new Vector();
-
+            var zero = new Vector(0, 0, 0);
+            
             if (N1.Equals(zero))
+            {
                 N1 = n;
-
-            if (N2.Equals(zero))
+            }
+            
+            if (N2.Equals(zero)) 
+            {
                 N2 = n;
+            }
 
-            if (N3.Equals(zero))
+            if (N3.Equals(zero)) 
+            {
                 N3 = n;
+            }
         }
     }
 }

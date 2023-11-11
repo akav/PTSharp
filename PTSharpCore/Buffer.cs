@@ -1,7 +1,9 @@
+using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace PTSharpCore
@@ -11,7 +13,8 @@ namespace PTSharpCore
         ColorChannel, VarianceChannel, StandardDeviationChannel, SamplesChannel
     }
 
-    public class Pixel
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Pixel
     {
         public int Samples;
         public Colour M;
@@ -28,14 +31,14 @@ namespace PTSharpCore
 
         public void AddSample(Colour sample)
         {
-            var newValue = Interlocked.Increment(ref Samples);
-            if (newValue == 1)
+            ++Samples;
+            if (Samples == 1)
             {
                 M = sample;
                 return;
             }
             var m = M;
-            M = M.Add(sample.Sub(M).DivScalar(newValue));
+            M = M.Add(sample.Sub(M).DivScalar(Samples));
             V = V.Add(sample.Sub(m).Mul(sample.Sub(M)));
         }
 
@@ -80,7 +83,6 @@ namespace PTSharpCore
             return color.DivScalar(numSamples);
         }
     }
-
 
     public class TileBuffer
     {
@@ -131,21 +133,12 @@ namespace PTSharpCore
             int tileIndexX = x % tileWidth;
             int tileIndexY = y % tileHeight;
             buffers[(tileX * tileWidth, tileY * tileHeight)].AddSample(tileIndexX, tileIndexY, color);
-        }
-
-        /*public Pixel GetPixel(int x, int y)
-        {
-            int tileX = x / tileWidth;
-            int tileY = y / tileHeight;
-            int tileIndexX = x % tileWidth;
-            int tileIndexY = y % tileHeight;
-            return buffers[(tileX * tileWidth, tileY * tileHeight)].GetPixel(tileIndexX, tileIndexY);
-        }*/
+        }        
     }
 
     class Buffer
     {
-        public int W, H;
+        public int Width, Height;
         public ConcurrentDictionary<(int, int), Pixel> Pixels;
 
         public Buffer() { }
@@ -167,8 +160,8 @@ namespace PTSharpCore
 
         public Buffer(int width, int height, ConcurrentDictionary<(int, int), Pixel> pbuffer)
         {
-            W = width;
-            H = height;
+            Width = width;
+            Height = height;
             Pixels = pbuffer;
         }
 
@@ -177,8 +170,8 @@ namespace PTSharpCore
             // Determine the range of pixels within the specified tile.
             int startX = tileIndexX * TileBuffer.GetTileWidth();
             int startY = tileIndexY * TileBuffer.GetTileHeight();
-            int endX = Math.Min(startX + TileBuffer.GetTileWidth(), W);
-            int endY = Math.Min(startY + TileBuffer.GetTileHeight(), H);
+            int endX = Math.Min(startX + TileBuffer.GetTileWidth(), Width);
+            int endY = Math.Min(startY + TileBuffer.GetTileHeight(), Height);
 
             // Accumulate the samples and compute the average color for the pixels within the tile.
             int totalSamples = 0;
@@ -204,12 +197,17 @@ namespace PTSharpCore
 
         public Buffer Copy()
         {
-            return new Buffer(W, H, new ConcurrentDictionary<(int, int), Pixel>(Pixels));
+            return new Buffer(Width, Height, new ConcurrentDictionary<(int, int), Pixel>(Pixels));
         }
 
         public void AddSample(int x, int y, Colour sample)
         {
-            Pixels[(x, y)].AddSample(sample);
+            Pixel pixel;
+            if (Pixels.TryGetValue((x, y), out pixel))
+            {
+                pixel.AddSample(sample);
+                Pixels[(x, y)] = pixel;
+            }
         }
 
         public int Samples(int x, int y)
@@ -246,7 +244,7 @@ namespace PTSharpCore
 
         public Bitmap Image(Channel channel)
         {
-            Bitmap bmp = new Bitmap(W, H);
+            Bitmap bmp = new Bitmap(Width, Height);
 
             double maxSamples = 0;
 
@@ -258,9 +256,9 @@ namespace PTSharpCore
                 }
             }
 
-            for (int y = 0; y < H; y++)
+            for (int y = 0; y < Height; y++)
             {
-                for (int x = 0; x < W; x++)
+                for (int x = 0; x < Width; x++)
                 {
                     Colour pixelColor = new Colour();
                     switch (channel)
@@ -279,7 +277,10 @@ namespace PTSharpCore
                             pixelColor = new Colour(p, p, p);
                             break;
                     }
-                    bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(Colour.getIntFromColor(pixelColor.r, pixelColor.g, pixelColor.b)));
+                    lock (bmp)
+                    {
+                        bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(Colour.getIntFromColor(pixelColor.r, pixelColor.g, pixelColor.b)));
+                    }                   
                 }
             }
             return bmp;

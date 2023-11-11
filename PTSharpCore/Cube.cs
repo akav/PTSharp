@@ -1,3 +1,4 @@
+using glTFLoader.Schema;
 using System;
 
 namespace PTSharpCore
@@ -8,6 +9,8 @@ namespace PTSharpCore
         internal Vector Max;
         internal Material Material;
         internal Box Box;
+        private readonly object _lock = new object();
+
 
         public Colour Color { get; set; }
         Cube(Vector min, Vector max, Material material, Box box)
@@ -20,6 +23,7 @@ namespace PTSharpCore
 
         public Cube()
         {
+
         }
 
         internal static Cube NewCube(Vector min, Vector max, Material material)
@@ -28,22 +32,38 @@ namespace PTSharpCore
             return new Cube(min, max, material, box);
         }
 
-        void IShape.Compile() { }
+        void IShape.Compile() {
+            lock (_lock)
+            {
+                // Modify shared data
+            }
+        }
 
-        Box IShape.BoundingBox() => Box;
+        Box IShape.BoundingBox()
+        {
+            lock (_lock)
+            {
+                // Access shared data
+                return Box;
+            }
+        }
+
 
         Hit IShape.Intersect(Ray r)
         {
-            (var n, var f) = (Min.Sub(r.Origin).Div(r.Direction), Max.Sub(r.Origin).Div(r.Direction));
-            (n, f) = (n.Min(f), n.Max(f));
-            (var t0, var t1) = (Math.Max(Math.Max(n.X, n.Y), n.Z), Math.Min(Math.Min(f.X, f.Y), f.Z));
-
-            if (t0 > 0 && t0 < t1)
+            lock (_lock)
             {
-                return new Hit(this, t0, null);
-            }
+                (var n, var f) = (Min.Sub(r.Origin).Div(r.Direction), Max.Sub(r.Origin).Div(r.Direction));
+                (n, f) = (n.Min(f), n.Max(f));
+                (var t0, var t1) = (Math.Max(Math.Max(n.X, n.Y), n.Z), Math.Min(Math.Min(f.X, f.Y), f.Z));
 
-            return Hit.NoHit;
+                if (t0 > 0 && t0 < t1)
+                {
+                    return new Hit(this, t0, null);
+                }
+
+                return Hit.NoHit;
+            }
         }
 
         Vector IShape.UV(Vector p)
@@ -52,7 +72,15 @@ namespace PTSharpCore
             return new Vector(p.X, p.Z, 0);
         }
 
-        Material IShape.MaterialAt(Vector p) => Material;
+        Material IShape.MaterialAt(Vector p)
+        {
+            lock (_lock)
+            {
+                // Access shared data
+                return Material;
+            }
+        }
+
 
         Vector IShape.NormalAt(Vector p)
         {
