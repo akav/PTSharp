@@ -1,24 +1,22 @@
+using glTFLoader.Schema;
 using System;
+using TinyEmbree;
 
 namespace PTSharpCore
 {
-    interface Func : IShape
+    public delegate double Func(double x, double y);
+    class Function : IShape
     {
-        double func(double x, double y);
-    }
-
-    class Function : Func
-    {
-        Func Funct;
-        Box Box;
-        Material Material;
+        public Func _Function;
+        public Box Box;
+        public Material Material;
         public Colour Color { get; set; }
 
         Function() { }
 
         Function(Func Function, Box Box, Material Material)
         {
-            this.Funct = Function;
+            this._Function = Function;
             this.Box = Box;
             this.Material = Material;
         }
@@ -28,19 +26,17 @@ namespace PTSharpCore
             return new Function(function, box, material);
         }
 
-        void IShape.Compile() { }
-
-        Box GetBoundingBox()
+        public void Compile()
         {
-            return this.Box;
+            // No action required
         }
 
-        bool Contains(Vector v)
+        public Box BoundingBox()
         {
-            return v.Z < func(v.X, v.Y);
+            return Box;
         }
 
-        Hit IShape.Intersect(Ray ray)
+        public Hit Intersect(Ray ray)
         {
             double step = 1.0 / 32;
             bool sign = Contains(ray.Position(step));
@@ -49,76 +45,38 @@ namespace PTSharpCore
                 Vector v = ray.Position(t);
                 if (Contains(v) != sign && Box.Contains(v))
                 {
-                    return new Hit(this, t - step, null);
+                    return new Hit(this, t - step, null); // Assuming Hit is a struct or class
                 }
             }
             return Hit.NoHit;
         }
 
-        Vector IShape.UV(Vector p)
+        bool Contains(Vector v)
         {
-            double x1 = Box.Min.X;
-            double x2 = Box.Max.X;
-            double y1 = Box.Min.Y;
-            double y2 = Box.Max.Y;
-            double u = p.X - x1 / x2 - x1;
-            double v = p.Y - y1 / y2 - y1;
+            return v.Z < _Function(v.X, v.Y);
+        }
+
+        public Vector UV(Vector p)
+        {
+            double u = (p.X - Box.Min.X) / (Box.Max.X - Box.Min.X);
+            double v = (p.Y - Box.Min.Y) / (Box.Max.Y - Box.Min.Y);
             return new Vector(u, v, 0);
         }
 
-        Material IShape.MaterialAt(Vector p)
+        public Vector NormalAt(Vector p)
         {
-            return Material;
-        }
-
-        Vector IShape.NormalAt(Vector p)
-        {
-            double eps = 1e-3F;
-            double x = func(p.X - eps, p.Y) - func(p.X + eps, p.Y);
-            double y = func(p.X, p.Y - eps) - func(p.X, p.Y + eps);
-            double z = 2 * eps;
-            Vector v = new Vector(x, y, z);
+            const double eps = 1e-3;
+            Vector v = new Vector(
+                _Function(p.X - eps, p.Y) - _Function(p.X + eps, p.Y),
+                _Function(p.X, p.Y - eps) - _Function(p.X, p.Y + eps),
+                2 * eps
+            );
             return v.Normalize();
         }
 
-        public double func(double x, double y)
+        public Material MaterialAt(Vector v)
         {
-            return Funct.func(x, y);
-        }
-
-        public Box BoundingBox()
-        {
-            return Funct.BoundingBox();
-        }
-
-        double Func.func(double x, double y)
-        {
-            throw new NotImplementedException();
-        }
-
-        Box IShape.BoundingBox()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Colour ComputeContribution(Vector position, Vector normal, Material material, Scene scene)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Colour ComputeDirectLighting(Vector position, Vector normal, Material material, Scene scene)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Colour ComputeIndirectLighting(Vector position, Vector normal, Material material, Scene scene)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Vector DirectionFrom(Vector position)
-        {
-            throw new NotImplementedException();
+            return Material;
         }
     }
 }

@@ -63,7 +63,6 @@ namespace PTSharpCore
             window.Render += OnRender;
             window.Closing += OnClose;
             window.Run();
-            //Example.Teapot(1920, 1080);
         }
 
         private static void KeyDown(IKeyboard arg1, Key arg2, int arg3)

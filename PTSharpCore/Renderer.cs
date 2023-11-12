@@ -503,7 +503,7 @@ namespace PTSharpCore
 
 
                 // 16 seconds
-                int tile_size = 128;
+                int tile_size = 256;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
                 int num_tiles_y = (h + tile_size - 1) / tile_size;
 

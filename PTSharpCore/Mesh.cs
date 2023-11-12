@@ -183,7 +183,7 @@ namespace PTSharpCore
             foreach (var t in Triangles)
             {
                 if (!lookup.ContainsKey(t.V1))
-                    lookup[t.V1] = new Vector(); // Assuming Vector has a default constructor
+                    lookup[t.V1] = new Vector(); 
                 lookup[t.V1] = lookup[t.V1].Add(t.N1);
 
                 if (!lookup.ContainsKey(t.V2))
@@ -224,9 +224,9 @@ namespace PTSharpCore
             var scale = box.Size().Div(BoundingBox().Size()).MinComponent();
             var extra = box.Size().Sub(BoundingBox().Size().MulScalar(scale));
             var matrix = Matrix.Identity;
-            matrix = matrix.Translate(BoundingBox().Min.Negate()); //.Mul(matrix);
-            matrix = matrix.Scale(new Vector(scale, scale, scale)); //Mul(matrix);
-            matrix = matrix.Translate(box.Min.Add(extra.Mul(anchor))); //.Mul(matrix);
+            matrix = matrix.Translate(BoundingBox().Min.Negate()); 
+            matrix = matrix.Scale(new Vector(scale, scale, scale)); 
+            matrix = matrix.Translate(box.Min.Add(extra.Mul(anchor))); 
             Transform(matrix);
         }
 

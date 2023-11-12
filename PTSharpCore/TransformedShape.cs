@@ -1,4 +1,5 @@
 using System;
+using TinyEmbree;
 
 namespace PTSharpCore
 {
@@ -7,16 +8,14 @@ namespace PTSharpCore
         public IShape Shape;
         private Matrix Matrix;
         private Matrix Inverse;
-        public Colour Color { get; set; }
-        public Vector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
+        
         TransformedShape() { }
 
-        internal TransformedShape(IShape s, Matrix m, Matrix im)
+        internal TransformedShape(IShape s, Matrix m)
         {
             Shape = s;
             Matrix = m;
-            Inverse = im;
+            Inverse = m.Inverse();
         }
 
         void IShape.Compile()
@@ -26,7 +25,7 @@ namespace PTSharpCore
 
         internal static IShape NewTransformedShape(IShape s, Matrix m)
         {
-            return new TransformedShape(s, m, m.Inverse());
+            return new TransformedShape(s, m);
         }
 
         Box IShape.BoundingBox()
@@ -34,34 +33,34 @@ namespace PTSharpCore
             return Matrix.MulBox(Shape.BoundingBox());
         }
 
-        Hit IShape.Intersect(Ray r)
+        Hit IShape.Intersect(Ray ray)
         {
-            var shapeRay = Matrix.Inverse().MulRay(r);
-            var hit = Shape.Intersect(shapeRay);
-
+            Ray shapeRay = Inverse.MulRay(ray);
+            Hit hit = Shape.Intersect(shapeRay);
             if (!hit.Ok)
             {
                 return hit;
             }
 
-            var shape = hit.Shape;
-            var shapePosition = shapeRay.Position(hit.T);
-            var shapeNormal = shape.NormalAt(shapePosition);
-            var position = Matrix.MulPosition(shapePosition);
-            var normal = Matrix.Inverse().Transpose().MulDirection(shapeNormal);
-            var material = Material.MaterialAt(shape, shapePosition);
-            var inside = false;
+            IShape shape = hit.Shape;
+            Vector shapePosition = shapeRay.Position(hit.T);
+            Vector shapeNormal = shape.NormalAt(shapePosition);
+            Vector position = Matrix.MulPosition(shapePosition);
+            Vector normal = Inverse.Transpose().MulDirection(shapeNormal);
+            Material material = Material.MaterialAt(shape, shapePosition);
+            bool inside = false;
 
-            if (shapeNormal.Dot(shapeRay.Direction) > 0)
+            if (Vector.Dot(shapeNormal, shapeRay.Direction) > 0)
             {
                 normal = normal.Negate();
                 inside = true;
             }
 
-            var ray = new Ray(position, normal);
-            var info = new HitInfo(shape, position, normal, ray, material, inside);
-            hit.T = position.Sub(r.Origin).Length();
+            Ray transformedRay = new Ray(position, normal);
+            HitInfo info = new HitInfo(shape, position, normal, transformedRay, material, inside);
+            hit.T = (position - ray.Origin).Length();
             hit.HitInfo = info;
+
             return hit;
         }
 

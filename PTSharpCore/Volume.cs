@@ -199,26 +199,6 @@ namespace PTSharpCore
                 sign = s;
             }
             return Hit.NoHit;
-        }
-
-        public Colour ComputeContribution(Vector position, Vector normal, Material material, Scene scene)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Colour ComputeDirectLighting(Vector position, Vector normal, Material material, Scene scene)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Colour ComputeIndirectLighting(Vector position, Vector normal, Material material, Scene scene)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Vector DirectionFrom(Vector position)
-        {
-            throw new NotImplementedException();
-        }
+        }        
     }
 }
