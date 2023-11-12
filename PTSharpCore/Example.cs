@@ -79,7 +79,7 @@ namespace PTSharpCore
                 for (int z = -12; z <= 12; z++)
                 {
                     var fx = (double)x;
-                    var fy = ThreadSafeRandom.NextDouble() * 2;
+                    var fy = Random.Shared.NextDouble() * 2;
                     var fz = (double)z;
                     scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new Vector(fx, fy, fz))));
                     scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new Vector(fx, fy - 1, fz))));
@@ -552,7 +552,7 @@ namespace PTSharpCore
             {
                 for (int y = -n; y <= n; y++)
                 {
-                    if (ThreadSafeRandom.NextDouble() > 0.8) 
+                    if (Random.Shared.NextDouble() > 0.8) 
                     {
                         var min = new Vector((double)x - 0.5, (double)y - 0.5, 0);
                         var max = new Vector((double)x + 0.5, (double)y + 0.5, 1);

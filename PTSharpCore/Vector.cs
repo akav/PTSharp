@@ -99,14 +99,14 @@ namespace PTSharpCore
                 switch (rand)
                 {
                     case null:
-                        x = ThreadSafeRandom.NextDouble() * 2 - 1;
-                        y = ThreadSafeRandom.NextDouble() * 2 - 1;
-                        z = ThreadSafeRandom.NextDouble() * 2 - 1;
+                        x = Random.Shared.NextDouble() * 2 - 1;
+                        y = Random.Shared.NextDouble() * 2 - 1;
+                        z = Random.Shared.NextDouble() * 2 - 1;
                         break;
                     default:
-                        x = ThreadSafeRandom.NextDouble(rand) * 2 - 1;
-                        y = ThreadSafeRandom.NextDouble(rand) * 2 - 1;
-                        z = ThreadSafeRandom.NextDouble(rand) * 2 - 1;
+                        x = Random.Shared.NextDouble() * 2 - 1;
+                        y = Random.Shared.NextDouble() * 2 - 1;
+                        z = Random.Shared.NextDouble() * 2 - 1;
                         break;
                 }
                 

@@ -67,14 +67,14 @@ namespace PTSharpCore
             {
                 // Need non-negative random integers
                 // must be a non-negative pseudo-random number in [0,n).
-                int index = ThreadSafeRandom.Next(active.Length);
+                int index = Random.Shared.Next(active.Length);
                 Vector point = active.ElementAt(index);
                 bool ok = false;
 
                 for (int i = 0; i < n; i++)
                 {
-                    double a = ThreadSafeRandom.NextDouble() * 2 * Math.PI;
-                    double d = ThreadSafeRandom.NextDouble() * r + r;
+                    double a = Random.Shared.NextDouble() * 2 * Math.PI;
+                    double d = Random.Shared.NextDouble() * r + r;
                     x = point.x + Math.Cos(a) * d;
                     y = point.y + Math.Sin(a) * d;
                     if (x < x1 || y < y1 || x > x2 || y > y2)

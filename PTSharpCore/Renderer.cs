@@ -198,8 +198,8 @@ namespace PTSharpCore
                           for (int s = 0; s < spp; s++)
                           {
                               int y = i / w, x = i % w;
-                              var fu = ThreadSafeRandom.NextDouble(rand);
-                              var fv = ThreadSafeRandom.NextDouble(rand);
+                              var fu = Random.Shared.NextDouble();
+                              var fv = Random.Shared.NextDouble();
                               var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
                               var sample = sampler.Sample(scene, ray, rand);
                               buf.AddSample(x, y, sample);

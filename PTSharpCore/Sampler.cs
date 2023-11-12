@@ -115,8 +115,8 @@ namespace PTSharpCore
                     for (BounceType mode = ma; mode <= mb; mode++)
                     {
 
-                        var fu = (u + ThreadSafeRandom.NextDouble()) / n;
-                        var fv = (v + ThreadSafeRandom.NextDouble()) / n;
+                        var fu = (u + Random.Shared.NextDouble()) / n;
+                        var fv = (v + Random.Shared.NextDouble()) / n;
                         (var newRay, var reflected, var p) = ray.Bounce(info, fu, fv, mode, rand);
 
                         if (mode == BounceType.BounceTypeAny)
