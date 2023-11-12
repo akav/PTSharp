@@ -66,6 +66,9 @@ namespace PTSharpCore
 
             internal Hit Intersect(Ray r, double tmin, double tmax)
             {
+                double tsplit;
+                bool leftFirst;
+
                 switch (Axis)
                 {
                     case Axis.AxisNone:
@@ -82,48 +85,30 @@ namespace PTSharpCore
                         tsplit = (Point - r.Origin.z) / r.Direction.z;
                         leftFirst = (r.Origin.z < Point) || (r.Origin.z == Point && r.Direction.z <= 0);
                         break;
+                    default:
+                        throw new InvalidOperationException("Invalid Axis");
                 }
 
-                Node first, second; 
-
-                if(leftFirst)
-                {
-                    first = Left;
-                    second = Right;
-                }
-                else
-                {
-                    first = Right;
-                    second = Left;
-                }
+                Node first = leftFirst ? Left : Right;
+                Node second = leftFirst ? Right : Left;
 
                 if (tsplit > tmax || tsplit <= 0)
                 {
                     return first.Intersect(r, tmin, tmax);
                 }
-                else if(tsplit < tmin) {
+                else if (tsplit < tmin)
+                {
                     return second.Intersect(r, tmin, tmax);
                 }
                 else
                 {
-                    var h1 = first.Intersect(r, tmin, tsplit);
-          
-                    if(h1.T <= tsplit)
+                    Hit h1 = first.Intersect(r, tmin, tsplit);
+                    if (h1.T <= tsplit)
                     {
                         return h1;
                     }
-
-                    var h2 = second.Intersect(r, tsplit, Math.Min(tmax, h1.T));
-          
-                    if(h1.T <= h2.T)
-                    {
-                        return h1;
-
-                    }
-                    else
-                    {
-                        return h2;
-                    }
+                    Hit h2 = second.Intersect(r, tsplit, Math.Min(tmax, h1.T));
+                    return h1.T <= h2.T ? h1 : h2;
                 }
             }
 
