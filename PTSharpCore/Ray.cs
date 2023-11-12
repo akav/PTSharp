@@ -24,7 +24,6 @@ namespace PTSharpCore
 
         public Ray WeightedBounce(double u, double v)
         {
-            //var rand = ConcurrentRandom.Instance;
             var radius = Math.Sqrt(u);
             var theta = 2 * Math.PI * v;
             var s = Direction.Cross(Vector.RandomUnitVector(Random.Shared)).Normalize();
