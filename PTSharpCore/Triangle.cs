@@ -1,19 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace PTSharpCore
-{   
-    public class Triangle : IShape
+{
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+
+    public struct Triangle : IShape
     {
-        internal Material Material;
+        public Material Material;
         public Vector V1, V2, V3;
         public Vector N1, N2, N3;
         public Vector T1, T2, T3;
         
-        internal Triangle() { }
+        public Triangle() { }
 
         internal Triangle(Vector v1, Vector v2, Vector v3)
         {
@@ -65,6 +69,8 @@ namespace PTSharpCore
             return new Box(min, max);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         Hit IShape.Intersect(Ray r)
         {
             var e1x = V2.X - V1.X;
@@ -114,6 +120,8 @@ namespace PTSharpCore
             return new Hit(this, d, null);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         Vector IShape.UVector(Vector p)
         {
             (var u, var v, var w) = Barycentric(p);
@@ -125,6 +133,8 @@ namespace PTSharpCore
         }
 
         Material IShape.MaterialAt(Vector v) => Material;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         Vector IShape.NormalAt(Vector p)
         {
@@ -190,6 +200,9 @@ namespace PTSharpCore
             var e2 = V3.Sub(V1);
             return e1.Cross(e2).Normalize();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         (double, double, double) Barycentric(Vector p)
         {
             var v0 = V2.Sub(V1);

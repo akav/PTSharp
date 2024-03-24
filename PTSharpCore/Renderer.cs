@@ -204,7 +204,7 @@ namespace PTSharpCore
             }
             else
             {
-                int tile_size = 32;
+                int tile_size = 64;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
                 int num_tiles_y = (h + tile_size - 1) / tile_size;
                 var partitioner = Partitioner.Create(0, num_tiles_x * num_tiles_y);

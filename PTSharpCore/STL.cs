@@ -114,7 +114,7 @@ namespace PTSharpCore
             else
             {
                 Console.WriteLine("Specified file could not be opened...");
-                return null;
+                return new();
             }
         }
 
@@ -248,7 +248,7 @@ namespace PTSharpCore
             {
                 Console.WriteLine("The file could not be read:");
                 Console.WriteLine(e.Message);
-                return null;
+                return new();
             }
             file.Close();
             return Mesh.NewMesh(triangles.ToArray());
