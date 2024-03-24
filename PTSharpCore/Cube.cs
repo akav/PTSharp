@@ -1,9 +1,10 @@
 using glTFLoader.Schema;
 using System;
+using System.Numerics;
 
 namespace PTSharpCore
 {
-    class Cube : IShape
+    public class Cube : IShape
     {
         internal Vector Min;
         internal Vector Max;
@@ -33,37 +34,31 @@ namespace PTSharpCore
         }
 
         void IShape.Compile() {
-            lock (_lock)
-            {
-                // Modify shared data
-            }
+            
         }
 
         Box IShape.BoundingBox()
         {
-            lock (_lock)
-            {
-                // Access shared data
-                return Box;
-            }
+            return Box;            
         }
 
 
         Hit IShape.Intersect(Ray r)
         {
-            lock (_lock)
+            Vector n = (Min - r.Origin) / r.Direction;
+            Vector f = (Max - r.Origin) / r.Direction;
+            n = Vector.Min(n, f);
+            f = Vector.Max((Min - r.Origin) / r.Direction, (Max - r.Origin) / r.Direction);
+
+            double t0 = Math.Max(Math.Max(n.X, n.Y), n.Z);
+            double t1 = Math.Min(Math.Min(f.X, f.Y), f.Z);
+
+            if (t0 > 0 && t0 < t1)
             {
-                (var n, var f) = (Min.Sub(r.Origin).Div(r.Direction), Max.Sub(r.Origin).Div(r.Direction));
-                (n, f) = (n.Min(f), n.Max(f));
-                (var t0, var t1) = (Math.Max(Math.Max(n.X, n.Y), n.Z), Math.Min(Math.Min(f.X, f.Y), f.Z));
-
-                if (t0 > 0 && t0 < t1)
-                {
-                    return new Hit(this, t0, null);
-                }
-
-                return Hit.NoHit;
+                return new Hit(this, t0, null);
             }
+
+            return Hit.NoHit;
         }
 
         Vector IShape.UV(Vector p)

@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -881,7 +882,104 @@ namespace PTSharpCore
                     threads[i].Start();
                 }*/
 
+                int tile_size = 64;
+                int num_tiles_x = (w + tile_size - 1) / tile_size;
+                int num_tiles_y = (h + tile_size - 1) / tile_size;
+                var partitioner = Partitioner.Create(0, num_tiles_x * num_tiles_y);
 
+                Parallel.ForEach(partitioner, new ParallelOptions { MaxDegreeOfParallelism = 24 }, range =>
+                {
+                    Random rand = Random.Shared;
+
+                    for (int p = 0; p < spp; p++)
+                    {
+                        for (int tile_index = range.Item1; tile_index < range.Item2; tile_index++)
+                        {
+                            if (cts.IsCancellationRequested)
+                            {
+                                return;
+                            }
+
+                            int tile_x = tile_index % num_tiles_x;
+                            int tile_y = tile_index / num_tiles_x;
+                            int x_start = tile_x * tile_size;
+                            int y_start = tile_y * tile_size;
+                            int x_end = Math.Min(x_start + tile_size, w);
+                            int y_end = Math.Min(y_start + tile_size, h);
+
+                            for (int y = y_start; y < y_end; y++)
+                            {
+                                for (int x = x_start; x < x_end; x++)
+                                {
+                                    // Render the tile at the current coordinates, using the current resolution
+                                    Colour c = new Colour(0, 0, 0);
+
+                                    // Jittered sampling
+                                    double u = (x + rand.NextDouble()) / w;
+                                    double v = (y + rand.NextDouble()) / h;
+
+                                    Ray ray = camera.CastRay(x, y, w, h, u, v, rand);
+                                    c += sampler.Sample(scene, ray, rand);
+
+                                    // Update the buffer with the sample
+                                    buf.AddSample(x, y, c);
+
+                                    // Convert the color to display gamma and update the bitmap
+                                    var offset = (y * w + x) * 4; // BGR
+                                    Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                    Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                    Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                                }
+                            }
+                        }
+                    }
+                });
+
+
+                /*
+                int tile_size = 64;
+                int num_tiles_x = (w + tile_size - 1) / tile_size;
+                int num_tiles_y = (h + tile_size - 1) / tile_size;
+                int num_tiles = num_tiles_x * num_tiles_y;
+                int maxDegreeOfParallelism = 24;
+
+                Parallel.For(0, num_tiles, new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism }, tile_index =>
+                {
+                    if (cts.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    Random rand = Random.Shared;
+                    int tile_x = tile_index % num_tiles_x;
+                    int tile_y = tile_index / num_tiles_x;
+                    int x_start = tile_x * tile_size;
+                    int y_start = tile_y * tile_size;
+                    int x_end = Math.Min(x_start + tile_size, w);
+                    int y_end = Math.Min(y_start + tile_size, h);
+
+                    for (int p = 0; p < spp; p++)
+                    {
+                        for (int y = y_start; y < y_end; y++)
+                        {
+                            for (int x = x_start; x < x_end; x++)
+                            {
+                                // Render the tile at the current coordinates, using the current resolution
+                                Colour c = sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                                buf.AddSample(x, y, c);
+
+                                var offset = (y * w + x) * 4; // BGR
+                                Colour color = buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2);
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(color.r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(color.g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(color.b, 0.0, 0.999));
+                            }
+                        }
+                    }
+                });*/
+
+
+                /*
                 
                 int tile_size = 64;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
@@ -925,7 +1023,7 @@ namespace PTSharpCore
                             }
                         }
                     }
-                });
+                });*/
 
 
 
@@ -1217,41 +1315,105 @@ namespace PTSharpCore
                     }
                 });*/
             }
+
             if (AdaptiveSamples > 0)
             {
                 Parallel.For(0, w * h, po, (i, loopState) =>
                 {
-                    int y = i / w, x = i % w;
-                    double v = buf.StandardDeviation(x, y).MaxComponent();
-                    v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
+                    int y = i / w;
+                    int x = i % w;
+
+                    Colour stddev = buf.StandardDeviation(x, y);
+                    double v = stddev.MaxComponent() / AdaptiveThreshold;
+                    v = v > 1 ? 1 : v;  // Ensure v is within [0, 1]
                     v = Math.Pow(v, AdaptiveExponent);
                     int samples = (int)(v * AdaptiveSamples);
-                    
+
+                    Random rng = Random.Shared;
                     for (int s = 0; s < samples; s++)
                     {
-                        var fu = Random.Shared.NextDouble();
-                        var fv = Random.Shared.NextDouble();
-                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
-                        Colour sample = sampler.Sample(scene, ray, Random.Shared);
+                        double fu = rng.NextDouble();
+                        double fv = rng.NextDouble();
+                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, rng);
+                        Colour sample = sampler.Sample(scene, ray, rng);
                         buf.AddSample(x, y, sample);
                     }
                 });
             }
 
+            /*
             if (FireflySamples > 0)
             {
-                _ = Parallel.For(0, w * h, po, (i, loopState) =>
-                  {
-                      int y = i / w, x = i % w;
-                      if (buf.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
-                      {
-                          for (int j = 0; j < FireflySamples; j++)
-                          {
-                              buf.AddSample(x, y, sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), Random.Shared), Random.Shared));
-                          }
-                      }
-                  });
+                var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+                Parallel.ForEach(Enumerable.Range(0, w * h), options, i =>
+                {
+                    int y = i / w;
+                    int x = i % w;
+                    Colour stddev = buf.StandardDeviation(x, y);
+
+                    // Calculate the probability of a pixel being a firefly
+                    double probability = Math.Max(0, stddev.MaxComponent() - FireflyThreshold) / (1 - FireflyThreshold);
+
+                    // Sample the pixel with a probability proportional to the calculated probability
+                    if (probability > Random.Shared.NextDouble())
+                    {
+                        var rng = Random.Shared;
+                        bool isFirefly = false;
+
+                        // Check nearby samples to determine if this sample is a firefly
+                        for (int nx = Math.Max(0, x - 1); nx <= Math.Min(w - 1, x + 1); nx++)
+                        {
+                            for (int ny = Math.Max(0, y - 1); ny <= Math.Min(h - 1, y + 1); ny++)
+                            {
+                                if ((nx != x || ny != y) && buf.StandardDeviation(nx, ny).MaxComponent() > FireflyThreshold)
+                                {
+                                    isFirefly = true;
+                                    break;
+                                }
+                            }
+                            if (isFirefly)
+                                break;
+                        }
+
+                        // Eliminate the firefly if it's detected
+                        if (!isFirefly)
+                        {
+                            for (int j = 0; j < FireflySamples; j++)
+                            {
+                                double fu = rng.NextDouble();
+                                double fv = rng.NextDouble();
+                                Ray ray = camera.CastRay(x, y, w, h, fu, fv, rng);
+                                Colour sample = sampler.Sample(scene, ray, rng);
+                                buf.AddSample(x, y, sample);
+                            }
+                        }
+                    }
+                });
+            }*/
+
+            
+            if (FireflySamples > 0)
+            {
+                var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+                Parallel.ForEach(Enumerable.Range(0, w * h), options, i =>
+                {
+                    int y = i / w;
+                    int x = i % w;
+                    if (buf.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
+                    {
+                        var rng = Random.Shared;
+                        for (int j = 0; j < FireflySamples; j++)
+                        {
+                            double fu = rng.NextDouble();
+                            double fv = rng.NextDouble();
+                            Ray ray = camera.CastRay(x, y, w, h, fu, fv, rng);
+                            Colour sample = sampler.Sample(scene, ray, rng);
+                            buf.AddSample(x, y, sample);
+                        }
+                    }
+                });
             }
+
             Console.WriteLine("time elapsed:" + sw.Elapsed);
             sw.Stop();
         }

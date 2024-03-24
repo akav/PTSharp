@@ -97,7 +97,7 @@ namespace PTSharpCore
             return box;
         }
 
-        public Box BoundingBox()
+        public Box? BoundingBox()
         {
             if (box == null)
             {

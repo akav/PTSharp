@@ -15,7 +15,7 @@ namespace PTSharpCore
         public IShape[] Shapes;
         public IShape[] Lights;
         public IShape[] PhysicalLights;
-
+        
         public Scene()
         {
             Shapes = Array.Empty<IShape>();

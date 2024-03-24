@@ -2,6 +2,7 @@ using ILGPU.Algorithms.Random;
 using System;
 using System.Numerics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
@@ -56,6 +57,53 @@ namespace PTSharpCore
         }
 
         Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand, bool russianRoulette = false, double minReflectance = 0.05)
+        {
+            if (depth > MaxBounces)
+                return Colour.Black;
+
+            var hit = scene.Intersect(ray);
+
+            if (!hit.Ok)
+                return sampleEnvironment(scene, ray);
+
+            var info = hit.Info(ray);
+            var material = info.material;
+            var result = Colour.Black;
+
+            if (material.Emittance > 0 && (!DirectLighting || emission))
+                result = result.Add(material.Color.MulScalar(material.Emittance * samples));
+
+            int n = (int)Math.Sqrt(samples);
+            BounceType ma = (SpecularMode == SpecularMode.SpecularModeAll || (depth == 0 && SpecularMode == SpecularMode.SpecularModeFirst)) ? BounceType.BounceTypeDiffuse : BounceType.BounceTypeAny;
+            BounceType mb = (SpecularMode == SpecularMode.SpecularModeAll || (depth == 0 && SpecularMode == SpecularMode.SpecularModeFirst)) ? BounceType.BounceTypeSpecular : BounceType.BounceTypeAny;
+
+            Parallel.For(0, n * n, i =>
+            {
+                int u = i / n;
+                int v = i % n;
+
+                for (BounceType mode = ma; mode <= mb; mode++)
+                {
+                    double fu = (u + rand.NextDouble()) / n;
+                    double fv = (v + rand.NextDouble()) / n;
+                    var (newRay, reflected, p) = ray.Bounce(info, fu, fv, mode, rand);
+
+                    if (p > 0)
+                    {
+                        var indirect = sample(scene, newRay, reflected, 1, depth + 1, rand);
+                        Colour direct = DirectLighting ? sampleLights(scene, info.Ray, rand) : Colour.Black;
+
+                        var mixedColor = material.Color.Mul(direct.Add(indirect)).MulScalar(p);
+                        result = result.Add(mixedColor);
+                    }
+                }
+            });
+
+            return result.DivScalar(n * n);
+        }
+
+
+        /*Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand, bool russianRoulette = false, double minReflectance = 0.05)
         {
             if (depth > MaxBounces)
             {
@@ -129,7 +177,7 @@ namespace PTSharpCore
                 }
             }
             return result.DivScalar(n * n);
-        }
+        }*/
 
         public static Vector RandomUnitVectorOnUnitSphere(Random rand)
         {
@@ -174,8 +222,35 @@ namespace PTSharpCore
             }
             return scene.Color;
         }
-                
+
         Colour sampleLights(Scene scene, Ray n, Random rand)
+{
+    var nLights = scene.Lights.Length;
+
+    if (nLights == 0)
+    {
+        return Colour.Black;
+    }
+
+    if (LightMode == LightMode.LightModeAll)
+    {
+        Colour result = new Colour();
+        foreach (var light in scene.Lights)
+        {
+            result = result.Add(sampleLight(scene, n, light, rand));
+        }
+        return result.DivScalar(nLights);
+    }
+    else
+    {
+        // Pick a random light index directly
+        int lightIndex = Random.Shared.Next(nLights);
+        return sampleLight(scene, n, scene.Lights[lightIndex], rand).MulScalar((double)nLights);
+    }
+}
+
+                
+        /*Colour sampleLights(Scene scene, Ray n, Random rand)
         {
             var nLights = scene.Lights.Length;
 
@@ -199,7 +274,7 @@ namespace PTSharpCore
                 var lightIndex = Random.Shared.Next(nLights);
                 return sampleLight(scene, n, scene.Lights[lightIndex], rand).MulScalar((double)nLights);
             }
-        }
+        }*/
         
         Colour sampleLight(Scene scene, Ray n, IShape light, Random rand)
         {

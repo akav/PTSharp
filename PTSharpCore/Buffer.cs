@@ -277,7 +277,7 @@ namespace PTSharpCore
                     }
                     lock (bmp)
                     {
-                        bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(Colour.getIntFromColor(pixelColor.r, pixelColor.g, pixelColor.b)));
+                        bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(Colour.GetIntFromColor(pixelColor.r, pixelColor.g, pixelColor.b)));
                     }                   
                 }
             }

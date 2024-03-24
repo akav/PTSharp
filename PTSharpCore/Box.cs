@@ -1,49 +1,19 @@
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace PTSharpCore
 {
     public class Box
     {
-        internal Vector Min;
-        internal Vector Max;
-        internal bool left; 
-        internal bool right;
+        public readonly Vector Min;
+        public readonly Vector Max;
 
-        internal Box() { }
-
+        public Box() { }
         public Box(Vector min, Vector max)
         {
             Min = min;
             Max = max;
-        }
-
-        internal static Box BoxForShapes(IShape[] shapes)
-        {
-            if (shapes.Length == 0)
-            {
-                return new Box();
-            }
-            var box = shapes[0].BoundingBox();
-            foreach (var shape in shapes)
-            {
-                box = box.Extend(shape.BoundingBox());
-            }
-            return box;
-        }
-
-        internal static Box BoxForTriangles(Triangle[] shapes)
-        {
-            if (shapes.Length == 0)
-            {
-                return new Box();
-            }
-            Box box = shapes[0].BoundingBox();
-            foreach (var shape in shapes)
-            {
-                box = box.Extend(shape.BoundingBox());
-            }
-            return box;
         }
 
         public Vector Anchor(Vector anchor) => Min.Add(Size().Mul(anchor));
@@ -59,43 +29,37 @@ namespace PTSharpCore
         public Box Extend(Box b) => new Box(Min.Min(b.Min), Max.Max(b.Max));
 
         public bool Contains(Vector b) => Min.X <= b.X && Max.X >= b.X &&
-                                     Min.Y <= b.Y && Max.Y >= b.Y &&
-                                     Min.Z <= b.Z && Max.Z >= b.Z;
-
+                                           Min.Y <= b.Y && Max.Y >= b.Y &&
+                                           Min.Z <= b.Z && Max.Z >= b.Z;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Intersects(Box b) =>
-            !(Min.X > b.Max.X
-            || Max.X < b.Min.X
-            || Min.Y > b.Max.Y
-            || Max.Y < b.Min.Y
-            || Min.Z > b.Max.Z
-            || Max.Z < b.Min.Z);
-
+            !(Min.X > b.Max.X || Max.X < b.Min.X ||
+              Min.Y > b.Max.Y || Max.Y < b.Min.Y ||
+              Min.Z > b.Max.Z || Max.Z < b.Min.Z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (double, double) Intersect(Ray r)
         {
-            (var x1, var y1, var z1) = (((Min.X - r.Origin.X) / r.Direction.X), ((Min.Y - r.Origin.Y) / r.Direction.Y),
-                ((Min.Z - r.Origin.Z) / r.Direction.Z));
+            double tMinX = (Min.X - r.Origin.X) / r.Direction.X;
+            double tMaxX = (Max.X - r.Origin.X) / r.Direction.X;
+            if (tMinX > tMaxX)
+                (tMinX, tMaxX) = (tMaxX, tMinX);
 
-            (var x2, var y2, var z2) = (((Max.X - r.Origin.X) / r.Direction.X),
-                ((Max.Y - r.Origin.Y) / r.Direction.Y), ((Max.Z - r.Origin.Z) / r.Direction.Z));
+            double tMinY = (Min.Y - r.Origin.Y) / r.Direction.Y;
+            double tMaxY = (Max.Y - r.Origin.Y) / r.Direction.Y;
+            if (tMinY > tMaxY)
+                (tMinY, tMaxY) = (tMaxY, tMinY);
 
-            if (x1 > x2)
-            {
-                (x1, x2) = (x2, x1);
-            }
-            if (y1 > y2)
-            {
-                (y1, y2) = (y2, y1);
-            }
-            if (z1 > z2)
-            {
-                (z1, z2) = (z2, z1);
-            }
+            double tMinZ = (Min.Z - r.Origin.Z) / r.Direction.Z;
+            double tMaxZ = (Max.Z - r.Origin.Z) / r.Direction.Z;
+            if (tMinZ > tMaxZ)
+                (tMinZ, tMaxZ) = (tMaxZ, tMinZ);
 
-            return (Math.Max(Math.Max(x1, y1), z1), Math.Min(Math.Min(x2, y2), z2));
+            double tMin = Math.Max(Math.Max(tMinX, tMinY), tMinZ);
+            double tMax = Math.Min(Math.Min(tMaxX, tMaxY), tMaxZ);
+
+            return (tMin, tMax);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -104,19 +68,30 @@ namespace PTSharpCore
             switch (axis)
             {
                 case Axis.AxisX:
-                    left = Min.X <= point;
-                    right = Max.X >= point;
-                    break;
+                    return (Min.X <= point, Max.X >= point);
                 case Axis.AxisY:
-                    left = Min.Y <= point;
-                    right = Max.Y >= point;
-                    break;
+                    return (Min.Y <= point, Max.Y >= point);
                 case Axis.AxisZ:
-                    left = Min.Z <= point;
-                    right = Max.Z >= point;
-                    break;
+                    return (Min.Z <= point, Max.Z >= point);
+                default:
+                    return (false, false); // Handle invalid axis
             }
-            return (left, right);
+        }
+
+        public static Box BoxForShapes(IShape[] shapes)
+        {
+            if (shapes.Length == 0)
+            {
+                return new Box();
+            }
+
+            var boxes = shapes.Select(shape => shape.BoundingBox()).ToArray();
+            var box = boxes[0];
+            foreach (var b in boxes.Skip(1))
+            {
+                box = box.Extend(b);
+            }
+            return box;
         }
     }
 }

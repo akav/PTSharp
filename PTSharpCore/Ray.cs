@@ -1,8 +1,10 @@
 using System;
+using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-    public class Ray
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Ray
     {
         internal Vector Origin, Direction;
         internal bool reflect;
@@ -35,7 +37,7 @@ namespace PTSharpCore
             return new Ray(Origin, Util.Cone(Direction, theta, u, v, Random.Shared));
         }
 
-        public (Ray, bool, double) Bounce(HitInfo info, double u, double v, BounceType bounceType, Random rand)
+        /*public (Ray, bool, double) Bounce(HitInfo info, double u, double v, BounceType bounceType, Random rand)
         {
             var n = info.Ray;
             var material = info.material;
@@ -77,6 +79,57 @@ namespace PTSharpCore
             {
                 return (n.WeightedBounce(u, v), false, 1 - p);
             }
+        }*/
+
+        public (Ray, bool, double) Bounce(HitInfo info, double u, double v, BounceType bounceType, Random rand)
+        {
+            var n = info.Ray;
+            var material = info.material;
+
+            var (n1, n2) = (1.0, material.Index);
+
+            if (info.Inside)
+            {
+                (n1, n2) = (n2, n1);
+            }
+
+            double p = material.Reflectivity >= 0 ? material.Reflectivity : n.Reflectance(this, n1, n2);
+
+            // Generate a single random number for all bounce types
+            double randomValue = rand.NextDouble();
+            bool reflect;
+
+            switch (bounceType)
+            {
+                case BounceType.BounceTypeAny:
+                    reflect = randomValue < p;
+                    break;
+                case BounceType.BounceTypeDiffuse:
+                    reflect = false;
+                    break;
+                case BounceType.BounceTypeSpecular:
+                    reflect = true;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(bounceType), "Invalid bounce type.");
+            }
+
+            if (reflect)
+            {
+                var reflected = n.Reflect(this);
+                return (reflected.ConeBounce(material.Gloss, u, v, rand), true, p);
+            }
+            else if (material.Transparent)
+            {
+                var refracted = n.Refract(this, n1, n2);
+                refracted.Origin = refracted.Origin.Add(refracted.Direction.MulScalar(1e-4));
+                return (refracted.ConeBounce(material.Gloss, u, v, rand), true, 1 - p);
+            }
+            else
+            {
+                return (n.WeightedBounce(u, v), false, 1 - p);
+            }
         }
+
     }
 }

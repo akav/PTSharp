@@ -18,12 +18,7 @@ namespace PTSharpCore
             Material = material_;
             Box = box_;
         }
-
-        public Sphere()
-        {
-
-        }
-
+                
         internal static Sphere NewSphere(Vector center, double radius, Material material)
         {
             var min = new Vector(center.X - radius, center.Y - radius, center.Z - radius);
@@ -39,10 +34,11 @@ namespace PTSharpCore
 
         Hit IShape.Intersect(Ray r)
         {
-            Vector to = r.Origin.Sub(Center);
-            double b = to.Dot(r.Direction);
-            double c = to.Dot(to) - Radius * Radius;
+            Vector to = r.Origin - Center;
+            double b = Vector.Dot(to, r.Direction);
+            double c = to.LengthSquared() - Radius * Radius;
             double d = b * b - c;
+
             if (d > 0)
             {
                 d = Math.Sqrt(d);

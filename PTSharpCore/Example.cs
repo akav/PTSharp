@@ -280,8 +280,10 @@ namespace PTSharpCore
             scene.Add(Cube.NewCube(new Vector(-100, -1, -100), new Vector(100, 0, 100), whiteMat));
             scene.Add(Sphere.NewSphere(new Vector(-1, 4, -1), 1, Material.LightMaterial(Colour.White, 20)));
             var camera = Camera.LookAt(new Vector(0, 4, -8), new Vector(0, 0, -2), new Vector(0, 1, 0), 45);
-            var sampler = DefaultSampler.NewSampler(4, 4);
+            var sampler = DefaultSampler.NewSampler(8, 8);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
+            //renderer.AdaptiveSamples = 32;
+            renderer.FireflySamples = 128;
             renderer.IterativeRender("example2.png", 1000);
         }
 
@@ -480,6 +482,7 @@ namespace PTSharpCore
             camera.SetFocus(new Vector(0, 20000, 0), 1);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.FireflySamples = 128;
             renderer.IterativeRender("runway.png", 1000);
         }
 
@@ -615,10 +618,10 @@ namespace PTSharpCore
             scene.Add(Cube.NewCube(new Vector(-1000, -1000, -1), new Vector(1000, 1000, 0), floor));
             scene.Add(Sphere.NewSphere(new Vector(fn, fn / 3, fn * 2), 1, Material.LightMaterial(Colour.White, 100)));
             var camera = Camera.LookAt(new Vector(fn * 2, fn * 2, fn * 2), new Vector(0, 0, fn / 4), new Vector(0, 0, 1), 35);
-            var sampler = DefaultSampler.NewSampler(8, 4);
+            var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
-            //renderer.AdaptiveSamples = 16;
-            renderer.FireflySamples = 128;
+            //renderer.AdaptiveSamples = 32;
+            renderer.FireflySamples = 64;
             renderer.IterativeRender("qbert.png", 1000);
         }
 
@@ -937,9 +940,9 @@ namespace PTSharpCore
             }
             scene.Add(Sphere.NewSphere(new Vector(0, 0, 2.25F), 0.25F, Material.LightMaterial(Colour.White, 500)));
             var camera = Camera.LookAt(new Vector(1, 0, 30), new Vector(0, 0, 0), new Vector(0, 0, 1), 35);
-            var sampler = DefaultSampler.NewSampler(4, 4);
+            var sampler = DefaultSampler.NewSampler(4, 32);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            renderer.FireflySamples = 128;
+            renderer.FireflySamples = 256;
             renderer.IterativeRender("maze.png", 1000);
         }
 

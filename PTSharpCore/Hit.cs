@@ -1,6 +1,6 @@
 namespace PTSharpCore
 {
-    public class Hit
+    public struct Hit
     {
         static double INF = 1e9F;
         internal IShape Shape;

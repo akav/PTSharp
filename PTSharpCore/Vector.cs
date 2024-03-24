@@ -191,7 +191,8 @@ namespace PTSharpCore
         }
     }
 
-    public class Vector
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Vector
     {
         public double X;
         public double Y;
@@ -256,6 +257,16 @@ namespace PTSharpCore
             return new Vector(c * a.X, c * a.Y, c * a.Z);
         }
 
+        public static Vector operator *(double c, Vector a)
+        {
+            return new Vector(c * a.X, c * a.Y, c * a.Z);
+        }
+
+        public static Vector operator *(Vector a, double c)
+        {
+            return new Vector(c * a.X, c * a.Y, c * a.Z);
+        }
+
         public static Vector operator *(float c, Vector a)
         {
             return new Vector(c * a.X, c * a.Y, c * a.Z);
@@ -264,6 +275,11 @@ namespace PTSharpCore
         public static Vector operator /(Vector a, float c)
         {
             return new Vector(a.X / c, a.Y / c, a.Z / c);
+        }
+
+        public static Vector operator /(Vector a, Vector b)
+        {
+            return new Vector(a.X / b.X, a.Y / b.Y, a.Z / b.Z);
         }
 
         public static Vector operator -(Vector a)
