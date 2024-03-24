@@ -19,9 +19,7 @@ namespace PTSharpCore
         public int Samples;
         public Colour M;
         public Colour V;
-
-        public Pixel() { }
-
+        
         public Pixel(int Samples, Colour M, Colour V)
         {
             this.Samples = Samples;

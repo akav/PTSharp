@@ -35,7 +35,7 @@ namespace PTSharpCore
 
         Hit IShape.Intersect(Ray ray)
         {
-            Ray shapeRay = Inverse.MulRay(ray);
+            Ray shapeRay = Inverse.MulRay(ref ray);
             Hit hit = Shape.Intersect(shapeRay);
             if (!hit.Ok)
             {

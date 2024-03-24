@@ -11,6 +11,126 @@ namespace PTSharpCore
 {
     class Example
     {
+
+        public static void Beads(int Width, int Height)
+        {
+            for (int i = 0; i < 30; i++)
+            {
+                double t = (double)i / 30;
+                string path = $"out{i:D3}.png";
+                Console.WriteLine(path);
+                Frame(path, t, Width, Height);
+            }
+        }
+
+        public static void Frame(string path, double t, int Width, int Height)
+        {
+            // Material definitions need to be adapted to C# equivalent
+            var materials = new List<Material>
+            {
+                Material.GlossyMaterial(Colour.HexColor(0x167F39), 1.3, Util.Radians(20)),
+                Material.GlossyMaterial(Colour.HexColor(0x45BF55), 1.3, Util.Radians(20)),
+                Material.GlossyMaterial(Colour.HexColor(0x96ED89), 1.3, Util.Radians(20))
+            };
+
+            var random = new Random(1211);
+            var eye = new Vector(4, 2, 8); // Assuming Vector is a struct or class representing a 3D vector
+            var center = new Vector(0, 0, 0);
+            var up = new Vector(0, 0, 1);
+            var scene = new Scene(); // Scene type needs to be defined or replaced
+
+            for (int j = 0; j < 80; j++)
+            {
+                var material = materials[random.Next(materials.Count)];
+                int n = 400;
+                var xs = LowPassNoise(n, 0.25, 4);
+                var ys = LowPassNoise(n, 0.25, 4);
+                var zs = LowPassNoise(n, 0.25, 4);
+                var position = new Vector();
+                var positions = new Vector[n];
+
+                for (int i = 0; i < n; i++)
+                {
+                    positions[i] = position;
+                    var v = new Vector(xs[i], ys[i], zs[i]).Normalize().MulScalar(0.1);
+                    position = position.Add(v);
+                }
+
+                for (int i = 0; i < n - 1; i++)
+                {
+                    var a = positions[i];
+                    var b = positions[i + 1];
+                    var p = a.Add(b.Sub(a).MulScalar(t));
+                    var sphere = Sphere.NewSphere(p, 0.1, material); // Sphere type needs to be defined or replaced
+                    scene.Add(sphere);
+                }
+            }
+
+            // More class or struct definitions are required for the following
+            scene.Add(Sphere.NewSphere(new Vector(4, 4, 20), 2, Material.LightMaterial(Colour.HexColor(0xFFFFFF), 30)));
+            double fovy = 40.0;
+            var camera = Camera.LookAt(eye, center, up, fovy); // LookAt function or equivalent needed
+            var sampler = DefaultSampler.NewSampler(4, 4); // Sampler type needs to be defined or replaced
+            sampler.SpecularMode = SpecularMode.SpecularModeFirst; // SpecularMode enum or equivalent needed
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true); // Renderer type needs to be defined or replaced
+            renderer.IterativeRender($"out{path}", 1000);
+        }
+
+        public static List<double> Normalize(List<double> values, double a, double b)
+        {
+            var result = new List<double>(values.Count);
+            double lo = values[0];
+            double hi = values[0];
+
+            foreach (var x in values)
+            {
+                lo = Math.Min(lo, x);
+                hi = Math.Max(hi, x);
+            }
+
+            foreach (var x in values)
+            {
+                double p = (x - lo) / (hi - lo);
+                result.Add(a + p * (b - a));
+            }
+
+            return result;
+        }
+
+        public static List<double> LowPass(List<double> values, double alpha)
+        {
+            var result = new List<double>(values.Count);
+            double y = 0;
+
+            foreach (var x in values)
+            {
+                y -= alpha * (y - x);
+                result.Add(y);
+            }
+
+            return result;
+        }
+
+        public static List<double> LowPassNoise(int n, double alpha, int iterations)
+        {
+            var random = new Random();
+            var result = new List<double>(n);
+
+            for (int i = 0; i < n; i++)
+            {
+                result.Add(random.NextDouble() * 2 - 1);
+            }
+
+            for (int i = 0; i < iterations; i++)
+            {
+                result = LowPass(result, alpha);
+            }
+
+            return Normalize(result, -1, 1);
+        }
+
+
+
         static Vector offset(double stdev)
         {
             var a = Random.Shared.NextDouble() * 2 * Math.PI;

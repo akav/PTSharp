@@ -191,44 +191,23 @@ namespace PTSharpCore
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 128)]
-    public struct Vector 
+    public class Vector
     {
-        private Vector256<double> data;
+        public double X;
+        public double Y;
+        public double Z;
 
-        public double X
+        public double this[int index]
         {
-            get => data.GetElement(0);
-            set
+            get
             {
-                data = Vector256.Create(value, Y, Z, W);
-            }
-        }
-
-        public double Y
-        {
-            get => data.GetElement(1);
-            set
-            {
-                data = Vector256.Create(X, value, Z, W);
-            }
-        }
-
-        public double Z
-        {
-            get => data.GetElement(2);
-            set
-            {
-                data = Vector256.Create(X, Y, value, W);
-            }
-        }
-
-        public double W
-        {
-            get => data.GetElement(3);
-            set
-            {
-                data = Vector256.Create(X, Y, Z, value);
+                switch (index)
+                {
+                    case 0: return X;
+                    case 1: return Y;
+                    case 2: return Z;
+                    default: throw new IndexOutOfRangeException();
+                }
             }
         }
 
@@ -238,62 +217,58 @@ namespace PTSharpCore
         public static Vector Up = new Vector(0, 1, 0);
         public static Vector Right = new Vector(1, 0, 0);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Vector(Vector256<double> data)
+        public Vector()
         {
-            this.data = data;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector(double x, double y, double z, double w = 1.0)
+        public Vector(double x, double y, double z)
         {
-            data = Vector256.Create(x, y, z, w);
+            X = x;
+            Y = y;
+            Z = z;
         }        
         
-        public Vector() { }
+        public Vector(Vector3<double> v)
+        {
+            X = v.X;
+            Y = v.Y;
+            Z = v.Z;
+        }
 
         // Operators
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector operator +(Vector a, Vector b)
         {
-            return new Vector(Vector256.Add(a.data, b.data));
+            return new Vector(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector operator +(Vector v, double a)
+        public static Vector operator +(Vector v, float a)
         {
-            var scalarVector = Vector256.Create(a);
-            var result = Vector256.Add(v.data, scalarVector);
-            return new Vector(result);
+            return new Vector(a + v.X, a + v.Y, a + v.Z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector operator -(Vector a, Vector v)
         {
-            var result = Vector256.Subtract(a.data, v.data);
-            return new Vector(result);
+            return new Vector(a.X - v.X, a.Y - v.Y, a.Z - v.Z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double operator *(Vector a, Vector v)
+        public static Vector operator *(Vector a, float c)
         {
-            var mulResult = Vector256.Multiply(a.data, v.data);
-            double dotProduct = mulResult.GetElement(0) + mulResult.GetElement(1) + mulResult.GetElement(2);
-            return dotProduct;
+            return new Vector(c * a.X, c * a.Y, c * a.Z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector operator *(double c, Vector v)
+        public static Vector operator *(float c, Vector a)
         {
-            var scalarVector = Vector256.Create(c);
-            var result = Vector256.Multiply(scalarVector, v.data);
-            return new Vector(result);
+            return new Vector(c * a.X, c * a.Y, c * a.Z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector operator *(Vector a, double c)
+        public static Vector operator /(Vector a, float c)
         {
-            return new Vector(c * a.X, c * a.Y, c * a.Z, a.W);
+            return new Vector(a.X / c, a.Y / c, a.Z / c);
+        }
+
+        public static Vector operator -(Vector a)
+        {
+            return a.Negated();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -336,109 +311,66 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double AbsDot(Vector v1, Vector v2)
+        public static double AbsDot(Vector a, Vector b) => Math.Abs(Dot(a, b));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public double LengthSquared() => X * X + Y * Y + Z * Z;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public double Dot(Vector b) => X * b.X + Y * b.Y + Z * b.Z;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double Dot(Vector a, Vector b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector Cross(Vector a, Vector b)
         {
-            var mulResult = Vector256.Multiply(v1.data, v2.data);
-            double dotProduct = mulResult.GetElement(0) + mulResult.GetElement(1) + mulResult.GetElement(2);
-            var absDotProduct = Abs(Vector256.Create(dotProduct));
-            return absDotProduct.data.GetElement(0);
+            return new Vector(a.Y * b.Z - a.Z * b.Y,
+                a.Z * b.X - a.X * b.Z,
+                a.X * b.Y - a.Y * b.X);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double Length() //=> Math.Sqrt(X * X + Y * Y + Z * Z);
+        public Vector Normalized()
         {
-            var squares = Vector256.Multiply(data, data);
-            double sumOfSquares = squares.GetElement(0) + squares.GetElement(1) + squares.GetElement(2);
-            var sqrtSumOfSquares = Avx.Sqrt(Vector256.Create(sumOfSquares));
-            return sqrtSumOfSquares.GetElement(0);
-        }
-    
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double LengthN(double n)
-        {
-            if (n == 2)
-            {
-                return Length();
-            }
-            var a = Abs();
-            return Math.Pow(Math.Pow(a.X, n) + Math.Pow(a.Y, n) + Math.Pow(a.Z, n), 1 / n);
+            var l = Length();
+            return new Vector(X / l, Y / l, Z / l);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double Dot(Vector b)
-        {
-            var product = data * b.data;
-            double dotProduct = product.GetElement(0) + product.GetElement(1) + product.GetElement(2);
-            return dotProduct;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
-        public static double Dot(Vector a, Vector b)
-        {
-            var product = Vector256.Multiply(a.data, b.data);
-            double dotProduct = product.GetElement(0) + product.GetElement(1) + product.GetElement(2);
-            return dotProduct;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector Cross(Vector b)
-        {
-            var x = this.Y * b.Z - this.Z * b.Y;
-            var y = this.Z * b.X - this.X * b.Z;
-            var z = this.X * b.Y - this.Y * b.X;
-            return new Vector(x, y, z);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector Normalize()
-        {
-            var d = Length();
-            return new Vector(X / d, Y / d, Z / d);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector Negate()
+        public Vector Negated()
         {
             return new Vector(-X, -Y, -Z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        Vector Abs()
+        public override string ToString()
         {
-            return new Vector(Math.Abs(X), Math.Abs(Y), Math.Abs(Z));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector Abs(Vector256<double> value)
-        {
-            var mask = Vector256.Create(0x7FFFFFFFFFFFFFFF).AsDouble();
-            return new Vector(Avx.And(value, mask));
+            return $"({X}, {Y}, {Z})";
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Add(Vector b)
         {
-            return new Vector(Avx2.Add(this.data, b.data));            
+            return new Vector(X + b.X, Y + b.Y, Z + b.Z);
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Sub(Vector b)
         {
-            return new Vector(Avx2.Subtract(this.data, b.data));
+
+            return new Vector(X - b.X, Y - b.Y, Z - b.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Mul(Vector b)
         {
-            return new Vector(Avx2.Multiply(this.data, b.data));
+            return new Vector(X * b.X, Y * b.Y, Z * b.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Div(Vector b)
         {
-            return new Vector(Avx2.Divide(this.data, b.data));
+            return new Vector(X / b.X, Y / b.Y, Z / b.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -451,31 +383,26 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector AddScalar(double b) 
+        public Vector AddScalar(double b)
         {
-            var scalar = Vector256.Create(b);
-            return new Vector(Avx2.Add(this.data, scalar));
+            return new Vector(X + b, Y + b, Z + b);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector SubScalar(double b) 
+        public Vector SubScalar(double b)
         {
-            var scalar = Vector256.Create(b);
-            return new Vector(Avx2.Subtract(this.data, scalar));
+            return new Vector(X - b, Y - b, Z - b);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector MulScalar(double b) 
+        public Vector MulScalar(double b)
         {
-            var scalar = Vector256.Create(b);
-            return new Vector(Avx2.Multiply(this.data, scalar));
+            return new Vector(X * b, Y * b, Z * b);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector DivScalar(double b)
         {
-            var scalar = Vector256.Create(b);
-            return new Vector(Avx2.Divide(this.data, scalar));
+            return new Vector(X / b, Y / b, Z / b);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -499,7 +426,8 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector MinAxis()
         {
-            (var x, var y, var z) = (Math.Abs(this.X), Math.Abs(this.Y), Math.Abs(this.Z));
+            (var x, var y, var z) = (Math.Abs(X), Math.Abs(Y), Math.Abs(Z));
+            
             if (x <= y && x <= z)
             {
                 return new Vector(1, 0, 0);
@@ -511,13 +439,10 @@ namespace PTSharpCore
             return new Vector(0, 0, 1);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double MinComponent() => Math.Min(Math.Min(X, Y), Z);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double MaxComponent() => Math.Max(Math.Max(X, Y), Z);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Reflect(Vector i) => i.Sub(MulScalar(2 * Dot(i)));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -553,6 +478,93 @@ namespace PTSharpCore
             var rOrth = (n1 * cosI - n2 * cosT) / (n1 * cosI + n2 * cosT);
             var rPar = (n2 * cosI - n1 * cosT) / (n2 * cosI + n1 * cosT);
             return (rOrth * rOrth + rPar * rPar) / 2;
-        }        
+        }
+
+        
+        public Vector2<double> ToVector2()
+        {
+            return new Vector2<double>(X, Y);
+        }
+
+        public Vector3<double> ToVector3()
+        {
+            return new Vector3<double>(X, Y, Z);
+        }
+                
+        public static Vector Lerp(Vector a, Vector b, float t)
+        {
+            return a.Add(b.Sub(a).MulScalar(t));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector Slerp(Vector a, Vector b, float t)
+        {
+            var dot = Dot(a, b);
+            dot = Math.Clamp(dot, -1, 1);
+            var theta = Math.Acos(dot) * t;
+            var relativeVec = b.Sub(a.MulScalar(dot));
+            relativeVec = relativeVec.Normalized();
+            return a.MulScalar(Math.Cos(theta)).Add(relativeVec.MulScalar(Math.Sin(theta)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector Slerp(Vector a, Vector b, float t, float omega, bool allowFlip)
+        {
+            var dot = Dot(a, b);
+            var sign = 1.0f;
+            if (dot < 0 && allowFlip)
+            {
+                dot = -dot;
+                sign = -1.0f;
+            }
+            dot = Math.Clamp(dot, -1, 1);
+            var theta = Math.Acos(dot) * t;
+            var relativeVec = b.Sub(a.MulScalar(dot));
+            relativeVec = relativeVec.Normalized();
+            return a.MulScalar(Math.Cos(theta)).Add(relativeVec.MulScalar(Math.Sin(theta) * sign));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector Normalize()
+        {
+            var d = Length();
+            return new Vector(X / d, Y / d, Z / d);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector Negate()
+        {
+            return new Vector(-X, -Y, -Z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector Cross(Vector b)
+        {
+            var x = Y * b.Z - Z * b.Y;
+            var y = Z * b.X - X * b.Z;
+            var z = X * b.Y - Y * b.X;
+            return new Vector(x, y, z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public double Length() => Math.Sqrt(X * X + Y * Y + Z * Z);
+
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public double LengthN(double n)
+        {
+            if (n == 2)
+            {
+                return Length();
+            }
+            var a = Abs();
+            return Math.Pow(Math.Pow(a.X, n) + Math.Pow(a.Y, n) + Math.Pow(a.Z, n), 1 / n);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Vector Abs()
+        {
+            return new Vector(Math.Abs(X), Math.Abs(Y), Math.Abs(Z));
+        }
     }
 }

@@ -7,9 +7,7 @@ namespace PTSharpCore
         double Radius;
         double Z0, Z1;
         Material CylinderMaterial;
-        public Colour Color { get; set; }
-        public Vector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
+        
         Cylinder(double radius, double z0, double z1, Material material)
         {
             Radius = radius;

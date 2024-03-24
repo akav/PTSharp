@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace PTSharpCore
 {
@@ -6,8 +7,8 @@ namespace PTSharpCore
     {
         internal Vector Min;
         internal Vector Max;
-        internal bool left = new();
-        internal bool right = new();
+        internal bool left; 
+        internal bool right;
 
         internal Box() { }
 
@@ -61,6 +62,8 @@ namespace PTSharpCore
                                      Min.Y <= b.Y && Max.Y >= b.Y &&
                                      Min.Z <= b.Z && Max.Z >= b.Z;
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Intersects(Box b) =>
             !(Min.X > b.Max.X
             || Max.X < b.Min.X
@@ -69,6 +72,8 @@ namespace PTSharpCore
             || Min.Z > b.Max.Z
             || Max.Z < b.Min.Z);
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (double, double) Intersect(Ray r)
         {
             (var x1, var y1, var z1) = (((Min.X - r.Origin.X) / r.Direction.X), ((Min.Y - r.Origin.Y) / r.Direction.Y),
@@ -93,6 +98,7 @@ namespace PTSharpCore
             return (Math.Max(Math.Max(x1, y1), z1), Math.Min(Math.Min(x2, y2), z2));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (bool, bool) Partition(Axis axis, double point)
         {
             switch (axis)

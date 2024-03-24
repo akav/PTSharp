@@ -18,19 +18,33 @@ namespace PTSharpCore
         public unsafe Texture(GL gl, string path)
         {
             //Loading an image using imagesharp.
-            Image<Rgba32> img = (Image<Rgba32>)SixLabors.ImageSharp.Image.Load(path);
-            //We need to flip our image as image sharps coordinates has origin (0, 0) in the top-left corner,
-            //whereas openGL has origin in the bottom-left corner.
-            img.Mutate(x => x.Flip(FlipMode.Vertical));
-
-            fixed (void* data = &MemoryMarshal.GetReference(img.GetPixelRowSpan(0)))
+            using (Image<Rgba32> img = SixLabors.ImageSharp.Image.Load<Rgba32>(path))
             {
-                //Loading the actual image.
-                Load(gl, data, (uint)img.Width, (uint)img.Height);
-            }
+                //We need to flip our image as image sharps coordinates has origin (0, 0) in the top-left corner,
+                //whereas openGL has origin in the bottom-left corner.
+                img.Mutate(x => x.Flip(FlipMode.Vertical));
 
-            //Deleting the img from imagesharp.
-            img.Dispose();
+                // Converting the image data to a byte array
+                byte[] imageData = new byte[img.Width * img.Height * 4];
+                int index = 0;
+                for (int y = 0; y < img.Height; y++)
+                {
+                    for (int x = 0; x < img.Width; x++)
+                    {
+                        Rgba32 pixel = img[x, y];
+                        imageData[index++] = pixel.R;
+                        imageData[index++] = pixel.G;
+                        imageData[index++] = pixel.B;
+                        imageData[index++] = pixel.A;
+                    }
+                }
+
+                fixed (void* data = imageData)
+                {
+                    //Loading the actual image.
+                    Load(gl, data, (uint)img.Width, (uint)img.Height);
+                }
+            }
         }
 
         public unsafe Texture(GL gl, Span<byte> data, uint width, uint height)
