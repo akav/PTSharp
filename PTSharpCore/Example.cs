@@ -1,6 +1,7 @@
 using glTFLoader.Schema;
 using MathNet.Numerics.Financial;
 using PTSharpCore;
+using Silk.NET.Vulkan;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -171,7 +172,7 @@ namespace PTSharpCore
             renderer.IterativeRender("example2.png", 1000);
         }
 
-        public void example3()
+        public static void example3(int width, int height)
         {
             var scene = new Scene();
             var material = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1));
@@ -195,7 +196,7 @@ namespace PTSharpCore
             scene.Add(Cube.NewCube(new Vector(-5, 10, -5), new Vector(5, 11, 5), Material.LightMaterial(Colour.White, 5)));
             var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("example3.png", 1000);
         }
 

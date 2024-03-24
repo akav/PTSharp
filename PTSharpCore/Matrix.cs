@@ -5,8 +5,9 @@ using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-    
-    public class Matrix
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+
+    public struct Matrix
     {
         public double M11, M12, M13, M14;
         public double M21, M22, M23, M24;
@@ -39,7 +40,9 @@ namespace PTSharpCore
         internal Matrix Scale(Vector v) => new Matrix(v.X, 0, 0, 0,
             0, v.Y, 0, 0,
             0, 0, v.Z, 0,
-            0, 0, 0, 1);                
+            0, 0, 0, 1);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         internal Matrix Rotate(Vector v, double a)
         {
@@ -51,7 +54,9 @@ namespace PTSharpCore
                               m * v.X * v.Y - v.Z * s, m * v.Y * v.Y + c, m * v.Y * v.Z + v.X * s, 0,
                               m * v.Z * v.X + v.Y * s, m * v.Y * v.Z - v.X * s, m * v.Z * v.Z + c, 0,
                               0, 0, 0, 1);
-        }       
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         internal Matrix Frustum(double l, double r, double b, double t, double n, double f)
         {
@@ -63,7 +68,9 @@ namespace PTSharpCore
                               0, t1 / t3, (t + b) / t3, 0,
                               0, 0, (-f - n) / t4, (-t1 * f) / t4,
                               0, 0, -1, 0);
-        }       
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         internal Matrix Orthographic(double l, double r, double b, double t, double n, double f)
         {
@@ -71,14 +78,18 @@ namespace PTSharpCore
                               0, 2 / (t - b), 0, -(t + b) / (t - b),
                               0, 0, -2 / (f - n), -(f + n) / (f - n),
                               0, 0, 0, 1);
-        }       
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         internal Matrix Perspective(double fovy, double aspect, double near, double far)
         {
             double ymax = near * Math.Tan(fovy * Math.PI / 360);
             double xmax = ymax * aspect;
             return Frustum(-xmax, xmax, -ymax, ymax, near, far);
-        }       
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public Matrix LookAtMatrix(Vector eye, Vector center, Vector up)
         {
@@ -94,6 +105,7 @@ namespace PTSharpCore
 
             return m.Transpose().Inverse().Translate(m, eye);
         }
+
 
         internal Matrix Translate(Matrix m, Vector v) => new Matrix().Translate(v).Mul(m);
                 
@@ -147,6 +159,8 @@ namespace PTSharpCore
         public Ray MulRay(Ray b) => new Ray(MulPosition(b.Origin), MulDirection(b.Direction));
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public Box MulBox(Box box)
         {
             var r = new Vector(M11, M21, M31);
@@ -164,6 +178,9 @@ namespace PTSharpCore
             var max = xb.Add(yb).Add(zb).Add(t);
             return new Box(min, max);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public Matrix Transpose() => new Matrix(M11, M21, M31, M41, M12, M22, M32, M42, M13, M23, M33, M43, M14, M24, M34, M44);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
