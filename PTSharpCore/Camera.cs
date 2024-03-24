@@ -3,10 +3,14 @@ using MathNet.Numerics.RootFinding;
 using Silk.NET.Input;
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-    public class Camera
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+
+    public struct Camera
     {
         public Vector p, u, v, w;
         public double m;
@@ -16,6 +20,9 @@ namespace PTSharpCore
         public double theta;
         public static Vector Position;
         public Camera() { }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static Camera LookAt(Vector eye, Vector center, Vector up, double fovy)
         {
@@ -30,12 +37,16 @@ namespace PTSharpCore
             c.m = 1 / Math.Tan(fovy * Math.PI / 360);
             return c;
         }
-        
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public void SetFocus(Vector focalPoint, double apertureRadius)
         {
             focalDistance = focalPoint.Sub(p).Length();
             this.apertureRadius = apertureRadius;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public Vector GetPixelPosition(int x, int y, int Width, int Height)
         {
@@ -49,6 +60,8 @@ namespace PTSharpCore
             Vector cameraPosition = pixelPosition.X * u + pixelPosition.Y * v + m * w;
             return cameraPosition;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public Ray GenerateRay(int x, int y, int Width, int Height)
         {
@@ -65,6 +78,8 @@ namespace PTSharpCore
             return new Ray(p, rayDirection);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public Ray GenerateRandomRay(int x, int y, int width, int height)
         {
             // Generate a random point on the image plane
@@ -80,7 +95,9 @@ namespace PTSharpCore
             Vector direction = (pointOnLens - p).Normalize();
 
             return new Ray(pointOnLens, direction);
-        }       
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public Ray CastRay(int x, int y, int w, int h, double u, double v, Random rand)
         {

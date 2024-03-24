@@ -1,9 +1,12 @@
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace PTSharpCore
 {
-    public class Colour
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Colour
     {
         public double r;
         public double g;
@@ -95,6 +98,8 @@ namespace PTSharpCore
         }
         public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Colour HexColor(int x)
         {
             var red = ((x >> 16) & 0xff) / 255.0f;
@@ -104,7 +109,11 @@ namespace PTSharpCore
             return color.Pow(2.2f);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public Colour Pow(double b) => new Colour(Math.Pow(r, b), Math.Pow(g, b), Math.Pow(this.b, b));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static int getIntFromColor(double red, double green, double blue)
         {
@@ -120,6 +129,8 @@ namespace PTSharpCore
             var b = (int)(256 * Math.Clamp(blue, 0.0, 0.999));
             return 255 << 24 | r << 16 | g << 8 | b;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static Colour Kelvin(double K)
         {
@@ -190,24 +201,35 @@ namespace PTSharpCore
             return a.Add(b);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public Colour MulScalar(double b) => new(r * b, g * b, this.b * b);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour Add(Colour b) => new(this.r + b.r, this.g + b.g, this.b + b.b);
-        
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour Sub(Colour b) => new(r - b.r, g - b.g, this.b - b.b);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour Mul(Colour b) => new(r * b.r, g * b.g, this.b * b.b);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour Div(Colour b) => new(r / b.r, g / b.g, this.b / b.b);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour DivScalar(double b) => new(r / b, g / b, this.b / b);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour Min(Colour b) => new(Math.Min(r, b.r), Math.Min(g, b.g), Math.Min(this.b, b.b));
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Colour Max(Colour b) => new(Math.Max(r, b.r), Math.Max(g, b.g), Math.Max(this.b, b.b));
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]            
         public double MinComponent() => Math.Min(Math.Min(r, g), b);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double MaxComponent() => Math.Max(Math.Max(r, g), b);
     }
 }

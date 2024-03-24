@@ -201,7 +201,7 @@ namespace PTSharpCore
         }
 
 
-        public void simplesphere()
+        public static void simplesphere(int width, int height)
         {
             var scene = new Scene();
             // create a material
@@ -224,7 +224,7 @@ namespace PTSharpCore
 
             // render the scene with progressive refinement
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("simplesphere.png", 100);
         }
 
@@ -315,7 +315,7 @@ namespace PTSharpCore
             renderer.IterativeRender("cube.png", 100);
         }
 
-        public void runway()
+        public static void runway(int width, int height_)
         {
             const int radius = 2;
             const int height = 3;
@@ -366,11 +366,11 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(0, -1500, 200), new Vector(0, -100, 0), new Vector(0, 0, 1), 20);
             camera.SetFocus(new Vector(0, 20000, 0), 1);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height_, true);
             renderer.IterativeRender("runway.png", 1000);
         }
 
-        public void bunny()
+        public static void bunny(int width, int height)
         {
             var scene = new Scene();
             var material = Material.GlossyMaterial(Colour.HexColor(0xF2EBC7), 1.5F, Util.Radians(0));
@@ -385,12 +385,12 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(-1, 2, 3), new Vector(0, 0.75F, 0), new Vector(0, 1, 0), 50);
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SetSpecularMode(SpecularMode.SpecularModeFirst);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.FireflySamples = 32;
             renderer.IterativeRender("bunny.png", 1000);
         }
 
-        public void ellipsoid()
+        public static void ellipsoid(int width, int height)
         {
             var scene = new Scene();
             var wall = Material.GlossyMaterial(Colour.HexColor(0xFCFAE1), 1.333F, Util.Radians(30));
@@ -409,11 +409,11 @@ namespace PTSharpCore
             }
             var camera = Camera.LookAt(new Vector(8, 8, 0), new Vector(1, 0, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("ellipsoid.png", 1000);
         }
 
-        public static void refraction()
+        public static void refraction(int width, int height)
         {
             var scene = new Scene();
             var glass = Material.ClearMaterial(1.5, 0);
@@ -431,7 +431,7 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(0, -5, 5), new Vector(0, 0, 0), new Vector(0, 0, 1), 50);
             var sampler = DefaultSampler.NewSampler(16, 8);
             sampler.SetSpecularMode(SpecularMode.SpecularModeAll);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1920, 1080, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("refraction.png", 100);
         }
 
@@ -558,7 +558,7 @@ namespace PTSharpCore
             renderer.IterativeRender("toybrick.png", 1000);
         }
 
-        public void cylinder()
+        public static void cylinder(int width, int height)
         {
             Scene scene = new Scene();
             var meshes = new Mesh[]
@@ -585,7 +585,7 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(1, 0, 10), 3, Material.LightMaterial(Colour.White, 20)));
             var camera = Camera.LookAt(new Vector(-5, 0, 5), new Vector(1, 0, 0), new Vector(0, 0, 1), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("cylinder.png", 1000);
         }
 
