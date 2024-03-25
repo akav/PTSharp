@@ -1,20 +1,21 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace PTSharpCore
 {
-    public class Ray
+    public struct Ray
     {
-        internal Vector Origin, Direction;
-        internal bool reflect;
+        public Vector Origin, Direction;
+        public bool reflect;
 
-        internal Ray(Vector O, Vector D)
+        public Ray(Vector O, Vector D)
         {
             Origin = O;
             Direction = D;
         }
 
-        internal Vector Position(double t) => Origin.Add(Direction.MulScalar(t));
+        public Vector Position(double t) => Origin.Add(Direction.MulScalar(t));
 
         public Ray Reflect(Ray i) => new Ray(Origin, Direction.Reflect(i.Direction));
 
@@ -22,6 +23,7 @@ namespace PTSharpCore
 
         public double Reflectance(Ray i, double n1, double n2) => Direction.Reflectance(i.Direction, n1, n2);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Ray WeightedBounce(double u, double v)
         {
             var radius = Math.Sqrt(u);
@@ -36,6 +38,7 @@ namespace PTSharpCore
             return new Ray(Origin, Util.Cone(Direction, theta, u, v, Random.Shared));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (Ray, bool, double) Bounce(HitInfo info, double u, double v, BounceType bounceType, Random rand)
         {
             var n = info.Ray;

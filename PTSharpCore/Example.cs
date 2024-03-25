@@ -435,6 +435,23 @@ namespace PTSharpCore
             renderer.IterativeRender("refraction.png", 100);
         }
 
+        public static void DebugCube(int Width, int Height)
+        {
+            var scene = new Scene();
+            scene.Add(Sphere.NewSphere(new Vector(-2, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
+            scene.Add(Sphere.NewSphere(new Vector(5, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
+            scene.Add(Cube.NewCube(new Vector(-30, -1, -30), new Vector(30, 0, 30), Material.SpecularMaterial(Colour.HexColor(0xFCFAE1), 2)));
+            var mesh = OBJ.Load("models/debugcube.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
+            mesh.SmoothNormals();
+            scene.Add(mesh);
+            var camera = Camera.LookAt(new Vector(2, 5, -6), new Vector(0.5F, 1, 0), new Vector(0, 1, 0), 45);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
+            //renderer.FireflySamples = 64;
+            renderer.IterativeRender("debugcube.png", 10);
+        }
+
+
         public static void qbert(int Width, int Height)
         {
             var scene = new Scene();
@@ -596,7 +613,7 @@ namespace PTSharpCore
             scene.Add(Sphere.NewSphere(new Vector(5, 5, -3), 0.5F, Material.LightMaterial(Colour.White, 50)));
             scene.Add(Cube.NewCube(new Vector(-30, -1, -30), new Vector(30, 0, 30), Material.SpecularMaterial(Colour.HexColor(0xFCFAE1), 2)));
             var mesh = OBJ.Load("models/teapot.obj", Material.SpecularMaterial(Colour.HexColor(0xB9121B), 2));
-            mesh.SmoothNormals();
+            //mesh.SmoothNormals();
             scene.Add(mesh);
             var camera = Camera.LookAt(new Vector(2, 5, -6), new Vector(0.5F, 1, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);

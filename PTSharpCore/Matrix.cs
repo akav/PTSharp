@@ -25,6 +25,30 @@ namespace PTSharpCore
             this.M41 = x30; this.M42 = x31; this.M43 = x32; this.M44 = x33;
         }
 
+        public double[,] ToArray()
+        {
+            return new double[,]
+            {
+            { M11, M12, M13, M14 },
+            { M21, M22, M23, M24 },
+            { M31, M32, M33, M34 },
+            { M41, M42, M43, M44 }
+            };
+        }
+
+        public static Matrix FromArray(double[,] array)
+        {
+            if (array.GetLength(0) != 4 || array.GetLength(1) != 4)
+                throw new ArgumentException("Input array must be 4x4.");
+
+            return new Matrix(
+                array[0, 0], array[0, 1], array[0, 2], array[0, 3],
+                array[1, 0], array[1, 1], array[1, 2], array[1, 3],
+                array[2, 0], array[2, 1], array[2, 2], array[2, 3],
+                array[3, 0], array[3, 1], array[3, 2], array[3, 3]
+            );
+        }
+
         public Matrix() {}
 
         internal static Matrix Identity = new Matrix(1, 0, 0, 0,
@@ -118,6 +142,33 @@ namespace PTSharpCore
         public Matrix Mul(Matrix b)
         {
             Matrix m = new Matrix();
+
+            m.M11 = M11 * b.M11 + M12 * b.M21 + M13 * b.M31 + M14 * b.M41;
+            m.M12 = M11 * b.M12 + M12 * b.M22 + M13 * b.M32 + M14 * b.M42;
+            m.M13 = M11 * b.M13 + M12 * b.M23 + M13 * b.M33 + M14 * b.M43;
+            m.M14 = M11 * b.M14 + M12 * b.M24 + M13 * b.M34 + M14 * b.M44;
+
+            m.M21 = M21 * b.M11 + M22 * b.M21 + M23 * b.M31 + M24 * b.M41;
+            m.M22 = M21 * b.M12 + M22 * b.M22 + M23 * b.M32 + M24 * b.M42;
+            m.M23 = M21 * b.M13 + M22 * b.M23 + M23 * b.M33 + M24 * b.M43;
+            m.M24 = M21 * b.M14 + M22 * b.M24 + M23 * b.M34 + M24 * b.M44;
+
+            m.M31 = M31 * b.M11 + M32 * b.M21 + M33 * b.M31 + M34 * b.M41;
+            m.M32 = M31 * b.M12 + M32 * b.M22 + M33 * b.M32 + M34 * b.M42;
+            m.M33 = M31 * b.M13 + M32 * b.M23 + M33 * b.M33 + M34 * b.M43;
+            m.M34 = M31 * b.M14 + M32 * b.M24 + M33 * b.M34 + M34 * b.M44;
+
+            m.M41 = M41 * b.M11 + M42 * b.M21 + M43 * b.M31 + M44 * b.M41;
+            m.M42 = M41 * b.M12 + M42 * b.M22 + M43 * b.M32 + M44 * b.M42;
+            m.M43 = M41 * b.M13 + M42 * b.M23 + M43 * b.M33 + M44 * b.M43;
+            m.M44 = M41 * b.M14 + M42 * b.M24 + M43 * b.M34 + M44 * b.M44;
+
+            return m;
+        }
+
+        /*public Matrix Mul(Matrix b)
+        {
+            Matrix m = new Matrix();
             m.M11 = M11 * b.M11 + M12 * b.M21 + M13 * b.M31 + M14 * b.M41;
             m.M21 = M21 * b.M11 + M22 * b.M21 + M23 * b.M31 + M24 * b.M41;
             m.M31 = M31 * b.M11 + M32 * b.M21 + M33 * b.M31 + M34 * b.M41;
@@ -135,7 +186,7 @@ namespace PTSharpCore
             m.M34 = M31 * b.M14 + M32 * b.M24 + M33 * b.M34 + M34 * b.M44;
             m.M44 = M41 * b.M14 + M42 * b.M24 + M43 * b.M34 + M44 * b.M44;
             return m;
-        }
+        }*/
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector MulPosition(Vector b)
@@ -199,6 +250,9 @@ namespace PTSharpCore
                     M14 * M22 * M33 * M41 + M14 * M22 * M31 * M43 -
                     M14 * M23 * M31 * M42 + M14 * M23 * M32 * M41);
         }
+
+        /*
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix Inverse()
         {
             Matrix m = new Matrix();
@@ -220,7 +274,47 @@ namespace PTSharpCore
             m.M43 = (M13 * M22 * M41 - M12 * M23 * M41 - M13 * M21 * M42 + M11 * M23 * M42 + M12 * M21 * M43 - M11 * M22 * M43) / d;
             m.M44 = (M12 * M23 * M31 - M13 * M22 * M31 + M13 * M21 * M32 - M11 * M23 * M32 - M12 * M21 * M33 + M11 * M22 * M33) / d;
             return m;
+        }*/
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix Inverse()
+        {
+            Matrix m = new Matrix();
+            double determinant = Determinant();
+
+            // Check if the determinant is zero to avoid division by zero
+            if (Math.Abs(determinant) < double.Epsilon)
+            {
+                throw new InvalidOperationException("Matrix is singular, cannot compute inverse.");
+            }
+
+            double invDet = 1.0 / determinant;
+
+            // Compute the adjugate matrix
+            m.M11 = (M22 * M33 - M23 * M32) * invDet;
+            m.M12 = (M13 * M32 - M12 * M33) * invDet;
+            m.M13 = (M12 * M23 - M13 * M22) * invDet;
+            m.M14 = 0;
+
+            m.M21 = (M23 * M31 - M21 * M33) * invDet;
+            m.M22 = (M11 * M33 - M13 * M31) * invDet;
+            m.M23 = (M13 * M21 - M11 * M23) * invDet;
+            m.M24 = 0;
+
+            m.M31 = (M21 * M32 - M22 * M31) * invDet;
+            m.M32 = (M12 * M31 - M11 * M32) * invDet;
+            m.M33 = (M11 * M22 - M12 * M21) * invDet;
+            m.M34 = 0;
+
+            m.M41 = 0;
+            m.M42 = 0;
+            m.M43 = 0;
+            m.M44 = 1;
+
+            return m;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector Transform(Vector position, Matrix matrix)
         {
             // Multiply the position by the transformation matrix to compute the transformed position

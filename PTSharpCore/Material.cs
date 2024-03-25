@@ -45,6 +45,8 @@ namespace PTSharpCore
 
         public IDistribution Distribution { get; set; }
 
+        public Material() { }
+
         public Material(Colour color, ITexture texture, ITexture normaltexture, ITexture bumptexture, ITexture glosstexture, double b, double e, double i, double g, double tint, double r, Boolean t)
         {
             Color = color;
