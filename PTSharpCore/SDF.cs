@@ -104,7 +104,12 @@ namespace PTSharpCore
         public double Evaluate(Vector p)
         {
             return SDF.Evaluate(p);
-        }       
+        }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class SphereSDF : SDF

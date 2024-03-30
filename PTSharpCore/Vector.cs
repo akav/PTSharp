@@ -267,6 +267,11 @@ namespace PTSharpCore
             return new Vector(c * a.X, c * a.Y, c * a.Z, a.W);
         }
 
+        public static Vector operator *(Vector a, System.Numerics.Vector3 v)
+        {
+            return new Vector(a.X * v.X, a.Y * v.Y, a.Z * v.Z);
+        }
+
         public static Vector operator /(Vector a, double c)
         {
             return new Vector(a.X / c, a.Y / c, a.Z / c, a.W);
@@ -426,6 +431,37 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Max(Vector b) => new Vector(Math.Max(X, b.X), Math.Max(Y, b.Y), Math.Max(Z, b.Z));
 
+        public static bool operator !=(Vector a, Vector b)
+        {
+            return !(a == b);
+        }
+
+        public static bool operator ==(Vector a, Vector b)
+        {
+            return a.X == b.X && a.Y == b.Y && a.Z == b.Z;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Vector)
+            {
+                return this == (Vector)obj;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return $"({X}, {Y}, {Z})";
+        }
+
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector MinAxis()
         {
@@ -470,7 +506,7 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double Reflectance(Vector i, double n1, double n2)
         {
-            var nr = n1 / n2;
+            /*var nr = n1 / n2;
             var cosI = -Dot(i);
             var sinT2 = nr * nr * (1 - cosI * cosI);
 
@@ -482,6 +518,24 @@ namespace PTSharpCore
             var cosT = Math.Sqrt(1 - sinT2);
             var rOrth = (n1 * cosI - n2 * cosT) / (n1 * cosI + n2 * cosT);
             var rPar = (n2 * cosI - n1 * cosT) / (n2 * cosI + n1 * cosT);
+            return (rOrth * rOrth + rPar * rPar) / 2;*/
+
+            var nr2 = (n1 * n1) / (n2 * n2);  // Square of refractive index ratio
+            var cosI = -Dot(i);
+            var sinT2 = nr2 * (1 - cosI * cosI);
+
+            if (sinT2 > 1)
+            {
+                return 1;
+            }
+
+            var cosT = Math.Sqrt(1 - sinT2);
+
+            var cosI_n1 = n1 * cosI;
+            var cosT_n2 = n2 * cosT;
+            var rOrth = (cosI_n1 - cosT_n2) / (cosI_n1 + cosT_n2);
+            var rPar = (cosT_n2 - cosI_n1) / (cosT_n2 + cosI_n1);
+
             return (rOrth * rOrth + rPar * rPar) / 2;
         }
 

@@ -223,28 +223,25 @@ namespace PTSharpCore
             var nLights = scene.Lights.Length;
 
             if (nLights == 0)
-            {
                 return Colour.Black;
-            }
 
             if (LightMode == LightMode.LightModeAll)
             {
-                Colour result = new Colour();
+                var result = new Colour();
                 foreach (var light in scene.Lights)
-                {
                     result = result.Add(sampleLight(scene, n, light, rand));
-                }
                 return result.DivScalar(nLights);
             }
             else
             {
-                // pick a random light
                 var lightIndex = Random.Shared.Next(nLights);
                 return sampleLight(scene, n, scene.Lights[lightIndex], rand).MulScalar((double)nLights);
             }
         }
+
         Colour sampleLight(Scene scene, Ray n, IShape light, Random rand)
         {
+
             Vector center;
             double radius;
 
@@ -254,8 +251,13 @@ namespace PTSharpCore
                     radius = sphere.Radius;
                     center = sphere.Center;
                     break;
+                case Cylinder cylinder:
+                    // For cylinders, consider the radius and top/bottom positions
+                    radius = cylinder.Radius;
+                    center = new Vector(0, 0, (cylinder.Z0 + cylinder.Z1) / 2);
+                    break;
                 default:
-                    Box box = light.BoundingBox();
+                    var box = light.BoundingBox();
                     radius = box.OuterRadius();
                     center = box.Center();
                     break;
@@ -269,59 +271,55 @@ namespace PTSharpCore
                 {
                     var x = Random.Shared.NextDouble() * 2 - 1;
                     var y = Random.Shared.NextDouble() * 2 - 1;
-
                     if (x * x + y * y <= 1)
                     {
                         var l = center.Sub(n.Origin).Normalize();
                         var u = l.Cross(Vector.RandomUnitVector(rand)).Normalize();
                         var v = l.Cross(u);
-                        point = new Vector();
-                        point = point.Add(u.MulScalar(x * radius));
-                        point = point.Add(v.MulScalar(y * radius));
-                        point = point.Add(center);
+                        point = center.Add(u.MulScalar(x * radius)).Add(v.MulScalar(y * radius));
                         break;
                     }
                 }
             }
-            // construct ray toward light point
-            Ray ray = new Ray(n.Origin, point.Sub(n.Origin).Normalize());
 
-            // get cosine term
-            var diffuse = ray.Direction.Dot(n.Direction);
+            var rayDirection = point.Sub(n.Origin).Normalize();
+            var diffuse = rayDirection.Dot(n.Direction);
 
             if (diffuse <= 0)
-            {
                 return Colour.Black;
-            }
 
-            // check for light visibility
-            Hit hit = scene.Intersect(ray);
+            var ray = new Ray(n.Origin, rayDirection);
+            var hit = scene.Intersect(ray);
 
             if (!hit.Ok || hit.Shape != light)
-            {
                 return Colour.Black;
-            }
 
-            // compute solid angle (hemisphere coverage)
-            var hyp = center.Sub(n.Origin).Length();
-            var opp = radius;
-            var theta = Math.Asin(opp / hyp);
-            var adj = opp / Math.Tan(theta);
-            var d = Math.Cos(theta) * adj;
-            var r = Math.Sin(theta) * adj;
-            var coverage = (r * r) / (d * d);
-
-            if (hyp < opp)
+            // Calculate coverage for cylinder
+            double coverage;
+            if (light is Cylinder)
             {
-                coverage = 1;
+                // Adjust coverage calculation for cylinders
+                // You may need to refine this calculation based on the specific geometry of your cylinder
+                coverage = 1.0; // Placeholder value, adjust as needed
+            }
+            else
+            {
+                // Calculate coverage for other light sources
+                var hyp = center.Sub(n.Origin).Length();
+                var theta = Math.Asin(radius / hyp);
+                var adj = radius / Math.Tan(theta);
+                var d = Math.Cos(theta) * adj;
+                var r = Math.Sin(theta) * adj;
+                coverage = (r * r) / (d * d);
+
+                if (hyp < radius)
+                    coverage = 1;
+
+                coverage = Math.Min(coverage, 1);
             }
 
-            coverage = Math.Min(coverage, 1);
-
-            // get material properties from light
-            Material material = Material.MaterialAt(light, point);
-
-            // combine factors
+            // Compute color contribution
+            var material = Material.MaterialAt(light, point);
             var m = material.Emittance * diffuse * coverage;
 
             return material.Color.MulScalar(m);

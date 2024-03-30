@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 namespace PTSharpCore
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-
     public struct Matrix
     {
         public double M11, M12, M13, M14;
@@ -43,7 +42,6 @@ namespace PTSharpCore
             0, 0, 0, 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         internal Matrix Rotate(Vector v, double a)
         {
             v = v.Normalize();
@@ -57,7 +55,6 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         internal Matrix Frustum(double l, double r, double b, double t, double n, double f)
         {
             double t1 = 2 * n;
@@ -71,7 +68,6 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         internal Matrix Orthographic(double l, double r, double b, double t, double n, double f)
         {
             return new Matrix(2 / (r - l), 0, 0, -(r + l) / (r - l),
@@ -81,7 +77,6 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         internal Matrix Perspective(double fovy, double aspect, double near, double far)
         {
             double ymax = near * Math.Tan(fovy * Math.PI / 360);
@@ -90,7 +85,6 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         public Matrix LookAtMatrix(Vector eye, Vector center, Vector up)
         {
             up = up.Normalize();
@@ -147,6 +141,7 @@ namespace PTSharpCore
             return new Vector(x, y, z);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector MulDirection(Vector b)
         {
             var x = M11 * b.X + M12 * b.Y + M13 * b.Z;
@@ -160,7 +155,6 @@ namespace PTSharpCore
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         public Box MulBox(Box box)
         {
             var r = new Vector(M11, M21, M31);
@@ -180,7 +174,6 @@ namespace PTSharpCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         public Matrix Transpose() => new Matrix(M11, M21, M31, M41, M12, M22, M32, M42, M13, M23, M33, M43, M14, M24, M34, M44);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -199,6 +192,8 @@ namespace PTSharpCore
                     M14 * M22 * M33 * M41 + M14 * M22 * M31 * M43 -
                     M14 * M23 * M31 * M42 + M14 * M23 * M32 * M41);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix Inverse()
         {
             Matrix m = new Matrix();
@@ -221,6 +216,8 @@ namespace PTSharpCore
             m.M44 = (M12 * M23 * M31 - M13 * M22 * M31 + M13 * M21 * M32 - M11 * M23 * M32 - M12 * M21 * M33 + M11 * M22 * M33) / d;
             return m;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector Transform(Vector position, Matrix matrix)
         {
             // Multiply the position by the transformation matrix to compute the transformed position

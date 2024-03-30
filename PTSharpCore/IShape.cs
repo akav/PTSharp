@@ -1,4 +1,6 @@
-﻿namespace PTSharpCore
+﻿using System;
+
+namespace PTSharpCore
 {
     public interface IShape
     {
@@ -8,6 +10,5 @@
         Vector UVector(Vector uv);
         Vector NormalAt(Vector normal);
         Material MaterialAt(Vector v);
-        
     }
 }

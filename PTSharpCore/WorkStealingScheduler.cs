@@ -9,10 +9,11 @@ namespace PTSharpCore
     public class WorkStealingScheduler : TaskScheduler, IDisposable
     {
         private BlockingCollection<Task> _tasks = new BlockingCollection<Task>();
-        private readonly List<Thread> _threads = new List<Thread>();
+        private readonly Thread[] _threads;
 
         public WorkStealingScheduler(int concurrencyLevel)
         {
+            _threads = new Thread[concurrencyLevel];
             for (int i = 0; i < concurrencyLevel; i++)
             {
                 var thread = new Thread(() =>
@@ -22,10 +23,9 @@ namespace PTSharpCore
                         TryExecuteTask(task);
                     }
                 });
-
                 thread.IsBackground = true;
                 thread.Start();
-                _threads.Add(thread);
+                _threads[i] = thread;
             }
         }
 
@@ -36,10 +36,10 @@ namespace PTSharpCore
 
         protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
         {
-            if (Thread.CurrentThread != _threads[0])
-                return false;
+            if (Thread.CurrentThread == _threads[0])
+                return TryExecuteTask(task);
 
-            return TryExecuteTask(task);
+            return false;
         }
 
         protected override IEnumerable<Task> GetScheduledTasks()
@@ -47,7 +47,7 @@ namespace PTSharpCore
             return _tasks.ToArray();
         }
 
-        public override int MaximumConcurrencyLevel => _threads.Count;
+        public override int MaximumConcurrencyLevel => _threads.Length;
 
         public void Dispose()
         {
@@ -60,5 +60,3 @@ namespace PTSharpCore
         }
     }
 }
-
-

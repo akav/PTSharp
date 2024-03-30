@@ -292,5 +292,10 @@ namespace PTSharpCore
             // Replace Triangles array with the updated copy
             Triangles = trianglesCopy;
         }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

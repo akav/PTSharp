@@ -61,6 +61,11 @@ namespace PTSharpCore
         Vector IShape.NormalAt(Vector a)
         {
             return Normal;
-        }        
+        }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

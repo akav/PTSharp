@@ -28,6 +28,10 @@ namespace PTSharpCore
 
         public static Colour Black = new(0, 0, 0);
         public static Colour White = new(1, 1, 1);
+        public static Colour Red = new(1, 0, 0);
+        public static Colour Green = new(0, 1, 0);
+        public static Colour Blue = new(0, 0, 1);
+
 
         public Colour() { }
 

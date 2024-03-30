@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
@@ -15,7 +17,6 @@ namespace PTSharpCore
 
         public IShape[] Shapes;
         public IShape[] Lights;
-        public IShape[] PhysicalLights;
 
         public Scene() 
         {
@@ -36,13 +37,53 @@ namespace PTSharpCore
             }
         }
 
+        internal void AddRange(IEnumerable<IShape> shapes)
+        {
+            // Resize the internal arrays to accommodate the new shapes
+            int newShapesCount = Shapes.Length + shapes.Count();
+            int newLightsCount = Lights.Length;
+
+            Array.Resize(ref Shapes, newShapesCount);
+
+            // Add each shape to the scene
+            int index = Shapes.Length - shapes.Count();
+            foreach (var shape in shapes)
+            {
+                Shapes[index++] = shape;
+
+                // Check if the added shape is a light source
+                if (shape.MaterialAt(new Vector()).Emittance > 0)
+                {
+                    // If so, resize the Lights array and add the shape to it
+                    Array.Resize(ref Lights, ++newLightsCount);
+                    Lights[newLightsCount - 1] = shape;
+                }
+            }
+
+            // Compile the shapes and update the acceleration structure if necessary
+            Compile();
+        }
+
         public void Compile()
         {
-            foreach(IShape shape in Shapes)
+            // Parallel compilation of shapes
+            Parallel.ForEach(Shapes, shape =>
             {
                 shape.Compile();
+            });
+
+            // Check if the tree has already been instantiated
+            if (tree == null)
+            {
+                // Using a lock to ensure thread safety when instantiating the tree
+                lock (this)
+                {
+                    if (tree == null) // Double-checking to prevent race conditions
+                    {
+                        tree = Tree.NewTree(Shapes);
+                    }
+                }
             }
-            tree ??= Tree.NewTree(Shapes);
         }
 
         int RayCount()

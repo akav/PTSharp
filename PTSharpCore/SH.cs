@@ -378,5 +378,10 @@ namespace PTSharpCore
         {
             throw new NotImplementedException();
         }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

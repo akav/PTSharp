@@ -89,5 +89,10 @@ namespace PTSharpCore
         {
             return Shape.MaterialAt(v);
         }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
