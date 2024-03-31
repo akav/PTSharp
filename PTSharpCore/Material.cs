@@ -28,6 +28,9 @@ namespace PTSharpCore
         // Emittance of the material
         public double Emittance { get; set; }
 
+        // Indicates whether the material emits light
+        public bool EmitLight { get; set; }
+
         // Index of refraction of the material
         public double Index { get; set; }
 
@@ -45,7 +48,7 @@ namespace PTSharpCore
 
         public IDistribution Distribution { get; set; }
 
-        public Material(Colour color, ITexture texture, ITexture normaltexture, ITexture bumptexture, ITexture glosstexture, double b, double e, double i, double g, double tint, double r, Boolean t)
+        public Material(Colour color, ITexture texture, ITexture normaltexture, ITexture bumptexture, ITexture glosstexture, double b, double e, double i, double g, double tint, double r, Boolean t, bool emitsLight = false)
         {
             Color = color;
             Texture = texture;
@@ -54,6 +57,7 @@ namespace PTSharpCore
             GlossTexture = glosstexture;
             BumpMultiplier = b;
             Emittance = e;
+            EmitLight = emitsLight;
             Index = i;
             Gloss = g;
             Tint = tint;
@@ -110,8 +114,8 @@ namespace PTSharpCore
                 material.Gloss = (c.r + c.g + c.b) / 3;
             }
             return material;
-        }
-        
+        }        
+
         // Generates a random direction in the hemisphere centered around a given normal
         private Vector RandomDirection(Vector normal)
         {

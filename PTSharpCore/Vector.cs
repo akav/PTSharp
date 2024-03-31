@@ -223,6 +223,11 @@ namespace PTSharpCore
 
         public int Index { get; internal set; }
 
+        public double LengthSquared()
+        {
+            return X * X + Y * Y + Z * Z;
+        }
+
         // Operators
         public static Vector operator +(Vector a, Vector v)
         {

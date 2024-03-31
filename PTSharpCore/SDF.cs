@@ -31,9 +31,9 @@ namespace PTSharpCore
 
         Hit IShape.Intersect(Ray ray)
         {
-            double epsilon = 0.00001F;
-            double start = 0.0001F;
-            double jumpSize = 0.001F;
+            double epsilon = 0.00001d;
+            double start = 0.0001d;
+            double jumpSize = 0.001d;
             Box box = BoundingBox();
             (double t1, double t2) = box.Intersect(ray);
             if (t2 < t1 || t2 < 0)

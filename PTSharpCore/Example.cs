@@ -6,33 +6,45 @@ using PTSharpCore;
 using Silk.NET.Vulkan;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
     class Example
     {
-        static Vector offset(double stdev)
+        static (double, double) offset(double stdev, CancellationToken cancellationToken)
         {
-            var a = Random.Shared.NextDouble() * 2 * Math.PI;
-            var r = Random.Shared.NextDouble() * stdev;
-            var x = Math.Cos(a) * r;
-            var y = Math.Sin(a) * r;
-            return new Vector(x, 0, y);
+            double a = Random.Shared.NextDouble() * 2 * Math.PI;
+            double r = Random.Shared.NextDouble() * stdev;
+            double x = Math.Cos(a) * r;
+            double y = Math.Sin(a) * r;
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return (x, y);
         }
 
         public static bool intersects(Scene scene, IShape shape)
         {
             var box = shape.BoundingBox();
-            foreach(var other in scene.Shapes)
+            foreach (var other in scene.Shapes)
             {
-                if (box.Intersects(other.BoundingBox()))
+                if (!box.Intersects(other.BoundingBox())) // Check bounding box intersection first
+                {
+                    continue; // Skip to next shape if bounding boxes don't intersect
+                }
+
+                if (box.Intersects(other.BoundingBox())) // Perform precise intersection test
                 {
                     return true;
                 }
@@ -42,85 +54,115 @@ namespace PTSharpCore
 
         public static void go(int width, int height)
         {
-            (double,double)[] blackPositions = {
-                ( 7, 3), (14, 17), ( 14, 4), (18, 4), ( 0, 7), ( 5, 8), (11, 5), (10, 7), 
-                (7, 6), ( 6, 10), (12, 6), ( 3, 2), (5, 11), ( 7, 5), ( 14, 15), ( 12, 11), 
-                ( 8, 12), ( 4, 15), ( 2, 11), ( 9, 9), ( 10, 3), ( 6, 17), ( 7, 2), ( 14, 5), 
-                ( 13, 3), ( 13, 16), ( 3, 6), ( 1, 10), ( 4, 1), ( 10, 9), ( 5, 17), ( 12, 7), 
-                ( 3, 5), ( 2, 7), ( 5, 10), ( 10, 10), ( 5, 7), ( 7, 4), ( 12, 4), ( 8, 13), ( 9, 8), 
-                ( 15, 17), ( 3, 10), ( 4, 13), ( 2, 13), ( 8, 16), ( 12, 3), ( 17, 5), ( 13, 2), 
-                ( 15, 3), ( 2, 3), (6, 5), (11, 7), ( 16, 5), (11, 8), (14, 7), (15, 6), 
-                ( 1, 7), ( 5, 9), (10, 11), ( 6, 6), (4, 18), ( 7, 14), ( 17, 3), ( 4, 9), 
-                 (10, 12), ( 6, 3), (16, 7), (14, 14), (16, 18), (3, 13), (1, 13), (2, 10), 
-                 (7, 9), (13, 1), (12, 15), (4, 3), (5, 2), (10, 2)
-            };
+            ConcurrentQueue<(double, double)> blackPositions = new ConcurrentQueue<(double, double)>(new[]
+            {
+                (7d, 3d), (14, 17), ( 14, 4), (18, 4), ( 0, 7), ( 5, 8), (11, 5), (10, 7),
+                (7, 6), ( 6, 10), (12, 6), ( 3, 2), (5, 11), ( 7, 5), ( 14, 15), ( 12, 11),
+                ( 8, 12), ( 4, 15), ( 2, 11), ( 9, 9), ( 10, 3), ( 6, 17), ( 7, 2), ( 14, 5),
+                ( 13, 3), ( 13, 16), ( 3, 6), ( 1, 10), ( 4, 1), ( 10, 9), ( 5, 17), ( 12, 7),
+                ( 3, 5), ( 2, 7), ( 5, 10), ( 10, 10), ( 5, 7), ( 7, 4), ( 12, 4), ( 8, 13), ( 9, 8),
+                ( 15, 17), ( 3, 10), ( 4, 13), ( 2, 13), ( 8, 16), ( 12, 3), ( 17, 5), ( 13, 2),
+                ( 15, 3), ( 2, 3), (6, 5), (11, 7), ( 16, 5), (11, 8), (14, 7), (15, 6),
+                ( 1, 7), ( 5, 9), (10, 11), ( 6, 6), (4, 18), ( 7, 14), ( 17, 3), ( 4, 9),
+                (10, 12), ( 6, 3), (16, 7), (14, 14), (16, 18), (3, 13), (1, 13), (2, 10),
+                (7, 9), (13, 1), (12, 15), (4, 3), (5, 2), (10, 2)
+            });
 
-            (double, double)[] whitePositions = {
-                (16, 6), (16, 9), (13, 4), (1, 6), (0, 10), (3, 7), 
-                (1, 11), (8, 5), (6, 7), (5, 5), (15, 11), (13, 7), 
-                (18, 9), (2, 6), (7, 10), (15, 14), (13, 10), (17, 18), 
-                (7, 15), (5, 14), (3, 18), (15, 16), (14, 8), (12, 8), 
-                (7, 13), (1, 15), (8, 9), (6, 14), (12, 2), (17, 6), 
-                (18, 5), (17, 11), (9, 7), (6, 4), (5, 4), (6, 11), 
-                (11, 9), (13, 6), (18, 6), (0, 8), (8, 3), (4, 6), 
-                (9, 2), (4, 17), (14, 12), (13, 9), (18, 11), (3, 15), 
-                (4, 8), (2, 8), (12, 9), (16, 17), (8, 10), (9, 11), (17, 7), 
-                (16, 11), (14, 10), (3, 9), (1, 9), (8, 7), (2, 14), (9, 6), (5, 3), 
-                (14, 16), (5, 16), (16, 8), (13, 5), (8, 4), (4, 7), (5, 6), (11, 2), (12, 5), 
-                (15, 8), (2, 9), (9, 15), (8, 1), (4, 4), (16, 15), (12, 10), (13, 11), (2, 16), 
+            ConcurrentQueue<(double, double)> whitePositions = new ConcurrentQueue<(double, double)>(new[]
+            {
+                (16d, 6d), (16, 9), (13, 4), (1, 6), (0, 10), (3, 7),
+                (1, 11), (8, 5), (6, 7), (5, 5), (15, 11), (13, 7),
+                (18, 9), (2, 6), (7, 10), (15, 14), (13, 10), (17, 18),
+                (7, 15), (5, 14), (3, 18), (15, 16), (14, 8), (12, 8),
+                (7, 13), (1, 15), (8, 9), (6, 14), (12, 2), (17, 6),
+                (18, 5), (17, 11), (9, 7), (6, 4), (5, 4), (6, 11),
+                (11, 9), (13, 6), (18, 6), (0, 8), (8, 3), (4, 6),
+                (9, 2), (4, 17), (14, 12), (13, 9), (18, 11), (3, 15),
+                (4, 8), (2, 8), (12, 9), (16, 17), (8, 10), (9, 11), (17, 7),
+                (16, 11), (14, 10), (3, 9), (1, 9), (8, 7), (2, 14), (9, 6), (5, 3),
+                (14, 16), (5, 16), (16, 8), (13, 5), (8, 4), (4, 7), (5, 6), (11, 2), (12, 5),
+                (15, 8), (2, 9), (9, 15), (8, 1), (4, 4), (16, 15), (12, 10), (13, 11), (2, 16),
                 (4, 14), (5, 15), (10, 1), (6, 8), (6, 12), (17, 9), (8, 8)
-            };
+            });
 
+            Random rand = new Random();
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken cancellationToken = cancellationTokenSource.Token;
 
             var scene = new Scene();
             scene.Color = Colour.White;
             var black = Material.GlossyMaterial(Colour.HexColor(0x111111), 1.5, Util.Radians(45));
             var white = Material.GlossyMaterial(Colour.HexColor(0xFFFFFF), 1.6, Util.Radians(20));
 
-            foreach(var p in blackPositions)
+            object sceneLock = new object();
+
+            Parallel.ForEach(blackPositions, (p, state) =>
             {
+                cancellationToken.ThrowIfCancellationRequested(); // Check for cancellation before starting the loop
+
+                for (; ; )
+                {
+                    if (cancellationToken.IsCancellationRequested) // Check for cancellation within the loop
+                    {
+                        state.Break(); // Break out of the loop if cancellation is requested
+                        return; // Exit the method
+                    }
+
+                    var m = new Matrix().Scale(new Vector(0.48, 0.2, 0.48)).Translate(new Vector(p.Item1 - 9.5, 0, p.Item2 - 9.5));
+                    var off = offset(0.02, cancellationToken);
+                    m = m.Translate(new Vector(off.Item1, 0, off.Item2));
+                    var shape = TransformedShape.NewTransformedShape(Sphere.NewSphere(new Vector(), 1, black), m);
+
+                    var box = shape.BoundingBox(); // Define bounding box of the current shape
+
+                    lock (sceneLock)
+                    {
+                        if (scene.Shapes.AsParallel().Any(other => box.Intersects(other.BoundingBox())))
+                        {
+                            continue;
+                        }
+
+                        scene.Add(shape);
+                    }
+                    break;
+                }
+            });
+
+            Parallel.ForEach(whitePositions, (p, state) =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 for (; ; )
                 {
                     var m = new Matrix().Scale(new Vector(0.48, 0.2, 0.48)).Translate(new Vector(p.Item1 - 9.5, 0, p.Item2 - 9.5));
-                    m = m.Translate(offset(0.02));
-                    var shape = TransformedShape.NewTransformedShape(Sphere.NewSphere(new Vector(), 1, black), m);
-
-                    if(intersects(scene, shape))
-                    {
-                        continue;
-                    }
-                    scene.Add(shape);
-                    break;
-                }
-            }
-
-        	foreach(var p in whitePositions)
-            {
-                while (true)
-                {
-                    var m = new Matrix().Scale(new Vector(0.48, 0.2, 0.48)).Translate(new Vector(p.Item1 - 9.5, 0, p.Item2 - 9.5));
-                    m = m.Translate(offset(0.02));
+                    var off = offset(0.02, cancellationToken);
+                    m = m.Translate(new Vector(off.Item1, 0, off.Item2));
 
                     var shape = TransformedShape.NewTransformedShape(Sphere.NewSphere(new Vector(), 1, white), m);
-			    
-                    if(intersects(scene, shape))
-                    {
-                        continue;
-                    }
-                    scene.Add(shape);
 
+                    var box = shape.BoundingBox(); // Define bounding box of the current shape
+
+                    lock (sceneLock)
+                    {
+                        if (scene.Shapes.AsParallel().Any(other => box.Intersects(other.BoundingBox())))
+                        {
+                            continue;
+                        }
+
+                        scene.Add(shape);
+                    }
                     break;
-                    
                 }
-            }
-	
-            for(int i = 0; i< 19; i++)
+            });
+
+
+            for (int i = 0; i < 19; i++)
             {
                 var x = (double)i - 9.5;
                 var m = 0.015;
                 scene.Add(Cube.NewCube(new Vector(x - m, -1, -9.5), new Vector(x + m, -0.195, 8.5), black));
                 scene.Add(Cube.NewCube(new Vector(-9.5, -1, x - m), new Vector(8.5, -0.195, x + m), black));
-	        }
+            }
 
             var material = Material.GlossyMaterial(Colour.HexColor(0xEFECCA), 1.2, Util.Radians(30));
             //material.Texture = ColorTexture.GetTexture("examples/wood.jpg");
@@ -200,8 +242,53 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.FireflySamples = 128;
             renderer.IterativeRender("example3.png", 1000);
         }
+
+        public static void simplesphere2(int width, int height)
+        {
+            var scene = new Scene();
+            // create a material
+            var material = Material.DiffuseMaterial(Colour.White);
+
+            // add the floor (a plane)
+            var plane = Plane.NewPlane(new Vector(0, 0, 0), new Vector(0, 0, 1), material);
+            scene.Add(plane);
+
+            // add the ball (a sphere)
+            var sphere = Sphere.NewSphere(new Vector(0, 0, 1), 1.0F, material);
+            scene.Add(sphere);
+
+            // add a spherical light source
+            //var light = Sphere.NewSphere(new Vector(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
+            //scene.Add(light);
+
+            // add a point light source
+            //var lightPosition = new Vector(0.0, 0.0, 5.0F);
+            //var lightColor = Colour.White;
+            //var lightIntensity = 8.0; // Intensity of the point light
+            //var pointLight = new PointLight(lightPosition, lightColor, lightIntensity);
+            //scene.Add(pointLight);
+
+            var lightPosition = new Vector(0.0, 0.0, 3.0F);
+            var lightDirection = new Vector(0.0, 0.0, 1.0); // Direction the spot light is pointing
+            var lightColor = Colour.White;
+            var lightIntensity = 8.0; // Intensity of the spot light
+            var lightAngle = Math.PI / 4.0; // 45-degree angle for the spot light (adjust as needed)
+            var spotLight = new SpotLight(lightPosition, lightDirection, lightColor, lightIntensity, lightAngle);
+            scene.Add(spotLight);
+
+
+            // position the camera
+            var camera = Camera.LookAt(new Vector(3, 3, 3), new Vector(0, 0, 0.5F), new Vector(0, 0, 1), 50);
+
+            // render the scene with progressive refinement
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, false);
+            renderer.IterativeRender("simplesphere2.png", 100);
+        }
+
 
         public static void simplesphere(int width, int height)
         {
@@ -227,8 +314,6 @@ namespace PTSharpCore
             // render the scene with progressive refinement
             var sampler = DefaultSampler.NewSampler(16, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            renderer.AdaptiveSamples = 128;
-            renderer.FireflySamples = 32;
             renderer.IterativeRender("simplesphere.png", 100);
         }
 
@@ -265,7 +350,7 @@ namespace PTSharpCore
             renderer.IterativeRender("simplecylinder.png", 100);
         }
 
-        public static void shrender(int l, int m)
+        public static void shrender(int l, int m, int width, int height)
         {
             Scene scene = new Scene();
             var eye = new Vector(1, 1, 1);
@@ -283,41 +368,42 @@ namespace PTSharpCore
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SetLightMode(LightMode.LightModeAll);
             sampler.SetSpecularMode(SpecularMode.SpecularModeFirst);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 1600 / 2, 1600 / 2, false);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             string timestamp = DateTime.Now.ToString("yyyyMMddhhmmss");
             string filename = String.Format("sh{0}.png", timestamp);
             renderer.IterativeRender(filename, 10);
         }
 
-        public void sh()
+        public static void sh(int width, int height)
         {
             for (int l = 0; l <= 4; l++)
             {
                 for (int m = -l; m <= l; m++)
                 {
-                    shrender(l, m);
+                    shrender(l, m, width, height);
                 }
             }
         }
 
         public static void dragon(int width, int height)
         {
-           var scene = new Scene();
-           var material = Material.GlossyMaterial(Colour.HexColor(0xB7CA79), 1.5F, Util.Radians(20));
-           var mesh = OBJ.Load("models/dragon.obj", material);
-           mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5, 0, 0.5));
-           scene.Add(mesh);
-           var floor = Material.GlossyMaterial(Colour.HexColor(0xD8CAA8), 1.2F, Util.Radians(5));
-           scene.Add(Cube.NewCube(new Vector(-50, -50, -50), new Vector(50, 0, 50), floor));
-           var light = Material.LightMaterial(Colour.White, 75);
-           scene.Add(Sphere.NewSphere(new Vector(-1, 10, 4), 1, light));
-           var mouth = Material.LightMaterial(Colour.HexColor(0xFFFAD5), 500);
-           scene.Add(Sphere.NewSphere(new Vector(-0.05F, 1, -0.5F), 0.03F, mouth));
-           var camera = Camera.LookAt(new Vector(-3, 2, -1), new Vector(0, 0.6F, -0.1F), new Vector(0, 1, 0), 35);
-           camera.SetFocus(new Vector(0, 1, -0.5F), 0.03F);
-           var sampler = DefaultSampler.NewSampler(4, 4);
-           var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-           renderer.IterativeRender("dragon.png", 100);
+            var scene = new Scene();
+            var material = Material.GlossyMaterial(Colour.HexColor(0xB7CA79), 1.5F, Util.Radians(20));
+            var mesh = OBJ.Load("models/dragon.obj", material);
+            mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5, 0, 0.5));
+            scene.Add(mesh);
+            var floor = Material.GlossyMaterial(Colour.HexColor(0xD8CAA8), 1.2F, Util.Radians(5));
+            scene.Add(Cube.NewCube(new Vector(-50, -50, -50), new Vector(50, 0, 50), floor));
+            var light = Material.LightMaterial(Colour.White, 75);
+            scene.Add(Sphere.NewSphere(new Vector(-1, 10, 4), 1, light));
+            var mouth = Material.LightMaterial(Colour.HexColor(0xFFFAD5), 500);
+            scene.Add(Sphere.NewSphere(new Vector(-0.05F, 1, -0.5F), 0.03F, mouth));
+            var camera = Camera.LookAt(new Vector(-3, 2, -1), new Vector(0, 0.6F, -0.1F), new Vector(0, 1, 0), 35);
+            camera.SetFocus(new Vector(0, 1, -0.5F), 0.03F);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.FireflySamples = 128;   
+            renderer.IterativeRender("dragon.png", 100);
         }
 
         public static void cube(int width, int height)
@@ -866,16 +952,16 @@ namespace PTSharpCore
         public static void sdf(int width, int height)
         {
             var scene = new Scene();
-            var light = Material.LightMaterial(Colour.White, 180);
-            double d = 4.0F;
-            scene.Add(Sphere.NewSphere(new Vector(-1, -1, 0.5F).Normalize().MulScalar(d), 0.25F, light));
-            scene.Add(Sphere.NewSphere(new Vector(0, -1, 0.25F).Normalize().MulScalar(d), 0.25F, light));
-            scene.Add(Sphere.NewSphere(new Vector(-1, 1, 0).Normalize().MulScalar(d), 0.25F, light));
+            var light = Material.LightMaterial(Colour.White, 360);
+            double d = 4.0;
+            scene.Add(Sphere.NewSphere(new Vector(-1, -1, 0.5F).Normalize().MulScalar(d), 0.25, light));
+            scene.Add(Sphere.NewSphere(new Vector(0, -1, 0.25F).Normalize().MulScalar(d), 0.25, light));
+            scene.Add(Sphere.NewSphere(new Vector(-1, 1, 0).Normalize().MulScalar(d), 0.25, light));
             var material = Material.GlossyMaterial(Colour.HexColor(0x468966), 1.2F, Util.Radians(20));
-            var sphere = SphereSDF.NewSphereSDF(0.65F);
+            var sphere = SphereSDF.NewSphereSDF(0.65);
             var cube = CubeSDF.NewCubeSDF(new Vector(1, 1, 1));
             var roundedCube = IntersectionSDF.NewIntersectionSDF(new List<SDF> { sphere, cube });
-            var a = CylinderSDF.NewCylinderSDF(0.25F, 1.1F);
+            var a = CylinderSDF.NewCylinderSDF(0.25, 1.1);
             var b = TransformSDF.NewTransformSDF(a, new Matrix().Rotate(new Vector(1, 0, 0), Util.Radians(90)));
             var c = TransformSDF.NewTransformSDF(a, new Matrix().Rotate(new Vector(0, 0, 1), Util.Radians(90)));
             var difference = DifferenceSDF.NewDifferenceSDF(new List<SDF> { roundedCube, a, b, c });

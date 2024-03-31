@@ -55,7 +55,93 @@ namespace PTSharpCore
         {
             LightMode = l;
         }
-       
+
+        Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand, bool russianRoulette = false, double minReflectance = 0.05)
+        {
+            if (depth > MaxBounces)
+            {
+                return Colour.Black;
+            }
+
+            var hit = scene.Intersect(ray);
+
+            if (!hit.Ok)
+            {
+                return sampleEnvironment(scene, ray);
+            }
+
+            var info = hit.Info(ray);
+            var material = info.material;
+            var result = new Colour(0, 0, 0);
+
+            if (material.Emittance > 0 && emission)
+            {
+                result = result.Add(material.Color.MulScalar(material.Emittance * samples));
+            }
+
+            var n = (int)Math.Sqrt(samples);
+            BounceType ma, mb;
+
+            if (SpecularMode.Equals(SpecularMode.SpecularModeAll) || depth == 0 && SpecularMode.Equals(SpecularMode.SpecularModeFirst))
+            {
+                ma = BounceType.BounceTypeDiffuse;
+                mb = BounceType.BounceTypeSpecular;
+            }
+            else
+            {
+                ma = BounceType.BounceTypeAny;
+                mb = BounceType.BounceTypeAny;
+            }
+
+            for (int u = 0; u < n; u++)
+            {
+                for (int v = 0; v < n; v++)
+                {
+                    for (BounceType mode = ma; mode <= mb; mode++)
+                    {
+                        (var newRay, var reflected, var p) = ray.Bounce(info, ((double)u + Random.Shared.NextDouble()) / (double)n, ((float)v + Random.Shared.NextDouble()) / (double)n, mode, Random.Shared);
+
+                        if (mode.Equals(BounceType.BounceTypeAny))
+                        {
+                            p = 1;
+                        }
+
+                        if (p > 0 && reflected)
+                        {
+                            // specular
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared, russianRoulette, minReflectance);
+                            var tinted = indirect.Mix(material.Color.Mul(indirect), material.Tint);
+                            result = result.Add(tinted.MulScalar(p));
+                        }
+
+                        if (p > 0 && !reflected)
+                        {
+                            // diffuse
+                            var indirect = sample(scene, newRay, reflected, 1, depth + 1, Random.Shared, russianRoulette, minReflectance);
+                            var direct = sampleLights(scene, newRay, rand);
+
+                            result = result.Add(material.Color.Mul(direct.Add(indirect)).MulScalar(p));
+                        }
+                    }
+                }
+            }
+
+            if (russianRoulette && depth >= 2)
+            {
+                // Russian Roulette termination
+                var probability = Math.Max(result.r, Math.Max(result.g, result.b));
+                if (Random.Shared.NextDouble() > probability)
+                {
+                    return result.DivScalar(probability);
+                }
+                return result.DivScalar(probability * (1 - minReflectance));
+            }
+
+            return result.DivScalar(n * n);
+        }
+
+
+        /*
         Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand, bool russianRoulette = false, double minReflectance = 0.05)
         {
             if (depth > MaxBounces)
@@ -128,6 +214,30 @@ namespace PTSharpCore
                             {
                                 direct = sampleLights(scene, info.Ray, rand);
                             }
+                            else
+                            {
+                                // If DirectLighting is disabled, still consider direct contribution from all light types
+                                foreach (var light in scene.Lights)
+                                {
+                                    switch (light.Type)
+                                    {
+                                        case LightMode.LightModePoint:
+                                            direct = direct.Add(samplePointLight(scene, info.Ray, (PointLight)light));
+                                            break;
+                                        case LightMode.LightModeDirectional:
+                                            direct = direct.Add(sampleDirectionalLight(scene, info.Ray, (DirectionalLight)light));
+                                            break;
+                                        case LightMode.LightModeSpot:
+                                            direct = direct.Add(sampleSpotLight(scene, info.Ray, (SpotLight)light));
+                                            break;
+                                        case LightMode.LightModeArea:
+                                            direct = direct.Add(sampleAreaLight(scene, info.Ray, (AreaLight)light));
+                                            break;
+                                            // Add cases for other light types as needed
+                                    }
+                                }
+                            }
+
                             result = result.Add(material.Color.Mul(direct.Add(indirect)).MulScalar(p));
                         }
                     }
@@ -146,7 +256,7 @@ namespace PTSharpCore
             }
 
             return result.DivScalar(n * n);
-        }
+        }*/
 
         public static Vector RandomUnitVectorOnUnitSphere(Random rand)
         {
@@ -220,23 +330,159 @@ namespace PTSharpCore
 
         Colour sampleLights(Scene scene, Ray n, Random rand)
         {
+            var nMaterialLights = scene.MaterialLights.Length;
             var nLights = scene.Lights.Length;
 
-            if (nLights == 0)
+            if (nMaterialLights == 0 && nLights == 0)
                 return Colour.Black;
 
+            var result = new Colour();
+
+            // Sample from material lights
+            foreach (var light in scene.MaterialLights)
+                result = result.Add(sampleLight(scene, n, light, rand));
+
+            // Sample from non-material lights
+            foreach (var light in scene.Lights)
+            {
+                switch (light.Type)
+                {
+                    case LightMode.LightModePoint:
+                        result = result.Add(samplePointLight(scene, n, (PointLight)light));
+                        break;
+                    case LightMode.LightModeDirectional:
+                        result = result.Add(sampleDirectionalLight(scene, n, (DirectionalLight)light));
+                        break;
+                    case LightMode.LightModeSpot:
+                        result = result.Add(sampleSpotLight(scene, n, (SpotLight)light));
+                        break;
+                    case LightMode.LightModeArea:
+                        result = result.Add(sampleAreaLight(scene, n, (AreaLight)light));
+                        break;
+                        // Add cases for other light types as needed
+                }
+            }
+
+            // Divide the result by the total number of lights for averaging
+            return result.DivScalar(nMaterialLights + nLights);
+
+            /*
             if (LightMode == LightMode.LightModeAll)
             {
-                var result = new Colour();
-                foreach (var light in scene.Lights)
+                foreach (var light in scene.MaterialLights)
                     result = result.Add(sampleLight(scene, n, light, rand));
-                return result.DivScalar(nLights);
+                return result.DivScalar(nMaterialLights + nLights);
             }
             else
             {
-                var lightIndex = Random.Shared.Next(nLights);
-                return sampleLight(scene, n, scene.Lights[lightIndex], rand).MulScalar((double)nLights);
+                var lightIndex = Random.Shared.Next(nMaterialLights);
+                return sampleLight(scene, n, scene.MaterialLights[lightIndex], rand).MulScalar((double)nMaterialLights);
+            }*/
+
+            // Normalize by the total number of lights
+            // return result.DivScalar(nMaterialLights + nLights);
+        }
+
+        private Colour sampleAreaLight(Scene scene, Ray n, AreaLight areaLight)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Colour sampleSpotLight(Scene scene, Ray n, SpotLight spotLight)
+        {
+            var directionToLight = spotLight.Position.Sub(n.Origin);
+            var distanceSquared = directionToLight.LengthSquared();
+            var direction = directionToLight.Normalize();
+            var attenuation = 1.0 / distanceSquared;
+
+            // Check if the spotlight is occluded by any objects
+            var rayToLight = new Ray(n.Origin, direction);
+            var occlusionHit = scene.Intersect(rayToLight);
+            if (occlusionHit.Ok && occlusionHit.T * occlusionHit.T < distanceSquared)
+            {
+                // The spotlight is occluded, return black color
+                return Colour.Black;
             }
+
+            // Check if the light direction is within the cone angle
+            var cosAngle = direction.Dot(-spotLight.Direction.Normalize());
+            if (cosAngle < Math.Cos(spotLight.Angle / 2.0))
+            {
+                // The intersection point is outside the spotlight cone, return black color
+                return Colour.Black;
+            }
+
+            // Calculate light intensity based on the inverse square law and cone angle
+            var intensity = spotLight.Intensity * attenuation * cosAngle;
+
+            // Intersect with the original ray to get hit information
+            var hit = scene.Intersect(n);
+            if (!hit.Ok || hit.HitInfo == null) // Check if the hit is valid and HitInfo is not null
+                return Colour.Black;
+
+            // Calculate diffuse term using the dot product between light direction and surface normal
+            var diffuse = direction.Dot(hit.HitInfo.Normal);
+            if (diffuse <= 0)
+                return Colour.Black;
+
+            // Calculate material at the intersection point on the surface
+            var intersectionMaterial = Material.MaterialAt(hit.Shape, hit.HitInfo.Position);
+
+            // Compute color contribution
+            var m = intersectionMaterial.Emittance * diffuse * intensity;
+
+            return intersectionMaterial.Color.MulScalar(m);
+        }
+
+
+
+        private Colour sampleDirectionalLight(Scene scene, Ray n, DirectionalLight directionalLight)
+        {
+            throw new NotImplementedException();
+        }
+
+        Colour samplePointLight(Scene scene, Ray n, PointLight light)
+        {
+            var directionToLight = light.Position.Sub(n.Origin);
+            var distanceSquared = directionToLight.LengthSquared();
+            var direction = directionToLight.Normalize();
+            var attenuation = 1.0 / distanceSquared;
+
+            var rayToLight = new Ray(n.Origin, direction);
+
+            // Check if the point light is occluded by any objects
+            var occlusionHit = scene.Intersect(rayToLight);
+            if (occlusionHit.Ok && occlusionHit.T * occlusionHit.T < distanceSquared)
+            {
+                // The point light is occluded, return black color
+                return Colour.Black;
+            }
+
+            // Calculate light intensity based on the inverse square law
+            var intensity = light.Intensity * attenuation;
+
+            // Intersect with the original ray to get hit information
+            var hit = scene.Intersect(n);
+
+            // Check if HitInfo is null or intersection failed
+            if (!hit.Ok || hit.HitInfo == null)
+            {
+                // If intersection failed, return light contribution based on intensity
+                return light.Color.MulScalar(intensity);
+            }
+
+            // Calculate diffuse term using the dot product between light direction and surface normal
+            var diffuse = direction.Dot(hit.HitInfo.Normal);
+            if (diffuse <= 0)
+                return Colour.Black;
+
+            // Calculate material at the intersection point on the surface
+            var intersectionMaterial = Material.MaterialAt(hit.Shape, hit.HitInfo.Position);
+
+            // Compute color contribution
+            var m = intersectionMaterial.Emittance * diffuse * intensity;
+
+            return intersectionMaterial.Color.MulScalar(m);
         }
 
         Colour sampleLight(Scene scene, Ray n, IShape light, Random rand)
@@ -265,6 +511,7 @@ namespace PTSharpCore
 
             var point = center;
 
+            /*
             if (SoftShadows)
             {
                 while (true)
@@ -278,6 +525,29 @@ namespace PTSharpCore
                         var v = l.Cross(u);
                         point = center.Add(u.MulScalar(x * radius)).Add(v.MulScalar(y * radius));
                         break;
+                    }
+                }
+            }*/
+
+            if (SoftShadows)
+            {
+                var l = center.Sub(n.Origin).Normalize();
+                var u = l.Cross(Vector.RandomUnitVector(rand)).Normalize();
+                var v = l.Cross(u);
+
+                var validPoint = false;
+                point = Vector.Zero;
+
+                while (!validPoint)
+                {
+                    var x = rand.NextDouble() * 2 - 1;
+                    var y = rand.NextDouble() * 2 - 1;
+                    var r2 = x * x + y * y;
+
+                    if (r2 <= 1)
+                    {
+                        point = center.Add(u.MulScalar(x * radius)).Add(v.MulScalar(y * radius));
+                        validPoint = true;
                     }
                 }
             }

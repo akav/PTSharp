@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using Silk.NET.Vulkan;
 
 namespace PTSharpCore
 {
@@ -105,6 +107,11 @@ namespace PTSharpCore
                                 Colour c = new Colour(0, 0, 0);
                                 c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
                                 buf.AddSample(x, y, c);
+                                // Set the pixel color
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
                             }
 
                         }
@@ -201,8 +208,7 @@ namespace PTSharpCore
                 });
             }
             else
-            {
-                /*
+            {                
                 int tile_size = 256;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
                 int num_tiles_y = (h + tile_size - 1) / tile_size;
@@ -211,7 +217,7 @@ namespace PTSharpCore
                 var colorSettingScheduler = new WorkStealingScheduler(Environment.ProcessorCount);
 
                 // Define the granularity of work distribution (e.g., sub-tiles)
-                int sub_tile_size = 8;
+                int sub_tile_size = 32;
 
                 for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
                 {
@@ -274,8 +280,10 @@ namespace PTSharpCore
 
                 // Dispose the schedulers after rendering completes
                 renderingScheduler.Dispose();
-                colorSettingScheduler.Dispose();*/
+                colorSettingScheduler.Dispose();
 
+
+                /*
                 int tile_size = 256;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
                 int num_tiles_y = (h + tile_size - 1) / tile_size;
@@ -348,7 +356,7 @@ namespace PTSharpCore
                 }
 
                 // Dispose the scheduler after rendering completes
-                scheduler.Dispose();
+                scheduler.Dispose();*/
 
 
 
@@ -682,23 +690,133 @@ namespace PTSharpCore
                 });
             }
 
+
             if (FireflySamples > 0)
             {
-                _ = Parallel.For(0, w * h, po, (i, loopState) =>
-                  {
-                      int y = i / w, x = i % w;
-                      if (buf.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
-                      {
-                          for (int j = 0; j < FireflySamples; j++)
-                          {
-                              buf.AddSample(x, y, sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), Random.Shared), Random.Shared));
-                          }
-                      }
-                  });
+                // Concurrent dictionary to track skipped pixels
+                ConcurrentDictionary<(int, int), bool> skippedPixels = new ConcurrentDictionary<(int, int), bool>();
+
+                Parallel.For(0, w * h, po, (i, loopState) =>
+                {
+                    int y = i / w, x = i % w;
+                    if (buf.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
+                    {
+                        if (!skippedPixels.ContainsKey((x, y))) // Check if the pixel was previously marked as a firefly
+                        {
+                            for (int j = 0; j < FireflySamples; j++)
+                            {
+                                var sample = sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+
+                                // Check if the sample is a firefly
+                                if (IsFirefly(sample, x, y, ref buf))
+                                {
+                                    // If it's a firefly, mark the pixel and break the loop
+                                    skippedPixels.TryAdd((x, y), true);
+                                    break;
+                                }
+
+                                buf.AddSample(x, y, sample);
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                            }
+                        }
+                        else
+                        {
+                            // Pixel was marked as a firefly in a previous run, recompute samples
+                            for (int j = 0; j < FireflySamples; j++)
+                            {
+                                var sample = sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                                buf.AddSample(x, y, sample);
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                            }
+
+                            // Remove the pixel from skippedPixels dictionary as it's being recomputed
+                            bool _;
+                            skippedPixels.TryRemove((x, y), out _);
+                        }
+                    }
+                });
             }
+
             Console.WriteLine("time elapsed:" + sw.Elapsed);
             sw.Stop();
-        }        
+        }
+
+        public bool IsFirefly(Colour sample, int x, int y, ref Buffer buf)
+        {
+            // Define your criteria for identifying fireflies
+            // Here's an example of a more sophisticated criterion:
+            // Fireflies are pixels with high brightness and high deviation from the local neighborhood
+
+            double brightnessThreshold = 0.9; // Adjust as needed
+            double brightness = sample.r * 0.2126 + sample.g * 0.7152 + sample.b * 0.0722; // Calculate brightness
+
+            // Check if the brightness exceeds the threshold
+            if (brightness > brightnessThreshold)
+            {
+                // Now, let's check the deviation from the local neighborhood
+                double localDeviationThreshold = 0.2; // Adjust as needed
+                double localDeviation = CalculateLocalDeviation(sample, x, y, ref buf); // Implement this method
+
+                // If the deviation from the local neighborhood is high, consider it a firefly
+                return localDeviation > localDeviationThreshold;
+            }
+            else
+            {
+                // If the brightness is not high enough, it's not a firefly
+                return false;
+            }
+        }
+
+        private double CalculateLocalDeviation(Colour sample, int x, int y, ref Buffer buf)
+        {
+            // Define the size of the local neighborhood (e.g., a 3x3 or 5x5 window)
+            int neighborhoodSize = 3; // Adjust as needed
+
+            // Calculate the boundaries of the neighborhood
+            int startX = Math.Max(0, x - neighborhoodSize / 2);
+            int startY = Math.Max(0, y - neighborhoodSize / 2);
+            int endX = Math.Min(buf.W - 1, x + neighborhoodSize / 2);
+            int endY = Math.Min(buf.H - 1, y + neighborhoodSize / 2);
+
+            // Accumulate the color components of neighboring pixels
+            double totalR = 0, totalG = 0, totalB = 0;
+            int count = 0;
+
+            for (int j = startY; j <= endY; j++)
+            {
+                for (int i = startX; i <= endX; i++)
+                {
+                    Colour neighborColor = buf.Color(i, j);
+                    totalR += neighborColor.r;
+                    totalG += neighborColor.g;
+                    totalB += neighborColor.b;
+                    count++;
+                }
+            }
+
+            // Calculate the average color of the neighborhood
+            double avgR = totalR / count;
+            double avgG = totalG / count;
+            double avgB = totalB / count;
+
+            // Compute the deviation of the sample color from the average neighborhood color
+            double deviationR = Math.Abs(sample.r - avgR);
+            double deviationG = Math.Abs(sample.g - avgG);
+            double deviationB = Math.Abs(sample.b - avgB);
+
+            // Calculate the overall deviation (e.g., Euclidean distance)
+            double overallDeviation = Math.Sqrt(deviationR * deviationR + deviationG * deviationG + deviationB * deviationB);
+
+            return overallDeviation;
+        }
+
+
 
         public System.Drawing.Bitmap IterativeRender(String pathTemplate, int iter)
         {
