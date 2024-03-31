@@ -14,6 +14,8 @@ namespace PTSharpCore
         Vector Direction { get; }
         Colour Color { get; }
         double Intensity { get; }
+
+        public abstract Hit Intersect(Ray ray);
     }
 
     public struct PointLight : ILight
@@ -30,6 +32,11 @@ namespace PTSharpCore
             Color = color;
             Intensity = intensity;
         }
+
+        public Hit Intersect(Ray ray)
+        {
+            return null;
+        }
     }
 
     public struct DirectionalLight : ILight
@@ -45,6 +52,11 @@ namespace PTSharpCore
             Direction = direction;
             Color = color;
             Intensity = intensity;
+        }
+
+        public Hit Intersect(Ray ray)
+        {
+            return null;
         }
     }
 
@@ -64,6 +76,11 @@ namespace PTSharpCore
             Color = color;
             Intensity = intensity;
             Angle = angle;
+        }
+
+        public Hit Intersect(Ray ray)
+        {
+            return null;
         }
     }
 
@@ -85,6 +102,11 @@ namespace PTSharpCore
             Intensity = intensity;
             Width = width;
             Height = height;
+        }
+
+        public Hit Intersect(Ray ray)
+        {
+            return null;
         }
     }
 

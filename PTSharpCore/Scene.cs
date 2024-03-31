@@ -77,5 +77,24 @@ namespace PTSharpCore
             Interlocked.Increment(ref rays);
             return tree.Intersect(r);
         }
+
+        internal Hit[] IntersectAll(Ray ray)
+        {
+            var hits = new List<Hit>();
+            foreach (var light in MaterialLights)
+            {
+                var test = light.Intersect(ray);
+                if (test != null)
+                    hits.Add(test);
+            }
+            foreach (var light in Lights)
+            {
+                var test = light.Intersect(ray);
+                if (test != null)
+                    hits.Add(test);
+            }
+            hits.Sort((a, b) => a.T.CompareTo(b.T));
+            return hits.ToArray();
+        }
     }
 }

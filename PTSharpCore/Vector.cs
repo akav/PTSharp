@@ -500,13 +500,14 @@ namespace PTSharpCore
 
             if (sinT2 > 1)
             {
-                return new Vector();
+                return new Vector(); // Total internal reflection
             }
 
             var cosT = Math.Sqrt(1 - sinT2);
 
             return i.MulScalar(nr).Add(MulScalar(nr * cosI - cosT));
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double Reflectance(Vector i, double n1, double n2)

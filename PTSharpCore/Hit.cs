@@ -9,6 +9,7 @@ namespace PTSharpCore
     public class Hit
     {
         static double INF = 1e9F;
+
         internal IShape Shape;
         public double T; // Distance
         public HitInfo HitInfo;
@@ -17,7 +18,7 @@ namespace PTSharpCore
         {
             Shape = shape;
             T = t;
-            HitInfo = hinfo;
+            HitInfo = hinfo; //?? Info(new Ray(Vector.Zero, Vector.Zero)); // Ensure HitInfo is initialized
         }
 
         public Hit()

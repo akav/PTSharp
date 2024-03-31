@@ -23,6 +23,28 @@ namespace PTSharpCore
 
         public Ray Refract(Ray i, double n1, double n2) => new Ray(Origin, Direction.Refract(i.Direction, n1, n2));
 
+        public Vector Reflect(Vector normal)
+        {
+            return Direction.Sub(normal.MulScalar(2 * Direction.Dot(normal)));
+        }
+
+        public Vector Refract(Vector normal, double n1, double n2)
+        {
+            var nr = n1 / n2;
+            var cosI = -Direction.Dot(normal);
+            var sinT2 = nr * nr * (1 - cosI * cosI);
+
+            if (sinT2 > 1)
+            {
+                return new Vector();
+            }
+
+            var cosT = Math.Sqrt(1 - sinT2);
+
+            return Direction.MulScalar(nr).Add(normal.MulScalar(nr * cosI - cosT));
+        }
+
+
         public double Reflectance(Ray i, double n1, double n2) => Direction.Reflectance(i.Direction, n1, n2);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

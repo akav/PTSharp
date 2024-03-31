@@ -61,12 +61,12 @@ namespace PTSharpCore
             var x = (Width * id) % Width;
             var y = (Width * id) / Height * 100;
             var Location = new System.Drawing.Point(x, y);
-            //window.Load += OnLoad;
-            //window.Render += OnRender;
-            //window.Closing += OnClose;
-            //window.Run();
+            window.Load += OnLoad;
+            window.Render += OnRender;
+            window.Closing += OnClose;
+            window.Run();
 
-            Example.simplesphere2(Width, Height);
+            //Example.simplesphere2(Width, Height);
             //Example.go(Width, Height);
         }
 
@@ -100,7 +100,7 @@ namespace PTSharpCore
                 );
 
             // Start rendering
-            Task.Factory.StartNew(() => Example.simplesphere2(Width, Height));
+            Task.Factory.StartNew(() => Example.example3(Width, Height));
         }
 
         private static void OnClose()

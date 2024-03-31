@@ -251,41 +251,36 @@ namespace PTSharpCore
             var scene = new Scene();
             // create a material
             var material = Material.DiffuseMaterial(Colour.White);
-
-            // add the floor (a plane)
+            var transparent = Material.TransparentMaterial(Colour.HexColor(0x334D5C), 2, Util.Radians(20), 1);
+            var clear = Material.ClearMaterial(2, 0);
+            
             var plane = Plane.NewPlane(new Vector(0, 0, 0), new Vector(0, 0, 1), material);
             scene.Add(plane);
-
-            // add the ball (a sphere)
-            var sphere = Sphere.NewSphere(new Vector(0, 0, 1), 1.0F, material);
+            
+            var sphere = Sphere.NewSphere(new Vector(0, 0, 1), 1.0F, clear);
             scene.Add(sphere);
+           
+            var light = Sphere.NewSphere(new Vector(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
+            scene.Add(light);
 
-            // add a spherical light source
-            //var light = Sphere.NewSphere(new Vector(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
-            //scene.Add(light);
-
-            // add a point light source
-            //var lightPosition = new Vector(0.0, 0.0, 5.0F);
+            // Point Light
+            //var lightPosition = new Vector(0.0, 0.0, 4.0F);
             //var lightColor = Colour.White;
             //var lightIntensity = 8.0; // Intensity of the point light
             //var pointLight = new PointLight(lightPosition, lightColor, lightIntensity);
             //scene.Add(pointLight);
 
-            var lightPosition = new Vector(0.0, 0.0, 3.0F);
-            var lightDirection = new Vector(0.0, 0.0, 1.0); // Direction the spot light is pointing
-            var lightColor = Colour.White;
-            var lightIntensity = 8.0; // Intensity of the spot light
-            var lightAngle = Math.PI / 4.0; // 45-degree angle for the spot light (adjust as needed)
-            var spotLight = new SpotLight(lightPosition, lightDirection, lightColor, lightIntensity, lightAngle);
-            scene.Add(spotLight);
+            //var lightPosition = new Vector(0.0, 0.0, 3.0F);
+            //var lightDirection = new Vector(0.0, 0.0, 1.0); // Direction the spot light is pointing
+            //var lightColor = Colour.White;
+            //var lightIntensity = 8.0; // Intensity of the spot light
+            //var lightAngle = Math.PI / 4.0; // 45-degree angle for the spot light (adjust as needed)
+            //var spotLight = new SpotLight(lightPosition, lightDirection, lightColor, lightIntensity, lightAngle);
+            //scene.Add(spotLight);
 
-
-            // position the camera
             var camera = Camera.LookAt(new Vector(3, 3, 3), new Vector(0, 0, 0.5F), new Vector(0, 0, 1), 50);
-
-            // render the scene with progressive refinement
-            var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, false);
+            var sampler = DefaultSampler.NewSampler(16, 16);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("simplesphere2.png", 100);
         }
 
