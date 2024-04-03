@@ -1,20 +1,9 @@
-using glTFLoader.Schema;
-using ILGPU.Backends.PointerViews;
-using ILGPU.Runtime.Cuda;
-using MathNet.Numerics.Financial;
-using PTSharpCore;
-using Silk.NET.Vulkan;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -252,23 +241,23 @@ namespace PTSharpCore
             // create a material
             var material = Material.DiffuseMaterial(Colour.White);
             var transparent = Material.TransparentMaterial(Colour.HexColor(0x334D5C), 2, Util.Radians(20), 1);
-            var clear = Material.ClearMaterial(2, 0);
-            
+            var clear = Material.ClearMaterial(0.9, 0.01); // Refractive index, Reflectivity 
+
             var plane = Plane.NewPlane(new Vector(0, 0, 0), new Vector(0, 0, 1), material);
             scene.Add(plane);
             
             var sphere = Sphere.NewSphere(new Vector(0, 0, 1), 1.0F, clear);
             scene.Add(sphere);
            
-            var light = Sphere.NewSphere(new Vector(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
-            scene.Add(light);
+            //var light = Sphere.NewSphere(new Vector(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
+            //scene.Add(light);
 
             // Point Light
-            //var lightPosition = new Vector(0.0, 0.0, 4.0F);
-            //var lightColor = Colour.White;
-            //var lightIntensity = 8.0; // Intensity of the point light
-            //var pointLight = new PointLight(lightPosition, lightColor, lightIntensity);
-            //scene.Add(pointLight);
+            var lightPosition = new Vector(0.0, 0.0, 4.0F);
+            var lightColor = Colour.White;
+            var lightIntensity = 100.0; // Intensity of the point light
+            var pointLight = new PointLight(lightPosition, lightColor, lightIntensity);
+            scene.Add(pointLight);
 
             //var lightPosition = new Vector(0.0, 0.0, 3.0F);
             //var lightDirection = new Vector(0.0, 0.0, 1.0); // Direction the spot light is pointing

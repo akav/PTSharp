@@ -1,5 +1,6 @@
 using ILGPU.Algorithms.Random;
 using Microsoft.VisualBasic;
+using Silk.NET.Input;
 using System;
 using System.Numerics;
 using System.Threading;
@@ -42,7 +43,7 @@ namespace PTSharpCore
 
         public Colour Sample(Scene scene, Ray ray, Random rand)
         {
-            return SampleInternal(scene, ray, true, FirstHitSamples, 0, rand);
+            return SampleInternal(scene, ray, true, FirstHitSamples, 10, rand);
         }
         
         public void SetSpecularMode(SpecularMode s)
@@ -130,7 +131,6 @@ namespace PTSharpCore
 
             return result.DivScalar(n * n);
         }
-
 
         /*
         Colour sample(Scene scene, Ray ray, bool emission, int samples, int depth, Random rand, bool russianRoulette = false, double minReflectance = 0.05)
@@ -291,7 +291,7 @@ namespace PTSharpCore
                 return scene.Texture.Sample(u, v);
             }
             return scene.Color;
-        }        
+        }
 
         Colour SampleLights(Scene scene, Ray n, Random rand, int depth)
         {
@@ -313,7 +313,7 @@ namespace PTSharpCore
                     case LightMode.LightModePoint:
                         var directionToLight = ((PointLight)light).Position.Sub(n.Origin);
                         var rayToLight = new Ray(n.Origin, directionToLight.Normalize());
-                        result = result.Add(SamplePointLight(scene, rayToLight, (PointLight)light, depth));
+                        result = result.Add(SamplePointLight(scene, n, (PointLight)light, depth, rand));
                         break;
                     case LightMode.LightModeDirectional:
                         result = result.Add(SampleDirectionalLight(scene, n, (DirectionalLight)light, depth));
@@ -328,7 +328,8 @@ namespace PTSharpCore
             }
 
             return result.DivScalar(nMaterialLights + nLights);
-        }        
+        }
+
         private Colour SampleAreaLight(Scene scene, Ray n, AreaLight areaLight, int depth)
         {
             throw new NotImplementedException();
@@ -407,20 +408,200 @@ namespace PTSharpCore
             var occlusionHit = scene.Intersect(ray);
             return occlusionHit.Ok && occlusionHit.T * occlusionHit.T < maxDistance;
         }
-
-        private Colour SamplePointLight(Scene scene, Ray n, PointLight light, int depth)
+        
+        Colour SamplePointLight(Scene scene, Ray n, PointLight pointLight, int depth, Random rand)
         {
-            if (depth > MaxBounces)
+            // Direction from the intersection point to the light source
+            Vector directionToLight = pointLight.Position - n.Origin;
+
+            // Distance squared from the intersection point to the light source
+            double distanceSquared = directionToLight.LengthSquared();
+
+            // Normalize the direction
+            Vector direction = directionToLight.Normalize();
+
+            // Create a ray towards the light source
+            Ray rayToLight = new Ray(n.Origin, direction);
+
+            // Check for occlusion by other objects between the intersection point and the light source
+            var lightIntersection = scene.Intersect(rayToLight);
+            if (lightIntersection.Ok && lightIntersection.T * lightIntersection.T < distanceSquared)
+            {
+                // If there's an intersection closer than the light source, the point is shadowed
                 return Colour.Black;
+            }
 
-            var directionToLight = light.Position.Sub(n.Origin);
-            var distance = directionToLight.Length();
-            directionToLight = directionToLight.Normalize();
+            // Check for intersection with objects in the scene
+            var hit = scene.Intersect(n);
 
-            var shadow = SoftShadows ? SampleShadow(scene, new Ray(n.Origin, directionToLight), distance) : 1;
+            // If there's no intersection, return the color of the point light divided by the distance squared
+            if (!hit.Ok || hit.HitInfo == null)
+            {
+                return pointLight.Color / distanceSquared;
+            }
 
-            var attenuation = Math.Max(0, Vector.Dot(n.Direction, directionToLight)) / (distance * distance);
-            return light.Color.MulScalar(attenuation * shadow);
+            // Retrieve material properties of the intersected object
+            Material intersectionMaterial = Material.MaterialAt(hit.Shape, hit.HitInfo.Position);
+            double diffuse = Math.Max(0, direction.Dot(hit.HitInfo.Normal));
+
+            // Calculate shadow factor
+            double shadow = 1;
+            if (SoftShadows)
+            {
+                double shadowDistance = Math.Sqrt(distanceSquared);
+                shadow = SampleShadow(scene, new Ray(hit.HitInfo.Position, direction), shadowDistance);
+            }
+
+            // Accumulate color contributions from all light sources
+            Colour totalColor = Colour.Black;
+            foreach (var light in scene.Lights)
+            {
+                // Direction from the intersection point to the current light source
+                Vector lightDirection = light.Position - hit.HitInfo.Position;
+
+                // Distance squared from the intersection point to the current light source
+                double lightDistanceSquared = lightDirection.LengthSquared();
+
+                // Normalize the light direction
+                lightDirection = lightDirection.Normalize();
+
+                // Create a ray towards the current light source
+                Ray rayToLightSource = new Ray(hit.HitInfo.Position, lightDirection);
+
+                // Check for occlusion by other objects between the intersection point and the current light source
+                var lightHit = scene.Intersect(rayToLightSource);
+                if (!lightHit.Ok || lightHit.T * lightHit.T >= lightDistanceSquared)
+                {
+                    // No intersection means the current light source is visible from the intersection point
+                    // Calculate the light intensity at the intersection point based on the light's distance and intensity
+                    double lightIntensity = light.Intensity / lightDistanceSquared;
+
+                    // Compute the diffuse shading for the current light source
+                    double lightDiffuse = Math.Max(0, lightDirection.Dot(hit.HitInfo.Normal));
+
+                    // Combine the light's color, intensity, and diffuse shading
+                    totalColor += light.Color * lightIntensity * lightDiffuse;
+                }
+            }
+
+            // Separate accumulation for transparent materials
+            Colour transparentColor = Colour.Black;
+            if (intersectionMaterial.Transparent && depth > 0)
+            {
+                // Compute Fresnel reflectance
+                double cosTheta = -direction.Dot(hit.HitInfo.Normal);
+                double n1 = 1.0; // Air
+                double n2 = intersectionMaterial.Index; // Refractive index of the material
+                double reflectance = FresnelReflectance(cosTheta, n1, n2);
+
+                // Trace the refracted ray further into the scene
+                var refractedRay = n.Refract(direction, n1, n2);
+                var refractedHit = scene.Intersect(new Ray(hit.HitInfo.Position, refractedRay));
+                if (refractedHit.Ok && refractedHit.HitInfo != null)
+                {
+                    // Recalculate the refracted ray direction based on the hit point and surface normal
+                    var newRayDirection = refractedRay.Refract(refractedHit.HitInfo.Normal, n2, n1);
+                    // Recursively sample the refracted ray
+                    var refractedPointLightColor = SamplePointLight(scene, new Ray(refractedHit.HitInfo.Position, newRayDirection), pointLight, depth - 1, rand);
+                    // Accumulate the refracted color
+                    transparentColor += refractedPointLightColor * (1 - reflectance);
+                }
+
+                // Calculate transmitted light contribution
+                var transmittedDirection = n.Refract(direction, n1, n2);
+                var transmittedRay = new Ray(hit.HitInfo.Position, transmittedDirection);
+                var transmittedHit = scene.Intersect(transmittedRay);
+                if (!transmittedHit.Ok || transmittedHit.HitInfo == null)
+                {
+                    // If there's no intersection, the ray has passed through the object
+                    var transmittedLightColor = totalColor / distanceSquared; // Use totalColor from all light sources
+                                                                              // Accumulate the transmitted light color
+                    transparentColor += transmittedLightColor * (1 - reflectance);
+                }
+            }
+
+            // Apply shadow factor to the color contribution from opaque materials
+            Colour opaqueColor = Colour.Black;
+            if (!intersectionMaterial.Transparent || depth <= 0)
+            {
+                // Compute color contribution from opaque materials
+                double m = intersectionMaterial.Emittance * diffuse * shadow / distanceSquared;
+                opaqueColor = intersectionMaterial.Color * m;
+
+                // Handle reflection
+                if (intersectionMaterial.Reflectivity > 0 && depth > 0)
+                {
+                    var reflectedRay = n.Reflect(direction);
+                    var reflectedColor = SamplePointLight(scene, new Ray(n.Origin, reflectedRay), pointLight, depth - 1, rand);
+                    opaqueColor = opaqueColor * (1 - intersectionMaterial.Reflectivity) + reflectedColor * intersectionMaterial.Reflectivity;
+                }
+            }
+
+            // Combine color contributions from transparent and opaque materials
+            return transparentColor + opaqueColor;
+        }
+
+        // Function to compute Fresnel reflectance
+        double FresnelReflectance(double cosTheta, double n1, double n2)
+        {
+            double rParallel = ((n1 * cosTheta) - (n2 * Math.Sqrt(1 - ((n1 * n1) * (1 - (cosTheta * cosTheta)))))) /
+                               ((n1 * cosTheta) + (n2 * Math.Sqrt(1 - ((n1 * n1) * (1 - (cosTheta * cosTheta))))));
+            double rPerpendicular = ((n2 * cosTheta) - (n1 * Math.Sqrt(1 - ((n2 * n2) * (1 - (cosTheta * cosTheta)))))) /
+                                    ((n2 * cosTheta) + (n1 * Math.Sqrt(1 - ((n2 * n2) * (1 - (cosTheta * cosTheta))))));
+
+            return (rParallel * rParallel + rPerpendicular * rPerpendicular) / 2.0;
+        }
+
+        double ComputeFresnel(Material material, Vector incident, Vector normal)
+        {
+            double cosi = Math.Abs(incident.Dot(normal));
+            double ni = 1.0; // Air's index of refraction
+            double nt = material.Index; // Material's index of refraction
+
+            double r0 = Math.Pow((ni - nt) / (ni + nt), 2);
+            double fresnel = r0 + (1 - r0) * Math.Pow(1 - cosi, 5);
+
+            return fresnel;
+        }
+
+        // Function to compute Fresnel reflectance using the Schlick approximation
+        double SchlickFresnel(Vector normal, Vector incident, double index)
+        {
+            var cosTheta = Math.Abs(normal.Dot(incident));
+            var r0 = (1 - index) / (1 + index);
+            r0 = r0 * r0;
+            return r0 + (1 - r0) * Math.Pow(1 - cosTheta, 5);
+        }
+
+        // Function to compute the refracted ray direction using Snell's law
+        Vector RefractRay(Vector incident, Vector normal, double index)
+        {
+            var cosI = -normal.Dot(incident);
+            var sinT2 = index * index * (1.0 - cosI * cosI);
+
+            if (sinT2 > 1.0)
+            {
+                // Total internal reflection, return the reflected ray direction
+                return ReflectedDirection(incident, normal);
+            }
+
+            var cosT = Math.Sqrt(1.0 - sinT2);
+            return incident.MulScalar(index).Add(normal.MulScalar(index * cosI - cosT)).Normalize();
+        }
+
+        // Function to compute the reflected ray direction
+        Vector ReflectedDirection(Vector incident, Vector normal)
+        {
+            return incident.Sub(normal.MulScalar(2 * incident.Dot(normal))).Normalize();
+        }
+
+        bool IsShadowed(Scene scene, Ray rayToLight, Ray originalRay, PointLight pointLight)
+        {
+            // Check if the ray intersects with any object in the scene
+            var hit = scene.Intersect(rayToLight);
+
+            // If the ray hits any object before reaching the light source, the intersection point is shadowed
+            return hit.Ok && hit.T < originalRay.Direction.Length();
         }
 
         double SampleShadow(Scene scene, Ray ray, double distance)
@@ -445,64 +626,6 @@ namespace PTSharpCore
             var attenuation = Math.Max(0, Vector.Dot(n.Direction, light.Direction.Negate()));
             return light.Color.MulScalar(attenuation * shadow);
         }
-
-
-        //Colour samplePointLight(Scene scene, Ray n, PointLight light)
-        //{
-        //    var directionToLight = light.Position.Sub(n.Origin);
-        //    var distanceSquared = directionToLight.LengthSquared();
-        //    var direction = directionToLight.Normalize();
-        //    var attenuation = 1.0 / distanceSquared;
-
-        //    var rayToLight = new Ray(n.Origin, direction);
-
-        //    // Check if the point light is occluded by any objects
-        //    var occlusionHit = scene.Intersect(rayToLight);
-        //    if (occlusionHit.Ok && occlusionHit.T * occlusionHit.T < distanceSquared)
-        //    {
-        //        // The point light is occluded, return black color
-        //        return Colour.Black;
-        //    }
-
-        //    // Calculate light intensity based on the inverse square law
-        //    var intensity = light.Intensity * attenuation;
-
-        //    // Intersect with the original ray to get hit information
-        //    var hit = scene.Intersect(n);
-
-        //    // Check if HitInfo is null or intersection failed
-        //    if (!hit.Ok || hit.HitInfo == null)
-        //    {
-        //        // If intersection failed, return light contribution based on intensity
-        //        return light.Color.MulScalar(intensity);
-        //    }
-
-        //    // Calculate diffuse term using the dot product between light direction and surface normal
-        //    var diffuse = direction.Dot(hit.HitInfo.Normal);
-        //    if (diffuse <= 0)
-        //        return Colour.Black;
-
-        //    // Calculate material at the intersection point on the surface
-        //    var intersectionMaterial = Material.MaterialAt(hit.Shape, hit.HitInfo.Position);
-
-        //    if (intersectionMaterial.Transparent)
-        //    {
-        //        // Compute the refracted ray direction based on Snell's law
-        //        var refractedDirection = direction.Refract(hit.HitInfo.Normal, 1.0, intersectionMaterial.Index);
-        //        var refractedRay = new Ray(hit.HitInfo.Position, refractedDirection);
-
-        //        // Recursively calculate color contribution using refracted ray
-        //        var transparency = samplePointLight(scene, refractedRay, light);
-
-        //        // Apply transparency and return the result
-        //        return transparency;
-        //    }
-
-        //    // Compute color contribution with diffuse term
-        //    var m = intersectionMaterial.Emittance * diffuse * intensity;
-        //    return intersectionMaterial.Color.MulScalar(m);
-        //}
-
 
         Colour SampleLight(Scene scene, Ray n, IShape light, Random rand, int depth)
         {
@@ -529,25 +652,7 @@ namespace PTSharpCore
             }
 
             var point = center;
-
-            /*
-            if (SoftShadows)
-            {
-                while (true)
-                {
-                    var x = Random.Shared.NextDouble() * 2 - 1;
-                    var y = Random.Shared.NextDouble() * 2 - 1;
-                    if (x * x + y * y <= 1)
-                    {
-                        var l = center.Sub(n.Origin).Normalize();
-                        var u = l.Cross(Vector.RandomUnitVector(rand)).Normalize();
-                        var v = l.Cross(u);
-                        point = center.Add(u.MulScalar(x * radius)).Add(v.MulScalar(y * radius));
-                        break;
-                    }
-                }
-            }*/
-
+                        
             if (SoftShadows)
             {
                 var l = center.Sub(n.Origin).Normalize();

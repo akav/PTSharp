@@ -212,10 +212,5 @@ namespace PTSharpCore
             if (N3.Equals(zero))
                 N3 = n;
         }
-
-        public Vector SamplePoint(Random rand)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

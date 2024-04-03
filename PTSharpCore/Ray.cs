@@ -28,6 +28,8 @@ namespace PTSharpCore
             return Direction.Sub(normal.MulScalar(2 * Direction.Dot(normal)));
         }
 
+        
+
         public Vector Refract(Vector normal, double n1, double n2)
         {
             var nr = n1 / n2;

@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 
 namespace PTSharpCore
 {
-
     class STL
     {
         // Binary STL reader is based on the article by Frank Niemeyer 

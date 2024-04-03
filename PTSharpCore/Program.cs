@@ -65,9 +65,6 @@ namespace PTSharpCore
             window.Render += OnRender;
             window.Closing += OnClose;
             window.Run();
-
-            //Example.simplesphere2(Width, Height);
-            //Example.go(Width, Height);
         }
 
         private static void KeyDown(IKeyboard arg1, Key arg2, int arg3)
@@ -100,7 +97,7 @@ namespace PTSharpCore
                 );
 
             // Start rendering
-            Task.Factory.StartNew(() => Example.example3(Width, Height));
+            Task.Factory.StartNew(() => Example.simplesphere2(Width, Height));
         }
 
         private static void OnClose()

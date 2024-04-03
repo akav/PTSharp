@@ -235,5 +235,40 @@ namespace PTSharpCore
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double MaxComponent() => Math.Max(Math.Max(r, g), b);
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Colour other)
+            {
+                return Equals(other);
+            }
+            return false;
+        }
+
+        public bool Equals(Colour other)
+        {
+            return r == other.r && g == other.g && b == other.b;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = r.GetHashCode();
+                hashCode = (hashCode * 397) ^ g.GetHashCode();
+                hashCode = (hashCode * 397) ^ b.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(Colour left, Colour right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Colour left, Colour right)
+        {
+            return !(left == right);
+        }
     }
 }
