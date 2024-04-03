@@ -202,7 +202,6 @@ namespace PTSharpCore
             }
             else
             {
-                /*
                 int tile_size = 256;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
                 int num_tiles_y = (h + tile_size - 1) / tile_size;
@@ -211,7 +210,7 @@ namespace PTSharpCore
                 var colorSettingScheduler = new WorkStealingScheduler(Environment.ProcessorCount);
 
                 // Define the granularity of work distribution (e.g., sub-tiles)
-                int sub_tile_size = 8;
+                int sub_tile_size = 32;
 
                 for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
                 {
@@ -274,370 +273,8 @@ namespace PTSharpCore
 
                 // Dispose the schedulers after rendering completes
                 renderingScheduler.Dispose();
-                colorSettingScheduler.Dispose();*/
-
-                int tile_size = 256;
-                int num_tiles_x = (w + tile_size - 1) / tile_size;
-                int num_tiles_y = (h + tile_size - 1) / tile_size;
-
-                var scheduler = new WorkStealingScheduler(Environment.ProcessorCount);
-
-                // Define the granularity of work distribution (e.g., sub-tiles)
-                int sub_tile_size = 32;
-
-                for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
-                {
-                    int tile_x = tile_index % num_tiles_x;
-                    int tile_y = tile_index / num_tiles_x;
-                    int x_start = tile_x * tile_size;
-                    int y_start = tile_y * tile_size;
-                    int x_end = Math.Min(x_start + tile_size, w);
-                    int y_end = Math.Min(y_start + tile_size, h);
-
-                    // Divide each tile into smaller sub-tiles for finer-grained parallelism
-                    for (int sub_tile_y = 0; sub_tile_y < tile_size; sub_tile_y += sub_tile_size)
-                    {
-                        for (int sub_tile_x = 0; sub_tile_x < tile_size; sub_tile_x += sub_tile_size)
-                        {
-                            int sub_x_start = x_start + sub_tile_x;
-                            int sub_y_start = y_start + sub_tile_y;
-                            int sub_x_end = Math.Min(sub_x_start + sub_tile_size, x_end);
-                            int sub_y_end = Math.Min(sub_y_start + sub_tile_size, y_end);
-
-                            // Schedule rendering of each sub-tile as a separate task
-                            Task.Factory.StartNew(() =>
-                            {
-                                // Rendering logic for the sub-tile
-                                for (int y = sub_y_start; y < sub_y_end; y++)
-                                {
-                                    for (int x = sub_x_start; x < sub_x_end; x++)
-                                    {
-                                        // Render the sub-tile at the current coordinates, using the current resolution
-                                        Colour c = new Colour(0, 0, 0);
-
-                                        // Perform Monte Carlo integration by sampling random offsets within the pixel
-                                        for (int s = 0; s < spp; s++)
-                                        {
-                                            // Generate random offsets within the pixel
-                                            double u = (x + rand.NextDouble()) / w;
-                                            double v = (y + rand.NextDouble()) / h;
-
-                                            // Cast ray into the scene using the random offsets
-                                            Ray ray = camera.CastRay(x, y, w, h, u, v, rand);
-
-                                            // Evaluate scene illumination at the intersection point
-                                            c += sampler.Sample(scene, ray, rand);
-                                        }
-
-                                        // Average the color over the number of samples
-                                        c /= spp;
-
-                                        // Update pixel buffer with the averaged color
-                                        buf.AddSample(x, y, c);
-
-                                        // Update bitmap with the averaged color
-                                        var offset = (y * w + x) * 4; // BGR
-                                        Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
-                                        Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
-                                        Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
-                                    }
-                                }
-                            }, CancellationToken.None, TaskCreationOptions.None, scheduler);
-                        }
-                    }
-                }
-
-                // Dispose the scheduler after rendering completes
-                scheduler.Dispose();
-
-
-
-                /*int tile_size = 256;
-                int num_tiles_x = (w + tile_size - 1) / tile_size;
-                int num_tiles_y = (h + tile_size - 1) / tile_size;
-
-                var scheduler = new WorkStealingScheduler(Environment.ProcessorCount);
-
-                // Define the granularity of work distribution (e.g., sub-tiles)
-                int sub_tile_size = 32;
-
-                for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
-                {
-                    int tile_x = tile_index % num_tiles_x;
-                    int tile_y = tile_index / num_tiles_x;
-                    int x_start = tile_x * tile_size;
-                    int y_start = tile_y * tile_size;
-                    int x_end = Math.Min(x_start + tile_size, w);
-                    int y_end = Math.Min(y_start + tile_size, h);
-
-                    // Divide each tile into smaller sub-tiles for finer-grained parallelism
-                    for (int sub_tile_y = 0; sub_tile_y < tile_size; sub_tile_y += sub_tile_size)
-                    {
-                        for (int sub_tile_x = 0; sub_tile_x < tile_size; sub_tile_x += sub_tile_size)
-                        {
-                            int sub_x_start = x_start + sub_tile_x;
-                            int sub_y_start = y_start + sub_tile_y;
-                            int sub_x_end = Math.Min(sub_x_start + sub_tile_size, x_end);
-                            int sub_y_end = Math.Min(sub_y_start + sub_tile_size, y_end);
-
-                            // Schedule rendering of each sub-tile as a separate task
-                            Task.Factory.StartNew(() =>
-                            {
-                                // Rendering logic for the sub-tile
-                                for (int y = sub_y_start; y < sub_y_end; y++)
-                                {
-                                    for (int x = sub_x_start; x < sub_x_end; x++)
-                                    {
-                                        // Render the sub-tile at the current coordinates, using the current resolution
-                                        Colour c = new Colour(0, 0, 0);
-                                        // Generate random offsets within the pixel
-                                        double u = (x + rand.NextDouble()) / w;
-                                        double v = (y + rand.NextDouble()) / h;
-                                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, u, v, rand), rand);
-
-                                        // Average the color over the number of samples
-                                        c /= spp;
-                                        buf.AddSample(x, y, c);
-
-                                        var offset = (y * w + x) * 4; // BGR
-                                        Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
-                                        Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
-                                        Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
-                                    }
-                                }
-                            }, CancellationToken.None, TaskCreationOptions.None, scheduler);
-                        }
-                    }
-                }
-
-                // Dispose the scheduler after rendering completes
-                scheduler.Dispose();*/
-
-                /*
-                int tile_size = 64;
-                int num_tiles_x = (w + tile_size - 1) / tile_size;
-                int num_tiles_y = (h + tile_size - 1) / tile_size;
-
-                var scheduler = new WorkStealingScheduler(Environment.ProcessorCount);
-
-                for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
-                {
-                    int tile_x = tile_index % num_tiles_x;
-                    int tile_y = tile_index / num_tiles_x;
-                    int x_start = tile_x * tile_size;
-                    int y_start = tile_y * tile_size;
-                    int x_end = Math.Min(x_start + tile_size, w);
-                    int y_end = Math.Min(y_start + tile_size, h);
-
-                    Task.Factory.StartNew(() =>
-                    {
-                        // Calculate the number of sub-tiles in each dimension based on the available processors
-                        int sub_tile_size_x = (x_end - x_start + Environment.ProcessorCount - 1) / Environment.ProcessorCount;
-                        int sub_tile_size_y = (y_end - y_start + Environment.ProcessorCount - 1) / Environment.ProcessorCount;
-
-                        for (int sub_tile_y = 0; sub_tile_y < Environment.ProcessorCount; sub_tile_y++)
-                        {
-                            for (int sub_tile_x = 0; sub_tile_x < Environment.ProcessorCount; sub_tile_x++)
-                            {
-                                int sub_x_start = x_start + sub_tile_x * sub_tile_size_x;
-                                int sub_y_start = y_start + sub_tile_y * sub_tile_size_y;
-                                int sub_x_end = Math.Min(sub_x_start + sub_tile_size_x, x_end);
-                                int sub_y_end = Math.Min(sub_y_start + sub_tile_size_y, y_end);
-
-                                for (int y = sub_y_start; y < sub_y_end; y++)
-                                {
-                                    for (int x = sub_x_start; x < sub_x_end; x++)
-                                    {
-                                        // Render the sub-tile at the current coordinates, using the current resolution
-                                        Colour c = new Colour(0, 0, 0);
-                                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
-
-                                        // Average the color over the number of samples
-                                        c /= spp;
-                                        buf.AddSample(x, y, c);
-
-                                        var offset = (y * w + x) * 4; // BGR
-                                        Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
-                                        Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
-                                        Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
-                                    }
-                                }
-                            }
-                        }
-                    }, CancellationToken.None, TaskCreationOptions.None, scheduler);
-                }
-
-                // Dispose the scheduler after rendering completes
-                scheduler.Dispose();*/
-
-                /*
-                int tile_size = 64;
-                int num_tiles_x = (w + tile_size - 1) / tile_size;
-                int num_tiles_y = (h + tile_size - 1) / tile_size;
-                var partitioner = Partitioner.Create(0, num_tiles_x * num_tiles_y);
-
-                Parallel.ForEach(partitioner, (range, state) =>
-                {
-                    for (int tile_index = range.Item1; tile_index < range.Item2; tile_index++)
-                    {
-                        int tile_x = tile_index % num_tiles_x;
-                        int tile_y = tile_index / num_tiles_x;
-                        int x_start = tile_x * tile_size;
-                        int y_start = tile_y * tile_size;
-                        int x_end = Math.Min(x_start + tile_size, w);
-                        int y_end = Math.Min(y_start + tile_size, h);
-
-                        // Calculate the number of sub-tiles in each dimension based on the available processors
-                        int sub_tile_size_x = (x_end - x_start + Environment.ProcessorCount - 1) / Environment.ProcessorCount;
-                        int sub_tile_size_y = (y_end - y_start + Environment.ProcessorCount - 1) / Environment.ProcessorCount;
-
-                        for (int sub_tile_y = 0; sub_tile_y < Environment.ProcessorCount; sub_tile_y++)
-                        {
-                            for (int sub_tile_x = 0; sub_tile_x < Environment.ProcessorCount; sub_tile_x++)
-                            {
-                                int sub_x_start = x_start + sub_tile_x * sub_tile_size_x;
-                                int sub_y_start = y_start + sub_tile_y * sub_tile_size_y;
-                                int sub_x_end = Math.Min(sub_x_start + sub_tile_size_x, x_end);
-                                int sub_y_end = Math.Min(sub_y_start + sub_tile_size_y, y_end);
-
-                                for (int y = sub_y_start; y < sub_y_end; y++)
-                                {
-                                    for (int x = sub_x_start; x < sub_x_end; x++)
-                                    {
-                                        // Render the sub-tile at the current coordinates, using the current resolution
-                                        Colour c = new Colour(0, 0, 0);
-                                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
-
-                                        // Average the color over the number of samples
-                                        c /= spp;
-                                        buf.AddSample(x, y, c);
-
-                                        var offset = (y * w + x) * 4; // BGR
-                                        Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
-                                        Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
-                                        Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });*/
-
-                /*
-                int tile_size = 64;
-                int num_tiles_x = (w + tile_size - 1) / tile_size;
-                int num_tiles_y = (h + tile_size - 1) / tile_size;
-
-                var partitioner = Partitioner.Create(0, num_tiles_x * num_tiles_y);
-
-                Parallel.ForEach(partitioner, (range, state) =>
-                {
-                    for (int tile_index = range.Item1; tile_index < range.Item2; tile_index++)
-                    {
-                        int tile_x = tile_index % num_tiles_x;
-                        int tile_y = tile_index / num_tiles_x;
-                        int x_start = tile_x * tile_size;
-                        int y_start = tile_y * tile_size;
-                        int x_end = Math.Min(x_start + tile_size, w);
-                        int y_end = Math.Min(y_start + tile_size, h);
-
-                        byte[] localBuffer = new byte[(x_end - x_start) * (y_end - y_start) * 4]; // BGR
-
-                        for (int y = y_start; y < y_end; y++)
-                        {
-                            for (int x = x_start; x < x_end; x++)
-                            {
-                                Colour accumulatedColor = new Colour(0, 0, 0);
-
-                                // Accumulate color values from multiple samples
-                                for (int s = 0; s < spp; s++)
-                                {
-                                    // Jittered sampling within each pixel
-                                    Colour c = sampler.Sample(scene, camera.CastRay(x, y, w, h, (x + rand.NextDouble()) / w, (y + rand.NextDouble()) / h, rand), rand);
-
-                                    // Sum the color values
-                                    accumulatedColor += c;
-                                }
-
-                                // Average the accumulated color over the number of samples
-                                accumulatedColor /= spp;
-
-                                var offset = ((y - y_start) * (x_end - x_start) + (x - x_start)) * 4; // BGR
-                                localBuffer[offset + 0] = (byte)(256 * Math.Clamp(accumulatedColor.Pow(1.0 / 2.2).r, 0.0, 0.999));
-                                localBuffer[offset + 1] = (byte)(256 * Math.Clamp(accumulatedColor.Pow(1.0 / 2.2).g, 0.0, 0.999));
-                                localBuffer[offset + 2] = (byte)(256 * Math.Clamp(accumulatedColor.Pow(1.0 / 2.2).b, 0.0, 0.999));
-                            }
-                        }
-
-                        // Copy the local buffer to the corresponding region in the bitmap
-                        for (int y = y_start; y < y_end; y++)
-                        {
-                            for (int x = x_start; x < x_end; x++)
-                            {
-                                var offset = (y * w + x) * 4; // BGR
-                                var localOffset = ((y - y_start) * (x_end - x_start) + (x - x_start)) * 4; // BGR
-
-                                Program.bitmap[offset + 0] = localBuffer[localOffset + 0];
-                                Program.bitmap[offset + 1] = localBuffer[localOffset + 1];
-                                Program.bitmap[offset + 2] = localBuffer[localOffset + 2];
-                            }
-                        }
-
-                        // Here you can update the display with the current state of the bitmap
-                    }
-                });*/
-
-                /*
-                int tile_size = 64;
-                int num_tiles_x = (w + tile_size - 1) / tile_size;
-                int num_tiles_y = (h + tile_size - 1) / tile_size;
-                var partitioner = Partitioner.Create(0, num_tiles_x * num_tiles_y);
-
-                Parallel.ForEach(partitioner, (range, state) =>
-                {
-                    for (int tile_index = range.Item1; tile_index < range.Item2; tile_index++)
-                    {
-                        int tile_x = tile_index % num_tiles_x;
-                        int tile_y = tile_index / num_tiles_x;
-                        int x_start = tile_x * tile_size;
-                        int y_start = tile_y * tile_size;
-                        int x_end = Math.Min(x_start + tile_size, w);
-                        int y_end = Math.Min(y_start + tile_size, h);
-
-                        for (int y = y_start; y < y_end; y++)
-                        {
-                            for (int x = x_start; x < x_end; x++)
-                            {
-                                // Render the tile at the current coordinates, using the current resolution
-                                Colour c = new Colour(0, 0, 0);
-
-                                // Jittered sampling within each pixel
-                                c += sampler.Sample(scene, camera.CastRay(x, y, w, h, (x + rand.NextDouble()) / w, (y + rand.NextDouble()) / h, rand), rand);
-
-
-                                // Average the color over the number of samples
-                                c /= spp;
-                                buf.AddSample(x, y, c);
-
-                                var offset = (y * w + x) * 4; // BGR
-                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
-                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
-                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
-                            }
-                        }
-
-                        // Check if there are more tiles than processors and, if so, yield the thread to the scheduler
-                        if (num_tiles_x * num_tiles_y > Environment.ProcessorCount * 2)
-                        {
-                            if (tile_index % Environment.ProcessorCount == 0)
-                            {
-                                Thread.Yield();
-                            }
-                        }
-                    }
-                });*/
-
-            }
+                colorSettingScheduler.Dispose();
+            }                   
 
             // Main rendering loop
             if (AdaptiveSamples > 0)
@@ -684,21 +321,128 @@ namespace PTSharpCore
 
             if (FireflySamples > 0)
             {
-                _ = Parallel.For(0, w * h, po, (i, loopState) =>
-                  {
-                      int y = i / w, x = i % w;
-                      if (buf.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
-                      {
-                          for (int j = 0; j < FireflySamples; j++)
-                          {
-                              buf.AddSample(x, y, sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), Random.Shared), Random.Shared));
-                          }
-                      }
-                  });
+                // Concurrent dictionary to track skipped pixels
+                ConcurrentDictionary<(int, int), bool> skippedPixels = new ConcurrentDictionary<(int, int), bool>();
+
+                Parallel.For(0, w * h, po, (i, loopState) =>
+                {
+                    int y = i / w, x = i % w;
+                    if (buf.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)
+                    {
+                        if (!skippedPixels.ContainsKey((x, y))) // Check if the pixel was previously marked as a firefly
+                        {
+                            for (int j = 0; j < FireflySamples; j++)
+                            {
+                                var sample = sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+
+                                // Check if the sample is a firefly
+                                if (IsFirefly(sample, x, y, ref buf))
+                                {
+                                    // If it's a firefly, mark the pixel and break the loop
+                                    skippedPixels.TryAdd((x, y), true);
+                                    break;
+                                }
+
+                                buf.AddSample(x, y, sample);
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                            }
+                        }
+                        else
+                        {
+                            // Pixel was marked as a firefly in a previous run, recompute samples
+                            for (int j = 0; j < FireflySamples; j++)
+                            {
+                                var sample = sampler.Sample(scene, camera.CastRay(x, y, w, h, Random.Shared.NextDouble(), Random.Shared.NextDouble(), rand), rand);
+                                buf.AddSample(x, y, sample);
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                            }
+
+                            // Remove the pixel from skippedPixels dictionary as it's being recomputed
+                            bool _;
+                            skippedPixels.TryRemove((x, y), out _);
+                        }
+                    }
+                });
             }
+
             Console.WriteLine("time elapsed:" + sw.Elapsed);
             sw.Stop();
-        }        
+        }
+
+        public bool IsFirefly(Colour sample, int x, int y, ref Buffer buf)
+        {
+            // Define your criteria for identifying fireflies
+            // Here's an example of a more sophisticated criterion:
+            // Fireflies are pixels with high brightness and high deviation from the local neighborhood
+
+            double brightnessThreshold = 0.9; // Adjust as needed
+            double brightness = sample.r * 0.2126 + sample.g * 0.7152 + sample.b * 0.0722; // Calculate brightness
+
+            // Check if the brightness exceeds the threshold
+            if (brightness > brightnessThreshold)
+            {
+                // Now, let's check the deviation from the local neighborhood
+                double localDeviationThreshold = 0.2; // Adjust as needed
+                double localDeviation = CalculateLocalDeviation(sample, x, y, ref buf); // Implement this method
+
+                // If the deviation from the local neighborhood is high, consider it a firefly
+                return localDeviation > localDeviationThreshold;
+            }
+            else
+            {
+                // If the brightness is not high enough, it's not a firefly
+                return false;
+            }
+        }
+
+        private double CalculateLocalDeviation(Colour sample, int x, int y, ref Buffer buf)
+        {
+            // Define the size of the local neighborhood (e.g., a 3x3 or 5x5 window)
+            int neighborhoodSize = 3; // Adjust as needed
+
+            // Calculate the boundaries of the neighborhood
+            int startX = Math.Max(0, x - neighborhoodSize / 2);
+            int startY = Math.Max(0, y - neighborhoodSize / 2);
+            int endX = Math.Min(buf.W - 1, x + neighborhoodSize / 2);
+            int endY = Math.Min(buf.H - 1, y + neighborhoodSize / 2);
+
+            // Accumulate the color components of neighboring pixels
+            double totalR = 0, totalG = 0, totalB = 0;
+            int count = 0;
+
+            for (int j = startY; j <= endY; j++)
+            {
+                for (int i = startX; i <= endX; i++)
+                {
+                    Colour neighborColor = buf.Color(i, j);
+                    totalR += neighborColor.r;
+                    totalG += neighborColor.g;
+                    totalB += neighborColor.b;
+                    count++;
+                }
+            }
+
+            // Calculate the average color of the neighborhood
+            double avgR = totalR / count;
+            double avgG = totalG / count;
+            double avgB = totalB / count;
+
+            // Compute the deviation of the sample color from the average neighborhood color
+            double deviationR = Math.Abs(sample.r - avgR);
+            double deviationG = Math.Abs(sample.g - avgG);
+            double deviationB = Math.Abs(sample.b - avgB);
+
+            // Calculate the overall deviation (e.g., Euclidean distance)
+            double overallDeviation = Math.Sqrt(deviationR * deviationR + deviationG * deviationG + deviationB * deviationB);
+
+            return overallDeviation;
+        }
 
         public System.Drawing.Bitmap IterativeRender(String pathTemplate, int iter)
         {
