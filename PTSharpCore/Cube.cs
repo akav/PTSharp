@@ -1,10 +1,12 @@
 using glTFLoader.Schema;
 using System;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-    public class Cube : IShape
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Cube : IShape
     {
         internal Vector Min;
         internal Vector Max;
