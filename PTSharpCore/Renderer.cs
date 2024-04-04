@@ -4,8 +4,6 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using Silk.NET.Vulkan;
 
 namespace PTSharpCore
 {
@@ -107,11 +105,6 @@ namespace PTSharpCore
                                 Colour c = new Colour(0, 0, 0);
                                 c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
                                 buf.AddSample(x, y, c);
-                                // Set the pixel color
-                                var offset = (y * w + x) * 4; // BGR
-                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
-                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
-                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
                             }
 
                         }
@@ -208,8 +201,8 @@ namespace PTSharpCore
                 });
             }
             else
-            {                
-                int tile_size = 256;
+            {
+                int tile_size = 128;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
                 int num_tiles_y = (h + tile_size - 1) / tile_size;
 
@@ -217,7 +210,7 @@ namespace PTSharpCore
                 var colorSettingScheduler = new WorkStealingScheduler(Environment.ProcessorCount);
 
                 // Define the granularity of work distribution (e.g., sub-tiles)
-                int sub_tile_size = 32;
+                int sub_tile_size = 16;
 
                 for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
                 {
@@ -325,7 +318,6 @@ namespace PTSharpCore
                     }
                 });
             }
-
 
             if (FireflySamples > 0)
             {
@@ -451,7 +443,6 @@ namespace PTSharpCore
 
             return overallDeviation;
         }
-
 
         public System.Drawing.Bitmap IterativeRender(String pathTemplate, int iter)
         {

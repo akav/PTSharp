@@ -37,7 +37,7 @@ namespace PTSharpCore
         Hit IShape.Intersect(Ray r)
         {
             (var n, var f) = (Min.Sub(r.Origin).Div(r.Direction), Max.Sub(r.Origin).Div(r.Direction));
-            (n,f) = (n.Min(f), n.Max(f));
+            (n, f) = (n.Min(f), n.Max(f));
             (var t0, var t1) = (Math.Max(Math.Max(n.X, n.Y), n.Z), Math.Min(Math.Min(f.X, f.Y), f.Z));
 
             if (t0 > 0 && t0 < t1)
@@ -55,7 +55,7 @@ namespace PTSharpCore
         }
 
         Material IShape.MaterialAt(Vector p) => Material;
-        
+
         Vector IShape.NormalAt(Vector p)
         {
             return p switch
@@ -99,6 +99,6 @@ namespace PTSharpCore
                 Triangle.NewTriangle(v100, v111, v101, z, z, z, m)
             };
             return Mesh.NewMesh(triangles);
-        }       
+        }
     }
 }

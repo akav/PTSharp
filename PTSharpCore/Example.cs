@@ -229,7 +229,7 @@ namespace PTSharpCore
             }
             scene.Add(Cube.NewCube(new Vector(-5, 10, -5), new Vector(5, 11, 5), Material.LightMaterial(Colour.White, 5)));
             var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
-            var sampler = DefaultSampler.NewSampler(4, 4);
+            var sampler = DefaultSampler.NewSampler(4, 10);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.FireflySamples = 128;
             renderer.IterativeRender("example3.png", 1000);

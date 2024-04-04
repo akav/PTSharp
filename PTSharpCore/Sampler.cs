@@ -43,7 +43,7 @@ namespace PTSharpCore
 
         public Colour Sample(Scene scene, Ray ray, Random rand)
         {
-            return SampleInternal(scene, ray, true, FirstHitSamples, 10, rand);
+            return SampleInternal(scene, ray, true, FirstHitSamples, 0, rand);
         }
         
         public void SetSpecularMode(SpecularMode s)

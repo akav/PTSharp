@@ -16,34 +16,62 @@ namespace PTSharpCore
         public Colour BackgroundColor;
 
         public IShape[] Shapes;
-        public IShape[] MaterialLights;
         public ILight[] Lights;
+        public IShape[] MaterialLights;
 
-        public Scene() 
+
+        public Scene()
         {
             Shapes = Array.Empty<IShape>();
+            Lights = Array.Empty<ILight>();
             MaterialLights = Array.Empty<IShape>();
-            Lights = Array.Empty<ILight>(); 
             Color = new Colour();
             BackgroundColor = new Colour(0.1, 0.1, 0.1);
         }
 
-        internal void Add(IShape shape)
+        internal void Add(IShape p)
         {
             Array.Resize(ref Shapes, Shapes.GetLength(0) + 1);
-            Shapes[Shapes.GetLength(0) - 1] = shape;
-            if (shape.MaterialAt(new Vector()).Emittance > 0)
+            Shapes[Shapes.GetLength(0) - 1] = p;
+            if (p.MaterialAt(new Vector()).Emittance > 0)
             {
                 Array.Resize(ref MaterialLights, MaterialLights.GetLength(0) + 1);
-                MaterialLights[MaterialLights.GetLength(0) - 1] = shape;
-            }            
+                MaterialLights[MaterialLights.GetLength(0) - 1] = p;
+            }
         }
 
-        internal void Add(ILight light)
+        internal void Add(ILight p)
         {
             Array.Resize(ref Lights, Lights.GetLength(0) + 1);
-            Lights[Lights.GetLength(0) - 1] = light;
-        }        
+            Lights[Lights.GetLength(0) - 1] = p;
+        }
+
+        internal void AddRange(IEnumerable<IShape> shapes)
+        {
+            // Resize the internal arrays to accommodate the new shapes
+            int newShapesCount = Shapes.Length + shapes.Count();
+            int newLightsCount = MaterialLights.Length;
+
+            Array.Resize(ref Shapes, newShapesCount);
+
+            // Add each shape to the scene
+            int index = Shapes.Length - shapes.Count();
+            foreach (var shape in shapes)
+            {
+                Shapes[index++] = shape;
+
+                // Check if the added shape is a light source
+                if (shape.MaterialAt(new Vector()).Emittance > 0)
+                {
+                    // If so, resize the Lights array and add the shape to it
+                    Array.Resize(ref Lights, ++newLightsCount);
+                    MaterialLights[newLightsCount - 1] = shape;
+                }
+            }
+
+            // Compile the shapes and update the acceleration structure if necessary
+            Compile();
+        }
 
         public void Compile()
         {
@@ -71,7 +99,7 @@ namespace PTSharpCore
         {
             return rays;
         }
-        
+
         internal Hit Intersect(Ray r)
         {
             Interlocked.Increment(ref rays);
