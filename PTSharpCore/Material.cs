@@ -2,9 +2,11 @@ using MathNet.Numerics;
 using MathNet.Numerics.Distributions;
 using System;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace PTSharpCore
-{       
+{
+    [StructLayout(LayoutKind.Auto, Pack = 1)]
     public struct Material
     {
         // Color of the material
