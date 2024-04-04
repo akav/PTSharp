@@ -5,8 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Cube : IShape
+    public class Cube : IShape
     {
         internal Vector Min;
         internal Vector Max;
