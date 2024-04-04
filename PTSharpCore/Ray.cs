@@ -3,8 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Ray
+    public class Ray
     {
         internal Vector Origin, Direction;
         internal bool reflect;

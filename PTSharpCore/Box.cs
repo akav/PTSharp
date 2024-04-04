@@ -32,13 +32,11 @@ namespace PTSharpCore
                                            Min.Y <= b.Y && Max.Y >= b.Y &&
                                            Min.Z <= b.Z && Max.Z >= b.Z;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Intersects(Box b) =>
             !(Min.X > b.Max.X || Max.X < b.Min.X ||
               Min.Y > b.Max.Y || Max.Y < b.Min.Y ||
               Min.Z > b.Max.Z || Max.Z < b.Min.Z);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (double, double) Intersect(Ray r)
         {
             double tMinX = (Min.X - r.Origin.X) / r.Direction.X;
@@ -62,7 +60,6 @@ namespace PTSharpCore
             return (tMin, tMax);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (bool, bool) Partition(Axis axis, double point)
         {
             switch (axis)

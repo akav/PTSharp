@@ -19,7 +19,6 @@ namespace PTSharpCore
         bool SoftShadows;
         public LightMode LightMode;
         public SpecularMode SpecularMode;
-        private object lockObj = new();
 
         DefaultSampler(int FH, int MB, bool DL, bool SS, LightMode LM, SpecularMode SM)
         {

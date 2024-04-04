@@ -3,8 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Sphere : IShape
+    public class Sphere : IShape
     {
         internal Vector Center;
         internal double Radius;
