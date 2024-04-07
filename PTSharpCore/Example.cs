@@ -337,11 +337,11 @@ namespace PTSharpCore
             {
                 for (int z = -12; z <= 12; z++)
                 {
-                    double fx = x;
-                    double fy = rand.NextDouble() * 2;
-                    double fz = z;
-                    scene.Add(TransformedShape.NewTransformedShape(meshes[rand.Next(meshes.Count)], new Matrix().Translate(new Vector(fx, fy, fz))));
-                    scene.Add(TransformedShape.NewTransformedShape(meshes[rand.Next(meshes.Count)], new Matrix().Translate(new Vector(fx, fy - 1, fz))));
+                    var fx = (double)x;
+                    var fy = Random.Shared.NextDouble() * 2;
+                    var fz = (double)z;
+                    scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new Vector(fx, fy, fz))));
+                    scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new Vector(fx, fy - 1, fz))));
                 }
             }
 
@@ -351,146 +351,7 @@ namespace PTSharpCore
             Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("cube.png", 1000);
         }
-        
-        /*
-        public static void runway(int width, int height_)
-        {
-            const int radius = 2;
-            const int height = 3;
-            const int emission = 3;
-            Scene scene = new Scene();
-            var white = Material.DiffuseMaterial(Colour.White);
-            var red = Material.DiffuseMaterial(Colour.Red);
-            var floor = Cube.NewCube(new Vector(-250, -1500, -1), new Vector(250, 6200, 0), white);
-            scene.Add(floor);
-            var light = Material.LightMaterial(Colour.Kelvin(2700), emission);
-
-            // Define lookup table for sphere parameters
-            var sphereParams = new[]
-            {
-                (new Vector(-100, 0, height), 151, 40, light), // Row 1
-                (new Vector(0, 0, height), 151, 40, light),    // Row 2
-                (new Vector(100, 0, height), 151, 40, light),  // Row 3
-                (new Vector(-10, 0, height), 35, 20, light),   // Row 4
-                (new Vector(0, 0, height), 35, 20, light),     // Row 5
-                (new Vector(10, 0, height), 35, 20, light),    // Row 6
-                (new Vector(-160, 250, height), 33, 10, red),  // Red lights along the runway
-                (new Vector(-180, 250, height), 33, 10, red),
-                (new Vector(-200, 250, height), 2, 20, light), // Light markers
-                (new Vector(-220, 250, height), 2, 20, light)
-            };
-
-            // Create spheres based on the lookup table
-            foreach (var param in sphereParams)
-            {
-                scene.AddRange(CreateSpheres(param.Item1, param.Item2, param.Item3, radius, param.Item4));
-            }
-
-            var camera = Camera.LookAt(new Vector(0, -1500, 200), new Vector(0, -100, 0), new Vector(0, 0, 1), 20);
-            camera.SetFocus(new Vector(0, 20000, 0), 1);
-            var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height_, true);
-            renderer.FireflySamples = 32;
-            renderer.IterativeRender("runway.png", 1000);
-        }
-
-
-        // Function to create spheres based on parameters
-        private static IEnumerable<IShape> CreateSpheres(Vector position, int count, double spacing, int radius, Material material)
-        {
-            List<IShape> spheres = new List<IShape>();
-            for (int i = 0; i < count; i++)
-            {
-                spheres.Add(Sphere.NewSphere(position + new Vector(0, i * spacing, 0), radius, material));
-            }
-            return spheres;
-        }*/
-                
-        /*
-        public static void runway(int width, int height_)
-        {
-            const int radius = 2;
-            const int sceneHeight = 3;
-            const int emission = 3;
-            Scene scene = new Scene();
-            var white = Material.DiffuseMaterial(Colour.White);
-            var light = Material.LightMaterial(Colour.Kelvin(2700), emission);
-            var green = Material.LightMaterial(Colour.HexColor(0x0BDB46), emission);
-            var red = Material.LightMaterial(Colour.HexColor(0xDC4522), emission);
-
-            // Add floor
-            AddFloor(scene, white);
-
-            // Add runway lights
-            AddRunwayLights(scene, radius, sceneHeight, light, red, green);
-
-            // Add additional sphere patterns
-            AddAdditionalSpheres(scene, radius, sceneHeight, red, light);
-
-            // Set up camera, sampler, and renderer
-            var camera = Camera.LookAt(new Vector(0, -1500, 200), new Vector(0, -100, 0), new Vector(0, 0, 1), 20);
-            camera.SetFocus(new Vector(0, 20000, 0), 1);
-            var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height_, true);
-            renderer.FireflySamples = 32;
-
-            // Render the scene
-            renderer.IterativeRender("runway.png", 1000);
-        }
-
-        private static void AddFloor(Scene scene, Material white)
-        {
-            const int sceneHeight = 3;
-            var floor = Cube.NewCube(new Vector(-250, -1500, -1), new Vector(250, 6200, 0), white);
-            scene.Add(floor);
-        }
-
-        private static void AddRunwayLights(Scene scene, int radius, int sceneHeight, Material light, Material red, Material green)
-        {
-            for (int y = 0; y <= 6000; y += 40)
-            {
-                scene.Add(Sphere.NewSphere(new Vector(-100, y, sceneHeight), radius, light));
-                scene.Add(Sphere.NewSphere(new Vector(0, y, sceneHeight), radius, light));
-                scene.Add(Sphere.NewSphere(new Vector(100, y, sceneHeight), radius, light));
-            }
-
-            for (int y = -40; y >= -750; y -= 20)
-            {
-                scene.Add(Sphere.NewSphere(new Vector(-10, y, sceneHeight), radius, light));
-                scene.Add(Sphere.NewSphere(new Vector(0, y, sceneHeight), radius, light));
-                scene.Add(Sphere.NewSphere(new Vector(10, y, sceneHeight), radius, light));
-            }
-
-            for (int x = -160; x <= 160; x += 10)
-            {
-                scene.Add(Sphere.NewSphere(new Vector(x, -20, sceneHeight), radius, green));
-                scene.Add(Sphere.NewSphere(new Vector(x, 6100, sceneHeight), radius, red));
-            }
-
-            scene.Add(Sphere.NewSphere(new Vector(-160, 250, sceneHeight), radius, red));
-            scene.Add(Sphere.NewSphere(new Vector(-180, 250, sceneHeight), radius, red));
-            scene.Add(Sphere.NewSphere(new Vector(-200, 250, sceneHeight), radius, light));
-            scene.Add(Sphere.NewSphere(new Vector(-220, 250, sceneHeight), radius, light));
-        }
-
-        private static void AddAdditionalSpheres(Scene scene, int radius, int sceneHeight, Material red, Material light)
-        {
-            for (int i = 0; i < 5; i++)
-            {
-                var y = (double)((i + 1) * -120);
-
-                for (int j = 1; j <= 4; j++)
-                {
-                    var x = (double)(j + 4) * 7.5F;
-                    scene.Add(Sphere.NewSphere(new Vector(x, y, sceneHeight), radius, red));
-                    scene.Add(Sphere.NewSphere(new Vector(-x, y, sceneHeight), radius, red));
-                    scene.Add(Sphere.NewSphere(new Vector(x, -y, sceneHeight), radius, light));
-                    scene.Add(Sphere.NewSphere(new Vector(-x, -y, sceneHeight), radius, light));
-                }
-            }
-        }*/
-
-        
+      
         public static void runway(int width, int height_)
         {
             const int radius = 2;
@@ -824,7 +685,6 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(2, 5, -6), new Vector(0.5F, 1, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
-            //DefaultSampler.SpecularMode = SpecularMode.SpecularModeFirst;
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.FireflySamples = 64;
             renderer.IterativeRender("teapot.png", 1000); 
@@ -962,9 +822,7 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(0, 5, 12), new Vector(0, 1, 0), new Vector(0, 1, 0), 50);
             var sampler = DefaultSampler.NewSampler(4, 8);
             sampler.SpecularMode = SpecularMode.SpecularModeAll;
-            //DefaultSampler.SpecularMode = SpecularMode.SpecularModeAll;
             sampler.LightMode = LightMode.LightModeAll;
-            //DefaultSampler.LightMode = LightMode.LightModeAll;
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("veachscene.png", 1000);
         }
@@ -982,7 +840,8 @@ namespace PTSharpCore
             {
                 for (int y = -n; y <= n; y++)
                 {
-                    if (rand.NextDouble() > 0.8) 
+
+                    if (Random.Shared.NextDouble() > 0.8) 
                     {
                         var min = new Vector((double)x - 0.5F, (double)y - 0.5F, 0);
                         var max = new Vector((double)x + 0.5F, (double)y + 0.5F, 1);
@@ -1021,35 +880,6 @@ namespace PTSharpCore
             var sampler = DefaultSampler.NewSampler(16, 16);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("gopher.png", 1000);
-        }
-
-        
-
-        /*internal static void gltf()
-        {
-            var scene = new Scene();
-
-            var material = Material.DiffuseMaterial(Colour.White);
-            var mesh = GLTF.Load("gltf/Cube/glTF/Cube.gltf", material);
-            scene.Add(mesh);
-
-            // add the floor (a plane)
-            var plane = Plane.NewPlane(new Vector(0, 0, 0), new Vector(0, 0, 1), material);
-            scene.Add(plane);
-
-            // add a spherical light source
-            var light = Sphere.NewSphere(new Vector(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
-            scene.Add(light);
-
-            // position the camera
-            var camera = Camera.LookAt(new Vector(3, 3, 3), new Vector(0, 0, 0.5F), new Vector(0, 0, 1), 50);
-
-            // render the scene with progressive refinement
-            var sampler = DefaultSampler.NewSampler(4, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
-            //renderer.AdaptiveSamples = 128;
-            //renderer.FireflySamples = 128;
-            renderer.IterativeRender("simplesphere.png", 100);
-        }*/
+        }    
     }
 }

@@ -319,7 +319,6 @@ namespace PTSharpCore
             }
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector RandomUnitVector(Random rand)
         {
@@ -506,20 +505,6 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double Reflectance(Vector i, double n1, double n2)
         {
-            /*var nr = n1 / n2;
-            var cosI = -Dot(i);
-            var sinT2 = nr * nr * (1 - cosI * cosI);
-
-            if (sinT2 > 1)
-            {
-                return 1;
-            }
-
-            var cosT = Math.Sqrt(1 - sinT2);
-            var rOrth = (n1 * cosI - n2 * cosT) / (n1 * cosI + n2 * cosT);
-            var rPar = (n2 * cosI - n1 * cosT) / (n2 * cosI + n1 * cosT);
-            return (rOrth * rOrth + rPar * rPar) / 2;*/
-
             var nr2 = (n1 * n1) / (n2 * n2);  // Square of refractive index ratio
             var cosI = -Dot(i);
             var sinT2 = nr2 * (1 - cosI * cosI);

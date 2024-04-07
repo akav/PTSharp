@@ -112,9 +112,10 @@ namespace PTSharpCore
             if (apertureRadius > 0)
             {
                 var focalPoint = this.p.Add(d.MulScalar(focalDistance));
-                var angle = Random.Shared.NextDouble() * 2.0 * Math.PI;
+                var angle = Random.Shared.NextDouble() * 2 * Math.PI;
                 var radius = Random.Shared.NextDouble() * apertureRadius;
-                p = p.Add(this.u.MulScalar(Math.Cos(angle) * radius)).Add(this.v.MulScalar(Math.Sin(angle) * radius));
+                p = p.Add(this.u.MulScalar(Math.Cos(angle) * radius));
+                p = p.Add(this.v.MulScalar(Math.Sin(angle) * radius));
                 d = focalPoint.Sub(p).Normalize();
             }
             

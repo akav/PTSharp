@@ -148,6 +148,7 @@ namespace PTSharpCore
             Console.WriteLine("time elapsed:" + sw.Elapsed);
             sw.Stop();
         }
+      
         public void RenderParallel()
         {
             Scene scene = Scene;

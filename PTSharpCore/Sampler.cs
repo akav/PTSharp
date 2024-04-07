@@ -192,32 +192,6 @@ namespace PTSharpCore
             return scene.Color;
         }
 
-        /*Colour sampleLights(Scene scene, Ray n, Random rand)
-        {
-            var nLights = scene.Lights.Length;
-
-            if (nLights == 0)
-            {
-                return Colour.Black;
-            }
-
-            if (LightMode == LightMode.LightModeAll)
-            {
-                Colour result = new Colour();
-                foreach (var light in scene.Lights)
-                {
-                    result = result.Add(sampleLight(scene, n, light, rand));
-                }
-                return result;
-            }
-            else
-            {
-                // pick a random light
-                var light = scene.Lights[Random.Shared.Next(nLights)];
-                return sampleLight(scene, n, light, rand).MulScalar((double)nLights);
-            }
-        }*/
-
         Colour sampleLights(Scene scene, Ray n, Random rand)
         {
             var nLights = scene.Lights.Length;
