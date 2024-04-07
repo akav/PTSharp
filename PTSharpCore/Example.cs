@@ -200,6 +200,7 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.FireflySamples = 128;
             renderer.IterativeRender("example3.png", 1000);
         }
 
