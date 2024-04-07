@@ -76,8 +76,8 @@ namespace PTSharpCore
                 {
                     double a = Random.Shared.NextDouble() * 2 * Math.PI;
                     double d = Random.Shared.NextDouble() * r + r;
-                    x = point.x + Math.Cos(a) * d;
-                    y = point.y + Math.Sin(a) * d;
+                    x = point.X + Math.Cos(a) * d;
+                    y = point.Y + Math.Sin(a) * d;
 
                     if (x < x1 || y < y1 || x > x2 || y > y2)
                     {

@@ -332,7 +332,6 @@ namespace PTSharpCore
                 Util.CreateCubeMesh(Material.GlossyMaterial(Colour.HexColor(0xECDB60), 1.5, Util.Radians(20)))
             };
 
-            Random rand = new Random();
             for (int x = -8; x <= 8; x++)
             {
                 for (int z = -12; z <= 12; z++)
@@ -340,8 +339,8 @@ namespace PTSharpCore
                     var fx = (double)x;
                     var fy = Random.Shared.NextDouble() * 2;
                     var fz = (double)z;
-                    scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new Vector(fx, fy, fz))));
-                    scene.Add(TransformedShape.NewTransformedShape(meshes[new Random().Next(meshes.Length)], new Matrix().Translate(new Vector(fx, fy - 1, fz))));
+                    scene.Add(TransformedShape.NewTransformedShape(meshes[Random.Shared.Next(meshes.Count)], new Matrix().Translate(new Vector(fx, fy, fz))));
+                    scene.Add(TransformedShape.NewTransformedShape(meshes[Random.Shared.Next(meshes.Count)], new Matrix().Translate(new Vector(fx, fy - 1, fz))));
                 }
             }
 
