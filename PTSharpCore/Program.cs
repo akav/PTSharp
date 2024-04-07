@@ -64,9 +64,7 @@ namespace PTSharpCore
             window.Load += OnLoad;
             window.Render += OnRender;
             window.Closing += OnClose;
-            window.Run();
-
-            
+            window.Run();            
         }
 
         private static void KeyDown(IKeyboard arg1, Key arg2, int arg3)

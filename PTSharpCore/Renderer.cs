@@ -242,7 +242,19 @@ namespace PTSharpCore
                                     {
                                         // Render the sub-tile at the current coordinates, using the current resolution
                                         Colour c = new Colour(0, 0, 0);
-                                        c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
+
+                                        for (int p = 0; p < spp; p++)
+                                        {
+                                            // Generate random offsets within the pixel
+                                            double xOffset = Random.Shared.NextDouble();
+                                            double yOffset = Random.Shared.NextDouble();
+
+                                            // Use jittered offsets to generate rays
+                                            double fu = (x + xOffset) / w;
+                                            double fv = (y + yOffset) / h;
+
+                                            c += sampler.Sample(scene, camera.CastRay(x, y, w, h, fu, fv, rand), rand);
+                                        }
 
                                         // Average the color over the number of samples
                                         c /= spp;
