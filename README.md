@@ -8,6 +8,6 @@ Getting Started:
 
 Status:
 - Multithreading is stable
-- Addded viewport using Silk .NET  
+- Added viewport using Silk .NET  
 
 My thanks go out to Michael Fogleman for his wonderful work.
