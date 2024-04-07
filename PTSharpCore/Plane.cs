@@ -8,6 +8,8 @@ namespace PTSharpCore
         Vector Normal;
         Material Material;
         Box box;
+        public Colour Color { get; set; }
+        public Vector Position { get; set; }
 
         Plane() { }
 
@@ -47,7 +49,7 @@ namespace PTSharpCore
             return new Hit(this, t, null);
         }
 
-        Vector IShape.UV(Vector a)
+        Vector IShape.UVector(Vector a)
         {
             return new Vector();
         }
@@ -59,6 +61,11 @@ namespace PTSharpCore
         Vector IShape.NormalAt(Vector a)
         {
             return Normal;
+        }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
         }
     }
 }

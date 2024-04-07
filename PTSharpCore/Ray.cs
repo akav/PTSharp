@@ -1,56 +1,57 @@
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace PTSharpCore
 {
-    public class Ray
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Ray
     {
-        internal Vector Origin, Direction;
-        internal bool reflect;
+        public Vector Origin, Direction;
+        public bool reflect;
 
-        internal Ray(Vector Origin_, Vector Direction_)
+        public Ray(Vector O, Vector D)
         {
-            Origin = Origin_;
-            Direction = Direction_;
+            Origin = O;
+            Direction = D;
         }
 
-        internal Vector Position(double t) => Origin.Add(Direction.MulScalar(t));
+        public Vector Position(double t) => Origin.Add(Direction.MulScalar(t));
 
-        internal Ray Reflect(Ray i) => new Ray(Origin, Direction.Reflect(i.Direction));
+        public Ray Reflect(Ray i) => new Ray(Origin, Direction.Reflect(i.Direction));
 
         public Ray Refract(Ray i, double n1, double n2) => new Ray(Origin, Direction.Refract(i.Direction, n1, n2));
 
         public double Reflectance(Ray i, double n1, double n2) => Direction.Reflectance(i.Direction, n1, n2);
 
-        public Ray WeightedBounce(double u, double v, Random rand)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Ray WeightedBounce(double u, double v)
         {
             var radius = Math.Sqrt(u);
             var theta = 2 * Math.PI * v;
-            var s = Direction.Cross(Vector.RandomUnitVector(rand)).Normalize();
+            var s = Direction.Cross(Vector.RandomUnitVector(Random.Shared)).Normalize();
             var t = Direction.Cross(s);
-            var d = new Vector();
-            d = d.Add(s.MulScalar(radius * Math.Cos(theta)));
-            d = d.Add(t.MulScalar(radius * Math.Sin(theta)));
-            d = d.Add(Direction.MulScalar(Math.Sqrt(1 - u)));
-            return new Ray(Origin, d);
+            return new Ray(Origin, new Vector().Add(s.MulScalar(radius * Math.Cos(theta))).Add(t.MulScalar(radius * Math.Sin(theta))).Add(Direction.MulScalar(Math.Sqrt(1 - u))));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Ray ConeBounce(double theta, double u, double v, Random rand)
         {
-            return new Ray(Origin, Util.Cone(Direction, theta, u, v, rand));
+            return new Ray(Origin, Util.Cone(Direction, theta, u, v, Random.Shared));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (Ray, bool, double) Bounce(HitInfo info, double u, double v, BounceType bounceType, Random rand)
         {
             var n = info.Ray;
             var material = info.material;
             
-            var n1 = 1.0;
-            var n2 = material.Index;
+            var (n1, n2) = (1.0, material.Index);
             
-            if (info.inside)
+            if (info.Inside)
             {
-                Interlocked.Exchange(ref n1, n2);
+                (n1, n2) = (n2, n1);
             }
 
             double p = material.Reflectivity >= 0 ? material.Reflectivity : n.Reflectance(this, n1, n2);
@@ -70,8 +71,7 @@ namespace PTSharpCore
 
             if (reflect)
             {
-                var reflected = n.Reflect(this);
-                return (reflected.ConeBounce(material.Gloss, u, v, rand), true, p);
+                return (n.Reflect(this).ConeBounce(material.Gloss, u, v, rand), true, p);
             }
             else if (material.Transparent)
             {
@@ -81,7 +81,7 @@ namespace PTSharpCore
             }
             else
             {
-                return (n.WeightedBounce(u, v, rand), false, 1 - p);
+                return (n.WeightedBounce(u, v), false, 1 - p);
             }
         }
     }

@@ -8,7 +8,7 @@ namespace PTSharpCore
     {
         public static double INF = 1e9;
         public static double EPS = 1e-9;
-        
+
         public static double Radians(double degrees) => degrees * Math.PI / 180;
         
         public static double Degrees(double radians) => radians * 180 / Math.PI;
@@ -19,25 +19,21 @@ namespace PTSharpCore
             {
                 return direction;
             }
-            theta = theta * (1 - (2 * Math.Cos(u) / Math.PI));
+            theta = theta * (1 - (2 * Math.Acos(u) / Math.PI));
             var m1 = Math.Sin(theta);
             var m2 = Math.Cos(theta);
             var a = v * 2 * Math.PI;
-            var q = Vector.RandomUnitVector(rand);
+            var q = Vector.RandomUnitVector(Random.Shared);
             var s = direction.Cross(q);
             var t = direction.Cross(s);
-            var d = new Vector();
-            d = d.Add(s.MulScalar(m1 * Math.Cos(a)));
-            d = d.Add(t.MulScalar(m1 * Math.Sin(a)));
-            d = d.Add(direction.MulScalar(m2));
-            d = d.Normalize();
+            var d = new Vector().Add(s.MulScalar(m1 * Math.Cos(a))).Add(t.MulScalar(m1 * Math.Sin(a))).Add(direction.MulScalar(m2)).Normalize();
             return d;
         }
         
         public static Mesh CreateMesh(Material material)
         {
-            var mesh = STL.Load("cylinder.stl", material);
-            mesh.FitInside(new Box(new Vector(-0.1, -0.1, 0), new Vector(1.1, 1.1, 100)), new Vector(0.5, 0.5, 0));
+            var mesh = STL.Load("models/cylinder.stl", material);
+            mesh.FitInside(new Box(new Vector(-0.1F, -0.1F, 0), new Vector(1.1F, 1.1F, 100)), new Vector(0.5F, 0.5F, 0));
             mesh.SmoothNormalsThreshold(Radians(10));
             return mesh;
         }
@@ -51,10 +47,10 @@ namespace PTSharpCore
 
         public static Mesh CreateBrick(int color)
         {
-            var material = Material.GlossyMaterial(Colour.HexColor(color), 1.3, Radians(20));
+            var material = Material.GlossyMaterial(Colour.HexColor(color), 1.3F, Radians(20));
             var mesh = STL.Load("models/toybrick.stl", material);
 	        mesh.SmoothNormalsThreshold(Radians(20));
-            mesh.FitInside(new Box(new Vector(), new Vector(2, 4, 10)), new Vector ( 0, 0, 0 ));
+            mesh.FitInside(new Box(new Vector(), new Vector(2, 4, 10)), new Vector( 0, 0, 0 ));
 	        return mesh;
         }
         public static Bitmap LoadImage(String path)
@@ -144,7 +140,7 @@ namespace PTSharpCore
             List<double> result = new List<double>(items.Length);
             foreach(String item in items)
             {
-                double f = Double.Parse(item);
+                double f = double.Parse(item);
                 result.Add(f);
             }
             return result.ToArray();

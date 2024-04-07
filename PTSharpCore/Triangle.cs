@@ -1,19 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace PTSharpCore
-{   
-    class Triangle : IShape
+{
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Triangle : IShape
     {
-        internal Material Material;
+        public Material Material;
         public Vector V1, V2, V3;
         public Vector N1, N2, N3;
         public Vector T1, T2, T3;
-
-        internal Triangle() { }
+        
+        public Triangle() { }
 
         internal Triangle(Vector v1, Vector v2, Vector v3)
         {
@@ -65,131 +68,120 @@ namespace PTSharpCore
             return new Box(min, max);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Hit IShape.Intersect(Ray r)
         {
-            var e1x = V2.x - V1.x;
-            var e1y = V2.y - V1.y;
-            var e1z = V2.z - V1.z;
-            var e2x = V3.x - V1.x;
-            var e2y = V3.y - V1.y;
-            var e2z = V3.z - V1.z;
-            var px = r.Direction.y * e2z - r.Direction.z * e2y;
-            var py = r.Direction.z * e2x - r.Direction.x * e2z;
-            var pz = r.Direction.x * e2y - r.Direction.y * e2x;
-            var det = e1x * px + e1y * py + e1z * pz;
+            var e1 = V2.Sub(V1);
+            var e2 = V3.Sub(V1);
+            var h = r.Direction.Cross(e2);
+            var det = e1.Dot(h);
 
-            if (det > -Util.EPS && det < Util.EPS) 
-            {
-                return Hit.NoHit;
-            }
-
-            var inv = 1 / det;
-            var tx = r.Origin.x - V1.x;
-            var ty = r.Origin.y - V1.y;
-            var tz = r.Origin.z - V1.z;
-            var u = (tx * px + ty * py + tz * pz) * inv;
-
-            if(u < 0 || u > 1)
-            {
-                return Hit.NoHit;
-            }
-
-            var qx = ty * e1z - tz * e1y;
-            var qy = tz * e1x - tx * e1z;
-            var qz = tx * e1y - ty * e1x;
-            var v = (r.Direction.x * qx + r.Direction.y * qy + r.Direction.z * qz) * inv;
-
-            if((v < 0) || ((u + v) > 1))
-            {
+            if (det > -Util.EPS && det < Util.EPS)
                 return Hit.NoHit;
 
-            }
+            var invDet = 1.0 / det;
+            var s = r.Origin.Sub(V1);
+            var u = s.Dot(h) * invDet;
 
-            var d = (e2x * qx + e2y * qy + e2z * qz) * inv;
-
-            if(d < Util.EPS) {
+            if (u < 0 || u > 1)
                 return Hit.NoHit;
-            }
 
-            return new Hit(this, d, null);
+            var q = s.Cross(e1);
+            var v = r.Direction.Dot(q) * invDet;
+
+            if (v < 0 || (u + v) > 1)
+                return Hit.NoHit;
+
+            var t = e2.Dot(q) * invDet;
+
+            if (t < Util.EPS)
+                return Hit.NoHit;
+
+            return new Hit(this, t, null);
         }
 
-        Vector IShape.UV(Vector p)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+        Vector IShape.UVector(Vector p)
         {
             (var u, var v, var w) = Barycentric(p);
             var n = new Vector();
             n = n.Add(T1.MulScalar(u));
             n = n.Add(T2.MulScalar(v));
             n = n.Add(T3.MulScalar(w));
-            return new Vector(n.x, n.y, 0);
+            return new Vector(n.X, n.Y, 0);
         }
 
         Material IShape.MaterialAt(Vector v) => Material;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         Vector IShape.NormalAt(Vector p)
         {
             (var u, var v, var w) = Barycentric(p);
-            var n = new Vector();
-            n = n.Add(N1.MulScalar(u));
-            n = n.Add(N2.MulScalar(v));
-            n = n.Add(N3.MulScalar(w));
-            n = n.Normalize();
+            var n = N1.MulScalar(u).Add(N2.MulScalar(v)).Add(N3.MulScalar(w));
 
-            if(Material.NormalTexture != null)
+            if (Material.NormalTexture != null)
             {
-                var b = new Vector();
-                b = b.Add(T1.MulScalar(u));
-                b = b.Add(T2.MulScalar(v));
-                b = b.Add(T3.MulScalar(w));
-                var ns = Material.NormalTexture.NormalSample(b.x, b.y);
-                var dv1 = V2.Sub(V1);
-                var dv2 = V3.Sub(V1);
-                var dt1 = T2.Sub(T1);
-                var dt2 = T3.Sub(T1);
-                var T = dv1.MulScalar(dt2.y).Sub(dv2.MulScalar(dt1.y)).Normalize();
-                var B = dv2.MulScalar(dt1.x).Sub(dv1.MulScalar(dt2.x)).Normalize();
-                var N = T.Cross(B);
+                var b = T1.MulScalar(u).Add(T2.MulScalar(v)).Add(T3.MulScalar(w));
+                var ns = Material.NormalTexture.NormalSample(b.X, b.Y);
 
-                var matrix = new Matrix(T.x, B.x, N.x, 0,
-                                        T.y, B.y, N.y, 0,
-                                        T.z, B.z, N.z, 0,
-                                        0, 0, 0, 1);
-                n = matrix.MulDirection(ns);
+                if (ns != Vector.Zero)
+                {
+                    var dv1 = V2.Sub(V1);
+                    var dv2 = V3.Sub(V1);
+                    var dt1 = T2.Sub(T1);
+                    var dt2 = T3.Sub(T1);
+                    var T = dv1.MulScalar(dt2.Y).Sub(dv2.MulScalar(dt1.Y)).Normalize();
+                    var B = dv2.MulScalar(dt1.X).Sub(dv1.MulScalar(dt2.X)).Normalize();
+                    var N = T.Cross(B);
+
+                    var matrix = new Matrix(T.X, B.X, N.X, 0,
+                                            T.Y, B.Y, N.Y, 0,
+                                            T.Z, B.Z, N.Z, 0,
+                                            0, 0, 0, 1);
+                    n = matrix.MulDirection(ns);
+                }
             }
 
-            if(Material.BumpTexture != null)
+            if (Material.BumpTexture != null)
             {
-                var b = new Vector();
-                b = b.Add(T1.MulScalar(u));
-                b = b.Add(T2.MulScalar(v));
-                b = b.Add(T3.MulScalar(w));
-                var bump = Material.BumpTexture.BumpSample(b.x, b.y);
-                var dv1 = V2.Sub(V1);
-                var dv2 = V3.Sub(V1);
-                var dt1 = T2.Sub(T1);
-                var dt2 = T3.Sub(T1);
-                var tangent = dv1.MulScalar(dt2.y).Sub(dv2.MulScalar(dt1.y)).Normalize();
-                var bitangent = dv2.MulScalar(dt1.x).Sub(dv1.MulScalar(dt2.x)).Normalize();
-                n = n.Add(tangent.MulScalar(bump.x * Material.BumpMultiplier));
-                n = n.Add(bitangent.MulScalar(bump.y * Material.BumpMultiplier));
+                var b = T1.MulScalar(u).Add(T2.MulScalar(v)).Add(T3.MulScalar(w));
+                var bump = Material.BumpTexture.BumpSample(b.X, b.Y);
+
+                if (bump != Vector.Zero)
+                {
+                    var dv1 = V2.Sub(V1);
+                    var dv2 = V3.Sub(V1);
+                    var dt1 = T2.Sub(T1);
+                    var dt2 = T3.Sub(T1);
+                    var tangent = dv1.MulScalar(dt2.Y).Sub(dv2.MulScalar(dt1.Y)).Normalize();
+                    var bitangent = dv2.MulScalar(dt1.X).Sub(dv1.MulScalar(dt2.X)).Normalize();
+                    n = n.Add(tangent.MulScalar(bump.X * Material.BumpMultiplier));
+                    n = n.Add(bitangent.MulScalar(bump.Y * Material.BumpMultiplier));
+                }
             }
-            n = n.Normalize();
-            return n;
+
+            return n.Normalize();
         }
-                
+
+
         double Area() {
             var e1 = V2.Sub(V1);
             var e2 = V3.Sub(V1);
             var n = e1.Cross(e2);
             return n.Length() / 2;
         }
-        
+
         Vector Normal()
         {
             var e1 = V2.Sub(V1);
             var e2 = V3.Sub(V1);
             return e1.Cross(e2).Normalize();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         (double, double, double) Barycentric(Vector p)
         {
             var v0 = V2.Sub(V1);
@@ -219,6 +211,11 @@ namespace PTSharpCore
 
             if (N3.Equals(zero))
                 N3 = n;
+        }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
         }
     }
 }

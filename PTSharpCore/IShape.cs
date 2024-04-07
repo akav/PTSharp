@@ -1,11 +1,13 @@
-﻿namespace PTSharpCore
+﻿using System;
+
+namespace PTSharpCore
 {
-    internal interface IShape
+    public interface IShape
     {
         void Compile();
         Box BoundingBox();
         Hit Intersect(Ray ray);
-        Vector UV(Vector uv);
+        Vector UVector(Vector uv);
         Vector NormalAt(Vector normal);
         Material MaterialAt(Vector v);
     }

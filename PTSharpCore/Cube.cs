@@ -11,12 +11,17 @@ namespace PTSharpCore
         internal Material Material;
         internal Box Box;
 
+        public Colour Color { get; set; }
         Cube(Vector min, Vector max, Material material, Box box)
         {
             Min = min;
             Max = max;
             Material = material;
             Box = box;
+        }
+
+        public Cube()
+        {
         }
 
         internal static Cube NewCube(Vector min, Vector max, Material material)
@@ -31,81 +36,54 @@ namespace PTSharpCore
 
         Hit IShape.Intersect(Ray r)
         {
-            double tmin = (Min.x - r.Origin.x) / r.Direction.x;
-            double tmax = (Max.x - r.Origin.x) / r.Direction.x;
+            (var n, var f) = (Min.Sub(r.Origin).Div(r.Direction), Max.Sub(r.Origin).Div(r.Direction));
+            (n,f) = (n.Min(f), n.Max(f));
+            (var t0, var t1) = (Math.Max(Math.Max(n.X, n.Y), n.Z), Math.Min(Math.Min(f.X, f.Y), f.Z));
 
-            if (tmin > tmax)
-                (tmin, tmax) = (tmax, tmin);
+            if (t0 > 0 && t0 < t1)
+            {
+                return new Hit(this, t0, null);
+            }
 
-            double tymin = (Min.y - r.Origin.y) / r.Direction.y;
-            double tymax = (Max.y - r.Origin.y) / r.Direction.y;
-
-            if (tymin > tymax) 
-                (tymin, tymax) = (tymax, tymin);
-
-            if ((tmin > tymax) || (tymin > tmax))
-                return Hit.NoHit;
-
-            if (tymin > tmin)
-                tmin = tymin;
-
-            if (tymax < tmax)
-                tmax = tymax;
-
-            double tzmin = (Min.z - r.Origin.z) / r.Direction.z;
-            double tzmax = (Max.z - r.Origin.z) / r.Direction.z;
-
-            if (tzmin > tzmax) 
-                (tzmin, tzmax) = (tzmax, tzmin);
-
-            if ((tmin > tzmax) || (tzmin > tmax))
-                return Hit.NoHit;
-
-            if (tzmin > tmin)
-                tmin = tzmin;
-
-            if (tzmax < tmax)
-                tmax = tzmax;
-
-            return tmin > 0 && tmin < tmax ? new Hit(this, tmin, null) : Hit.NoHit;
+            return Hit.NoHit;
         }
 
-        Vector IShape.UV(Vector p)
+        Vector IShape.UVector(Vector p)
         {
             p = p.Sub(Min).Div(Max.Sub(Min));
-            return new Vector(p.x, p.z, 0);
+            return new Vector(p.X, p.Z, 0);
         }
 
         Material IShape.MaterialAt(Vector p) => Material;
-
+        
         Vector IShape.NormalAt(Vector p)
         {
             return p switch
             {
-                Vector when p.x < Min.x + Util.EPS => new Vector(-1, 0, 0),
-                Vector when p.x > Max.x - Util.EPS => new Vector(1, 0, 0),
-                Vector when p.y < Min.y + Util.EPS => new Vector(0, -1, 0),
-                Vector when p.y > Max.y - Util.EPS => new Vector(0, 1, 0),
-                Vector when p.z < Min.z + Util.EPS => new Vector(0, 0, -1),
-                Vector when p.z > Max.z - Util.EPS => new Vector(0, 0, 1),
+                Vector when Math.Abs(p.X - Min.X) < Util.EPS => new Vector(-1, 0, 0),
+                Vector when Math.Abs(p.X - Max.X) < Util.EPS => new Vector(1, 0, 0),
+                Vector when Math.Abs(p.Y - Min.Y) < Util.EPS => new Vector(0, -1, 0),
+                Vector when Math.Abs(p.Y - Max.Y) < Util.EPS => new Vector(0, 1, 0),
+                Vector when Math.Abs(p.Z - Min.Z) < Util.EPS => new Vector(0, 0, -1),
+                Vector when Math.Abs(p.Z - Max.Z) < Util.EPS => new Vector(0, 0, 1),
                 _ => new Vector(0, 1, 0),
             };
         }
-        
+
         Mesh CubeMesh()
         {
             var a = Min;
             var b = Max;
             var z = new Vector();
             var m = Material;
-            var v000 = new Vector(a.x, a.y, a.z);
-            var v001 = new Vector(a.x, a.y, b.z);
-            var v010 = new Vector(a.x, b.y, a.z);
-            var v011 = new Vector(a.x, b.y, b.z);
-            var v100 = new Vector(b.x, a.y, a.z);
-            var v101 = new Vector(b.x, a.y, b.z);
-            var v110 = new Vector(b.x, b.y, a.z);
-            var v111 = new Vector(b.x, b.y, b.z);
+            var v000 = new Vector(a.X, a.Y, a.Z);
+            var v001 = new Vector(a.X, a.Y, b.Z);
+            var v010 = new Vector(a.X, b.Y, a.Z);
+            var v011 = new Vector(a.X, b.Y, b.Z);
+            var v100 = new Vector(b.X, a.Y, a.Z);
+            var v101 = new Vector(b.X, a.Y, b.Z);
+            var v110 = new Vector(b.X, b.Y, a.Z);
+            var v111 = new Vector(b.X, b.Y, b.Z);
             Triangle[] triangles = {
                 Triangle.NewTriangle(v000, v100, v110, z, z, z, m),
                 Triangle.NewTriangle(v000, v110, v010, z, z, z, m),
@@ -121,6 +99,6 @@ namespace PTSharpCore
                 Triangle.NewTriangle(v100, v111, v101, z, z, z, m)
             };
             return Mesh.NewMesh(triangles);
-        }
+        }       
     }
 }

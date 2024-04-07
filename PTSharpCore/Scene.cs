@@ -1,23 +1,29 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
     public class Scene
     {
-        internal Colour Color = new Colour();
-        internal ITexture Texture = null;
-        internal double TextureAngle = 0;
-        private Tree tree;
-        internal int rays = 0;
+        public Colour Color;
+        public ITexture Texture = null;
+        public double TextureAngle = 0;
+        public Tree tree;
+        public int rays = 0;
+        public Colour BackgroundColor;
 
-        internal IShape[] Shapes; 
-        internal IShape[] Lights;
+        public IShape[] Shapes;
+        public IShape[] Lights;
 
         public Scene() 
         {
-            Shapes = new IShape[0];
-            Lights = new IShape[0];        
+            Shapes = Array.Empty<IShape>(); 
+            Lights = Array.Empty<IShape>(); 
+            Color = new Colour();
+            BackgroundColor = new Colour(0.1, 0.1, 0.1);
         }
 
         internal void Add(IShape p)
@@ -31,15 +37,52 @@ namespace PTSharpCore
             }
         }
 
+        internal void AddRange(IEnumerable<IShape> shapes)
+        {
+            // Resize the internal arrays to accommodate the new shapes
+            int newShapesCount = Shapes.Length + shapes.Count();
+            int newLightsCount = Lights.Length;
+
+            Array.Resize(ref Shapes, newShapesCount);
+
+            // Add each shape to the scene
+            int index = Shapes.Length - shapes.Count();
+            foreach (var shape in shapes)
+            {
+                Shapes[index++] = shape;
+
+                // Check if the added shape is a light source
+                if (shape.MaterialAt(new Vector()).Emittance > 0)
+                {
+                    // If so, resize the Lights array and add the shape to it
+                    Array.Resize(ref Lights, ++newLightsCount);
+                    Lights[newLightsCount - 1] = shape;
+                }
+            }
+
+            // Compile the shapes and update the acceleration structure if necessary
+            Compile();
+        }
+
         public void Compile()
         {
-            foreach(IShape shape in Shapes)
+            // Parallel compilation of shapes
+            Parallel.ForEach(Shapes, shape =>
             {
                 shape.Compile();
-            }
-            if (tree is null)
+            });
+
+            // Check if the tree has already been instantiated
+            if (tree == null)
             {
-                tree = Tree.NewTree(Shapes);
+                // Using a lock to ensure thread safety when instantiating the tree
+                lock (this)
+                {
+                    if (tree == null) // Double-checking to prevent race conditions
+                    {
+                        tree = Tree.NewTree(Shapes);
+                    }
+                }
             }
         }
 
@@ -50,7 +93,7 @@ namespace PTSharpCore
         
         internal Hit Intersect(Ray r)
         {
-            rays++;
+            Interlocked.Increment(ref rays);
             return tree.Intersect(r);
         }
     }

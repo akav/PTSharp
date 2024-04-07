@@ -8,22 +8,24 @@ using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
-    class Mesh : IShape
+    public struct Mesh : IShape
     {
         public Triangle[] Triangles;
         Box box;
         Tree tree;
+        public Colour Color { get; set; }
+        public Vector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public Mesh() { }
         
-        Mesh() { }
-        
-        internal Mesh(Triangle[] triangles_, Box box_, Tree tree_)
+        public Mesh(Triangle[] triangles_, Box box_, Tree tree_)
         {
             Triangles = triangles_;
             box = box_;
             tree = tree_;
         }
         
-        internal static Mesh NewMesh(Triangle[] triangles)
+        public static Mesh NewMesh(Triangle[] triangles)
         {
             return new Mesh(triangles, null, null);
         }
@@ -95,7 +97,7 @@ namespace PTSharpCore
                 Vector min = Triangles[0].V1;
                 Vector max = Triangles[0].V1;
 
-                foreach (Triangle t in Triangles)
+                foreach (var t in Triangles)
                 {
                     min = min.Min(t.V1).Min(t.V2).Min(t.V3);
                     max = max.Max(t.V1).Max(t.V2).Max(t.V3);
@@ -127,7 +129,7 @@ namespace PTSharpCore
             return tree.Intersect(r);
         }
 
-        Vector IShape.UV(Vector p)
+        Vector IShape.UVector(Vector p)
         {
             return new Vector();
         }
@@ -176,12 +178,19 @@ namespace PTSharpCore
                 lookup[t.V3] = NL3.ToArray();
             }
 
-            foreach (Triangle t in Triangles)
+            // Create a copy of Triangles array to update normals
+            Triangle[] trianglesCopy = new Triangle[Triangles.Length];
+            Triangles.CopyTo(trianglesCopy, 0);
+
+            for (int i = 0; i < trianglesCopy.Length; i++)
             {
-                t.N1 = smoothNormalsThreshold(t.N1, lookup[t.V1], threshold);
-                t.N2 = smoothNormalsThreshold(t.N2, lookup[t.V2], threshold);
-                t.N3 = smoothNormalsThreshold(t.N3, lookup[t.V3], threshold);
+                trianglesCopy[i].N1 = smoothNormalsThreshold(trianglesCopy[i].N1, lookup[trianglesCopy[i].V1], threshold);
+                trianglesCopy[i].N2 = smoothNormalsThreshold(trianglesCopy[i].N2, lookup[trianglesCopy[i].V2], threshold);
+                trianglesCopy[i].N3 = smoothNormalsThreshold(trianglesCopy[i].N3, lookup[trianglesCopy[i].V3], threshold);
             }
+
+            // Replace Triangles array with the updated copy
+            Triangles = trianglesCopy;
         }
 
         public void SmoothNormals()
@@ -209,12 +218,19 @@ namespace PTSharpCore
                 lookup2[p.Key] = lookup[p.Key].Normalize();
             }
 
-            foreach (var t in Triangles)
+            // Create a copy of Triangles array to update normals
+            Triangle[] trianglesCopy = new Triangle[Triangles.Length];
+            Triangles.CopyTo(trianglesCopy, 0);
+
+            for (int i = 0; i < trianglesCopy.Length; i++)
             {
-                t.N1 = lookup2[t.V1];
-                t.N2 = lookup2[t.V2];
-                t.N3 = lookup2[t.V3];
+                trianglesCopy[i].N1 = lookup2[trianglesCopy[i].V1];
+                trianglesCopy[i].N2 = lookup2[trianglesCopy[i].V2];
+                trianglesCopy[i].N3 = lookup2[trianglesCopy[i].V3];
             }
+
+            // Replace Triangles array with the updated copy
+            Triangles = trianglesCopy;
         }
 
         void UnitCube()
@@ -242,24 +258,44 @@ namespace PTSharpCore
 
         internal void Transform(Matrix matrix)
         {
-            foreach(Triangle t in Triangles)
+            // Create a copy of Triangles array to update vertices and normals
+            Triangle[] trianglesCopy = new Triangle[Triangles.Length];
+            Triangles.CopyTo(trianglesCopy, 0);
+
+            for (int i = 0; i < trianglesCopy.Length; i++)
             {
-                t.V1 = matrix.MulPosition(t.V1);
-                t.V2 = matrix.MulPosition(t.V2);
-                t.V3 = matrix.MulPosition(t.V3);
-                t.N1 = matrix.MulDirection(t.N1);
-                t.N2 = matrix.MulDirection(t.N2);
-                t.N3 = matrix.MulDirection(t.N3);
+                trianglesCopy[i].V1 = matrix.MulPosition(trianglesCopy[i].V1);
+                trianglesCopy[i].V2 = matrix.MulPosition(trianglesCopy[i].V2);
+                trianglesCopy[i].V3 = matrix.MulPosition(trianglesCopy[i].V3);
+                trianglesCopy[i].N1 = matrix.MulDirection(trianglesCopy[i].N1);
+                trianglesCopy[i].N2 = matrix.MulDirection(trianglesCopy[i].N2);
+                trianglesCopy[i].N3 = matrix.MulDirection(trianglesCopy[i].N3);
             }
+
+            // Replace Triangles array with the updated copy
+            Triangles = trianglesCopy;
+
             dirty();
         }
 
         void SetMaterial(Material material)
         {
-            foreach (Triangle t in Triangles)
+            // Create a copy of Triangles array to update material
+            Triangle[] trianglesCopy = new Triangle[Triangles.Length];
+            Triangles.CopyTo(trianglesCopy, 0);
+
+            for (int i = 0; i < trianglesCopy.Length; i++)
             {
-                t.Material = material;
+                trianglesCopy[i].Material = material;
             }
+
+            // Replace Triangles array with the updated copy
+            Triangles = trianglesCopy;
+        }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
         }
     }
 }

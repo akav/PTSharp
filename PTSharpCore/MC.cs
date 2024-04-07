@@ -5,25 +5,25 @@ using System.Linq;
 namespace PTSharpCore
 {
     class MC 
-    {
+    {   
         internal static Mesh NewSDFMesh(SDF sdf, Box box, double step)
         {
             var min = box.Min;
             var size = box.Size();
-            var nx = (int)Math.Ceiling(size.x / step);
-            var ny = (int)Math.Ceiling(size.y / step);
-            var nz = (int)Math.Ceiling(size.z / step);
-            var sx = size.x / nx;
-            var sy = size.y / ny;
-            var sz = size.z / nz;
-            List<Triangle> triangles = new List<Triangle>();
+            var nx = (int)Math.Ceiling(size.X / step);
+            var ny = (int)Math.Ceiling(size.Y / step);
+            var nz = (int)Math.Ceiling(size.Z / step);
+            var sx = size.X / nx;
+            var sy = size.Y / ny;
+            var sz = size.Z / nz;
+            List<Triangle> triangles = new();
             for (int x = 0; x < nx - 1; x++)
             {
                 for(int y = 0; y < ny - 1; y++)
                 {
                     for(int z = 0; z < nz - 1; z++)
                     {
-                        (var x0, var y0, var z0) = (x * sx + min.x, y * sy + min.y, z * sz + min.z);
+                        (var x0, var y0, var z0) = (x * sx + min.X, y * sy + min.Y, z * sz + min.Z);
                         (var x1, var y1, var z1) = (x0 + sx, y0 + sy, z0 + sz);
 
                         var p = new Vector[8] {
@@ -98,10 +98,12 @@ namespace PTSharpCore
             
             for (int i = 0; i < count; i++)
             {
-                Triangle triangle = new Triangle();
-                triangle.V3 = points[table[i * 3 + 0]];
-                triangle.V2 = points[table[i * 3 + 1]];
-                triangle.V1 = points[table[i * 3 + 2]];
+                Triangle triangle = new()
+                {
+                    V3 = points[table[i * 3 + 0]],
+                    V2 = points[table[i * 3 + 1]],
+                    V1 = points[table[i * 3 + 2]]
+                };
                 triangle.FixNormals();
                 result[i] = triangle;
             }
@@ -121,7 +123,7 @@ namespace PTSharpCore
             
             var t = (x - v1) / (v2 - v1);
             
-            return new Vector(p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y), p1.z + t * (p2.z - p1.z));
+            return new Vector(p1.X + t * (p2.X - p1.X), p1.Y + t * (p2.Y - p1.Y), p1.Z + t * (p2.Z - p1.Z));
         }
 
         static readonly int[][] pairTable =  {

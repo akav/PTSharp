@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace PTSharpCore
 {
@@ -21,11 +22,11 @@ namespace PTSharpCore
             double gridsize = r / Math.Sqrt(2);
             return new Poisson(r, gridsize, new Dictionary<Vector, Vector>());
         }
-        
+
         Vector normalize(Vector v)
         {
-            var i = Math.Floor(v.x / size);
-            var j = Math.Floor(v.y / size);
+            var i = Math.Floor(v.X / size);
+            var j = Math.Floor(v.Y / size);
             return new Vector(i, j, 0);
         }
 
@@ -33,15 +34,15 @@ namespace PTSharpCore
         {
             Vector n = normalize(v);
 
-            for (double i = n.x - 2; i < n.x + 3; i++)
+            for (double i = n.X - 2; i < n.X + 3; i++)
             {
-                for (double j = n.y - 2; j < n.y + 3; j++)
+                for (double j = n.Y - 2; j < n.Y + 3; j++)
                 {
                     if(cells.ContainsKey(new Vector(i, j, 0)))
                     {
                         Vector m = cells[new Vector(i, j, 0)];
 
-                        if(Math.Sqrt(Math.Pow(m.x-v.x, 2) + Math.Pow(m.y-v.y, 2)) < r)
+                        if(Math.Sqrt(Math.Pow(m.X - v.X, 2) + Math.Pow(m.Y - v.Y, 2)) < r)
                         {
                             return false;
                         }
@@ -51,8 +52,8 @@ namespace PTSharpCore
             cells[n] = v;
             return true;
         }
-        
-        Vector[] PoissonDisc(double x1, double y1, double x2, double y2, double r, int n)
+
+        Vector[] PoissonDisc(double x1, double y1, double x2, double y2, double r, int n, Random rand)
         {
             Vector[] result;
             var x = x1 + (x2 - x1) / 2;
@@ -77,6 +78,7 @@ namespace PTSharpCore
                     double d = Random.Shared.NextDouble() * r + r;
                     x = point.x + Math.Cos(a) * d;
                     y = point.y + Math.Sin(a) * d;
+
                     if (x < x1 || y < y1 || x > x2 || y > y2)
                     {
                         continue;

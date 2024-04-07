@@ -1,20 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
-    class TransformedShape : IShape
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+
+    struct TransformedShape : IShape
     {
         public IShape Shape;
         private Matrix Matrix;
         private Matrix Inverse;
-        
-        TransformedShape() { }
+        public Colour Color { get; set; }
+        public Vector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        internal TransformedShape(IShape s, Matrix m, Matrix im)
+        public TransformedShape() { }
+
+        public TransformedShape(IShape s, Matrix m, Matrix im)
         {
             Shape = s;
             Matrix = m;
@@ -35,13 +41,15 @@ namespace PTSharpCore
         {
             return Matrix.MulBox(Shape.BoundingBox());
         }
-                
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         Hit IShape.Intersect(Ray r)
         {
             var shapeRay = Matrix.Inverse().MulRay(r);
             var hit = Shape.Intersect(shapeRay);
 
-            if(!hit.Ok())
+            if(!hit.Ok)
             {
                 return hit;
             }
@@ -67,9 +75,9 @@ namespace PTSharpCore
             return hit;
         }
 
-        Vector IShape.UV(Vector uv)
+        Vector IShape.UVector(Vector uv)
         {
-            return Shape.UV(uv);
+            return Shape.UVector(uv);
         }
 
         Vector IShape.NormalAt(Vector normal)
@@ -80,6 +88,11 @@ namespace PTSharpCore
         Material IShape.MaterialAt(Vector v)
         {
             return Shape.MaterialAt(v);
+        }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
         }
     }
 }

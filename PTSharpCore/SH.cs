@@ -10,14 +10,14 @@ namespace PTSharpCore
         Material NegativeMaterial;
         func harmonicFunction;
         Mesh mesh;
-
+       
         internal static IShape NewSphericalHarmonic(int l, int m, Material pm, Material nm)
         {
             var sh = new SphericalHarmonic();
             sh.PositiveMaterial = pm;
             sh.NegativeMaterial = nm;
             sh.harmonicFunction = shFunc(l, m);
-            sh.mesh = MC.NewSDFMesh(sh, sh.BoundingBox(), 0.01);
+            sh.mesh = MC.NewSDFMesh(sh, sh.BoundingBox(), 0.01F);
             return sh;
         }
 
@@ -47,14 +47,14 @@ namespace PTSharpCore
         Hit IShape.Intersect(Ray r)
         {
             var hit = mesh.Intersect(r);
-            if (!hit.Ok())
+            if (!hit.Ok)
             {
                 return Hit.NoHit;
             }
             return new Hit(this, hit.T, null);
         }
 
-        Vector IShape.UV(Vector p)
+        Vector IShape.UVector(Vector p)
         {
             return new Vector();
         }
@@ -75,7 +75,7 @@ namespace PTSharpCore
         Vector IShape.NormalAt(Vector p)
         {
             const double e = 0.0001;
-            (var x, var y, var z) = (p.x, p.y, p.z);
+            (var x, var y, var z) = (p.X, p.Y, p.Z);
 
             var n = new Vector(
                 Evaluate(new Vector(x - e, y, z)) - Evaluate(new Vector(x + e, y, z)),
@@ -102,150 +102,150 @@ namespace PTSharpCore
 
         static double sh00(Vector d)
         {
-            return 0.282095;
+            return 0.282095F;
         }
 
         static double sh1n1(Vector d)
         {
-            return -0.488603 * d.y;
+            return -0.488603F * d.Y;
         }
 
         static double sh10(Vector d)
         {
-            return 0.488603 * d.z;
+            return 0.488603F * d.Z;
         }
 
         static double sh1p1(Vector d)
         {
-            return -0.488603 * d.x;
+            return -0.488603F * d.X;
         }
 
         static double sh2n2(Vector d)
         {
             // 0.5 * sqrt(15/pi) * x * y
-            return 1.092548 * d.x * d.y;
+            return 1.092548F * d.X * d.Y;
         }
 
         static double sh2n1(Vector d)
         {
             // -0.5 * sqrt(15/pi) * y * z
-            return -1.092548 * d.y * d.z;
+            return -1.092548F * d.Y * d.Z;
         }
 
         static double sh20(Vector d)
         {
             // 0.25 * sqrt(5/pi) * (-x^2-y^2+2z^2)
-            return 0.315392 * (-d.x * d.x - d.y * d.y + 2.0 * d.z * d.z);
+            return 0.315392F * (-d.X * d.X - d.Y * d.Y + 2.0F * d.Z * d.Z);
         }
 
         static double sh2p1(Vector d)
         {
             // -0.5 * sqrt(15/pi) * x * z
-            return -1.092548 * d.x * d.z;
+            return -1.092548F * d.X * d.Z;
         }
 
         static double sh2p2(Vector d)
         {
             // 0.25 * sqrt(15/pi) * (x^2 - y^2)
-            return 0.546274 * (d.x * d.x - d.y * d.y);
+            return 0.546274F * (d.X * d.X - d.Y * d.Y);
         }
 
         static double sh3n3(Vector d)
         {
             // -0.25 * sqrt(35/(2pi)) * y * (3x^2 - y^2)
-            return -0.590044 * d.y * (3.0 * d.x * d.x - d.y * d.y);
+            return -0.590044F * d.Y * (3.0F * d.X * d.X - d.Y * d.Y);
         }
 
         static double sh3n2(Vector d)
         {
             // 0.5 * sqrt(105/pi) * x * y * z
-            return 2.890611 * d.x * d.y * d.z;
+            return 2.890611F * d.X * d.Y * d.Z;
         }
 
         static double sh3n1(Vector d)
         {
             // -0.25 * sqrt(21/(2pi)) * y * (4z^2-x^2-y^2)
-            return -0.457046 * d.y * (4.0 * d.z * d.z - d.x * d.x - d.y * d.y);
+            return -0.457046F * d.Y * (4.0F * d.Z * d.Z - d.X * d.X - d.Y * d.Y);
         }
 
         static double sh30(Vector d)
         {
             // 0.25 * sqrt(7/pi) * z * (2z^2 - 3x^2 - 3y^2)
-            return 0.373176 * d.z * (2.0 * d.z * d.z - 3.0 * d.x * d.x - 3.0 * d.y * d.y);
+            return 0.373176F * d.Z * (2.0F * d.Z * d.Z - 3.0F * d.X * d.X - 3.0F * d.Y * d.Y);
         }
 
         static double sh3p1(Vector d)
         {
             // -0.25 * sqrt(21/(2pi)) * x * (4z^2-x^2-y^2)
-            return -0.457046 * d.x * (4.0 * d.z * d.z - d.x * d.x - d.y * d.y);
+            return -0.457046F * d.X * (4.0F * d.Z * d.Z - d.X * d.X - d.Y * d.Y);
         }
 
         static double sh3p2(Vector d)
         {
             // 0.25 * sqrt(105/pi) * z * (x^2 - y^2)
-            return 1.445306 * d.z * (d.x * d.x - d.y * d.y);
+            return 1.445306F * d.Z * (d.X * d.X - d.Y * d.Y);
         }
 
         static double sh3p3(Vector d)
         {
             // -0.25 * sqrt(35/(2pi)) * x * (x^2-3y^2)
-            return -0.590044 * d.x * (d.x * d.x - 3.0 * d.y * d.y);
+            return -0.590044F * d.X * (d.X * d.X - 3.0F * d.Y * d.Y);
         }
         static double sh4n4(Vector d)
         {
             // 0.75 * sqrt(35/pi) * x * y * (x^2-y^2)
-            return 2.503343 * d.x * d.y * (d.x * d.x - d.y * d.y);
+            return 2.503343F * d.X * d.Y * (d.X * d.X - d.Y * d.Y);
         }
 
         static double sh4n3(Vector d)
         {
             // -0.75 * sqrt(35/(2pi)) * y * z * (3x^2-y^2)
-            return -1.770131 * d.y * d.z * (3.0 * d.x * d.x - d.y * d.y);
+            return -1.770131F * d.Y * d.Z * (3.0F * d.X * d.X - d.Y * d.Y);
         }
 
         static double sh4n2(Vector d)
         {
             // 0.75 * sqrt(5/pi) * x * y * (7z^2-1)
-            return 0.946175 * d.x * d.y * (7.0 * d.z * d.z - 1.0);
+            return 0.946175F * d.X * d.Y * (7.0F * d.Z * d.Z - 1.0F);
         }
 
         static double sh4n1(Vector d)
         {
             // -0.75 * sqrt(5/(2pi)) * y * z * (7z^2-3)
-            return -0.669047 * d.y * d.z * (7.0 * d.z * d.z - 3.0);
+            return -0.669047F * d.Y * d.Z * (7.0F * d.Z * d.Z - 3.0F);
         }
 
         static double sh40(Vector d)
         {
             // 3/16 * sqrt(1/pi) * (35z^4-30z^2+3)
-            double z2 = d.z * d.z;
-            return 0.105786 * (35.0 * z2 * z2 - 30.0 * z2 + 3.0);
+            double z2 = d.Z * d.Z;
+            return 0.105786F * (35.0F * z2 * z2 - 30.0F * z2 + 3.0F);
         }
 
         static double sh4p1(Vector d)
         {
             // -0.75 * sqrt(5/(2pi)) * x * z * (7z^2-3)
-            return -0.669047 * d.x * d.z * (7.0 * d.z * d.z - 3.0);
+            return -0.669047F * d.X * d.Z * (7.0F * d.Z * d.Z - 3.0F);
         }
 
         static double sh4p2(Vector d)
         {
             // 3/8 * sqrt(5/pi) * (x^2 - y^2) * (7z^2 - 1)
-            return 0.473087 * (d.x * d.x - d.y * d.y) * (7.0 * d.z * d.z - 1.0);
+            return 0.473087F * (d.X * d.X - d.Y * d.Y) * (7.0F * d.Z * d.Z - 1.0F);
         }
 
         static double sh4p3(Vector d)
         {
             // -0.75 * sqrt(35/(2pi)) * x * z * (x^2 - 3y^2)
-            return -1.770131 * d.x * d.z * (d.x * d.x - 3.0 * d.y * d.y);
+            return -1.770131F * d.X * d.Z * (d.X * d.X - 3.0F * d.Y * d.Y);
         }
 
         static double sh4p4(Vector d)
         {
             // 3/16*sqrt(35/pi) * (x^2 * (x^2 - 3y^2) - y^2 * (3x^2 - y^2))
-            double x2 = d.x * d.x;
-            double y2 = d.y * d.y;
-            return 0.625836 * (x2 * (x2 - 3.0 * y2) - y2 * (3.0 * x2 - y2));
+            double x2 = d.X * d.X;
+            double y2 = d.Y * d.Y;
+            return 0.625836F * (x2 * (x2 - 3.0F * y2) - y2 * (3.0F * x2 - y2));
         }
 
         static func shFunc(int l, int m)
@@ -357,6 +357,31 @@ namespace PTSharpCore
                 Console.WriteLine("unsupported spherical harmonic");
             }
             return f;
+        }
+
+        public Colour ComputeContribution(Vector position, Vector normal, Material material, Scene scene)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Colour ComputeDirectLighting(Vector position, Vector normal, Material material, Scene scene)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Colour ComputeIndirectLighting(Vector position, Vector normal, Material material, Scene scene)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Vector DirectionFrom(Vector position)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Vector SamplePoint(Random rand)
+        {
+            throw new NotImplementedException();
         }
     }
 }

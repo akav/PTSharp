@@ -1,9 +1,96 @@
+using Silk.NET.OpenGL;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
+
+    public class Texture : IDisposable
+    {
+        private uint _handle;
+        private GL _gl;
+
+        public unsafe Texture(GL gl, string path)
+        {
+            //Loading an image using imagesharp.
+            using (Image<Rgba32> img = SixLabors.ImageSharp.Image.Load<Rgba32>(path))
+            {
+                //We need to flip our image as image sharps coordinates has origin (0, 0) in the top-left corner,
+                //whereas openGL has origin in the bottom-left corner.
+                img.Mutate(x => x.Flip(FlipMode.Vertical));
+
+                // Converting the image data to a byte array
+                byte[] imageData = new byte[img.Width * img.Height * 4];
+                int index = 0;
+                for (int y = 0; y < img.Height; y++)
+                {
+                    for (int x = 0; x < img.Width; x++)
+                    {
+                        Rgba32 pixel = img[x, y];
+                        imageData[index++] = pixel.R;
+                        imageData[index++] = pixel.G;
+                        imageData[index++] = pixel.B;
+                        imageData[index++] = pixel.A;
+                    }
+                }
+
+                fixed (void* data = imageData)
+                {
+                    //Loading the actual image.
+                    Load(gl, data, (uint)img.Width, (uint)img.Height);
+                }
+            }
+        }
+
+        public unsafe Texture(GL gl, Span<byte> data, uint width, uint height)
+        {
+            //We want the ability to create a texture using data generated from code aswell.
+            fixed (void* d = &data[0])
+            {
+                Load(gl, d, width, height);
+            }
+        }
+
+        private unsafe void Load(GL gl, void* data, uint width, uint height)
+        {
+            //Saving the gl instance.
+            _gl = gl;
+
+            //Generating the opengl handle;
+            _handle = _gl.GenTexture();
+            Bind();
+
+            //Setting the data of a texture.
+            _gl.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, data);
+            //Setting some texture perameters so the texture behaves as expected.
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.Linear);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
+
+            //Generating mipmaps.
+            _gl.GenerateMipmap(TextureTarget.Texture2D);
+        }
+
+        public void Bind(TextureUnit textureSlot = TextureUnit.Texture0)
+        {
+            //When we bind a texture we can choose which textureslot we can bind it to.
+            _gl.ActiveTexture(textureSlot);
+            _gl.BindTexture(TextureTarget.Texture2D, _handle);
+        }
+
+        public void Dispose()
+        {
+            //In order to dispose we need to delete the opengl handle for the texure.
+            _gl.DeleteTexture(_handle);
+        }
+    }
+
     class ColorTexture : ITexture
     {
         public int Width;
@@ -16,7 +103,7 @@ namespace PTSharpCore
         {
             Width = 0;
             Height = 0;
-            Data = new Colour[] { };
+            Data = Array.Empty<Colour>();//new Colour[] { };
         }
         
         ColorTexture(int width, int height, Colour[] data)
@@ -36,12 +123,12 @@ namespace PTSharpCore
             else
             {
                 Console.WriteLine("Adding texture to list...");
-                ITexture img = new ColorTexture().LoadTexture(path);
+                ITexture img = LoadTexture(path);
                 textures.Add(path, img);
                 return img;
             }
         }
-        internal ITexture LoadTexture(String path)
+        internal static ITexture LoadTexture(String path)
         {
             Console.WriteLine("IMG: "+path);
             Bitmap image = Util.LoadImage(path);
@@ -55,12 +142,12 @@ namespace PTSharpCore
             }
             return NewTexture(image);
         }
-                
-        ITexture NewTexture(Bitmap image)
+
+        static ITexture NewTexture(Bitmap image)
         {
             GraphicsUnit unit = GraphicsUnit.Pixel;
-            RectangleF boundsF = image.GetBounds(ref unit);
-            Rectangle bounds = new Rectangle((int)boundsF.Left, (int)boundsF.Top, (int)boundsF.Width, (int)boundsF.Height);
+            System.Drawing.RectangleF boundsF = image.GetBounds(ref unit);
+            System.Drawing.Rectangle bounds = new((int)boundsF.Left, (int)boundsF.Top, (int)boundsF.Width, (int)boundsF.Height);
 
             int yMax = (int)boundsF.Height;
             int xMax = (int)boundsF.Width;
@@ -73,7 +160,7 @@ namespace PTSharpCore
                 {
                     int index = y * xMax + x;
                     System.Drawing.Color pixelcolor = image.GetPixel(x, y);
-                    imgdata[index] = new Colour((double)(pixelcolor.R)  / 255, (double)(pixelcolor.G) / 255, (double)(pixelcolor.B) / 255).Pow(2.2); 
+                    imgdata[index] = new Colour((double)(pixelcolor.R)  / 255, (double)(pixelcolor.G) / 255, (double)(pixelcolor.B) / 255).Pow(2.2F); 
                 }
             }
             return new ColorTexture(xMax, yMax, imgdata);
@@ -97,7 +184,7 @@ namespace PTSharpCore
             return this;
         }
 
-        Colour bilinearSample(double u, double v)
+        Colour BilinearSample(double u, double v)
         {
             if(u == 1)
             {
@@ -127,7 +214,7 @@ namespace PTSharpCore
             return c;
         }
 
-        double Fract(double x)
+        static double Fract(double x)
         {
             x = Util.Modf(x).Item2;
             return x;
@@ -137,14 +224,14 @@ namespace PTSharpCore
         {
             u = Fract(Fract(u) + 1);
             v = Fract(Fract(v) + 1);
-            return bilinearSample(u, 1 - v);
+            return BilinearSample(u, 1 - v);
         }
 
         Vector ITexture.NormalSample(double u, double v)
         {
             u = Fract(Fract(u) + 1);
             v = Fract(Fract(v) + 1);
-            var c = bilinearSample(u, 1 - v);
+            var c = BilinearSample(u, 1 - v);
             return new Vector(c.r * 2 - 1, c.g * 2 - 1, c.b * 2 - 1).Normalize();
         }
 

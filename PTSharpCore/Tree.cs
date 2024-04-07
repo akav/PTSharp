@@ -1,8 +1,11 @@
 using PTSharpCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PTSharpCore
@@ -32,8 +35,10 @@ namespace PTSharpCore
 
         internal Hit Intersect(Ray r)
         {
+            double tmin;
+            double tmax;
             
-            (double tmin, double tmax) = Box.Intersect(r);
+            (tmin, tmax) = Box.Intersect(r);
             
             if (tmax < tmin || tmax <= 0) {
                 return Hit.NoHit;
@@ -74,16 +79,16 @@ namespace PTSharpCore
                     case Axis.AxisNone:
                         return IntersectShapes(r);
                     case Axis.AxisX:
-                        tsplit = (Point - r.Origin.x) / r.Direction.x;
-                        leftFirst = (r.Origin.x < Point) || (r.Origin.x == Point && r.Direction.x <= 0);
+                        tsplit = (Point - r.Origin.X) / r.Direction.X;
+                        leftFirst = (r.Origin.X < Point) || (r.Origin.X == Point && r.Direction.X <= 0);
                         break;
                     case Axis.AxisY:
-                        tsplit = (Point - r.Origin.y) / r.Direction.y;
-                        leftFirst = (r.Origin.y < Point) || (r.Origin.y == Point && r.Direction.y <= 0);
+                        tsplit = (Point - r.Origin.Y) / r.Direction.Y;
+                        leftFirst = (r.Origin.Y < Point) || (r.Origin.Y == Point && r.Direction.Y <= 0);
                         break;
                     case Axis.AxisZ:
-                        tsplit = (Point - r.Origin.z) / r.Direction.z;
-                        leftFirst = (r.Origin.z < Point) || (r.Origin.z == Point && r.Direction.z <= 0);
+                        tsplit = (Point - r.Origin.Z) / r.Direction.Z;
+                        leftFirst = (r.Origin.Z < Point) || (r.Origin.Z == Point && r.Direction.Z <= 0);
                         break;
                     default:
                         throw new InvalidOperationException("Invalid Axis");
@@ -115,6 +120,7 @@ namespace PTSharpCore
             internal Hit IntersectShapes(Ray r)
             {
                 Hit hit = Hit.NoHit;
+
                 foreach (var shape in Shapes)
                 {
                     Hit h = shape.Intersect(r);
@@ -126,22 +132,22 @@ namespace PTSharpCore
                 return hit;
             }
 
-            public double Median(List<Double> list)
+            public static double Median(ConcurrentBag<double> list)
             {
-                int middle = list.Count() / 2;
+                int middle = list.Count / 2;
 
                 if (list.Count == 0)
                 {
                     return 0;
                 }
-                else if (list.Count() % 2 == 1)
+                else if (list.Count % 2 == 1)
                 {
                     return list.ElementAt(middle);
                 }
                 else
                 {
-                    var a = list.ElementAt(list.Count() / 2 - 1);
-                    var b = list.ElementAt(list.Count() / 2);
+                    var a = list.ElementAt(list.Count / 2 - 1);
+                    var b = list.ElementAt(list.Count / 2);
                     return (a + b) / 2;
                 }
             }
@@ -156,12 +162,12 @@ namespace PTSharpCore
                     (bool l, bool r) = box.Partition(axis, point);
                     if (l)
                     {
-                        left++;
+                        Interlocked.Increment(ref left);
                     }
 
                     if (r)
                     {
-                        right++;
+                        Interlocked.Increment(ref right);
                     }
                 }
 
@@ -175,8 +181,8 @@ namespace PTSharpCore
 
             (IShape[], IShape[]) Partition(int size, Axis axis, double point)
             {
-                List<IShape> left = new List<IShape>();
-                List<IShape> right = new List<IShape>();
+                ConcurrentBag<IShape> left = new();
+                ConcurrentBag<IShape> right = new();
 
                 foreach (var shape in Shapes)
                 {
@@ -204,25 +210,26 @@ namespace PTSharpCore
                     return;
                 }
 
-                List<double> xs = new List<double>();
-                List<double> ys = new List<double>();
-                List<double> zs = new List<double>();
+                ConcurrentBag<double> xs = new();
+                ConcurrentBag<double> ys = new();
+                ConcurrentBag<double> zs = new();
 
                 foreach (var shape in Shapes) {
                     Box box = shape.BoundingBox();
-                    xs.Add(box.Min.x); 
-                    xs.Add(box.Max.x); 
-                    ys.Add(box.Min.y); 
-                    ys.Add(box.Max.y); 
-                    zs.Add(box.Min.z); 
-                    zs.Add(box.Max.z); 
+                    xs.Add(box.Min.X); 
+                    xs.Add(box.Max.X); 
+                    ys.Add(box.Min.Y); 
+                    ys.Add(box.Max.Y); 
+                    zs.Add(box.Min.Z); 
+                    zs.Add(box.Max.Z); 
                 }
 
-                xs.Sort();
-                ys.Sort();
-                zs.Sort();
-
+                xs.AsParallel().AsOrdered();
+                ys.AsParallel().AsOrdered();
+                zs.AsParallel().AsOrdered();
+                
                 (double mx, double my, double mz) = (Median(xs), Median(ys), Median(zs));
+                
                 var best = (int)(Shapes.Length * 0.85);
                 var bestAxis = Axis.AxisNone;
                 var bestPoint = 0.0;
@@ -255,8 +262,8 @@ namespace PTSharpCore
                 (var l, var r) = Partition(best, bestAxis, bestPoint);
                 Axis = bestAxis;
                 Point = bestPoint;
-                Left = NewNode(l);
-                Right = NewNode(r);
+                
+                (Left, Right) = (NewNode(l), NewNode(r));
                 Left.Split(depth + 1);
                 Right.Split(depth + 1);
                 Shapes = null; // only needed at leaf nodes
