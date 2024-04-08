@@ -171,7 +171,8 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(0, 4, -8), new Vector(0, 0, -2), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
-            renderer.FireflySamples = 32;
+            renderer.HaltonSampling = true;
+            //renderer.FireflySamples = 32;
             renderer.IterativeRender("example2.png", 1000);
         }
 
@@ -227,10 +228,11 @@ namespace PTSharpCore
 
             // render the scene with progressive refinement
             var sampler = DefaultSampler.NewSampler(16, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            renderer.AdaptiveSamples = 128;
-            renderer.FireflySamples = 32;
-            renderer.IterativeRender("simplesphere.png", 100);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, false);
+            renderer.HaltonSampling = true;
+            //renderer.AdaptiveSamples = 128;
+            //renderer.FireflySamples = 32;
+            renderer.IterativeRender("halton_simplesphere.png", 100);
         }
 
         public static void simplecylinder(int width, int height)
@@ -550,6 +552,7 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(0, 3, 6), new Vector(0, 1, 0), new Vector(0, 1, 0), 30);
             var sampler = DefaultSampler.NewSampler(16, 16);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.HaltonSampling = true;
             renderer.IterativeRender("materialspheres.png", 100);
         }
 

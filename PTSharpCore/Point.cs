@@ -12,6 +12,29 @@ namespace PTSharpCore
         public T X;
         public T Y;
 
+        public T this[int index]
+        {
+            get
+            {
+                switch (index)
+                {
+                    case 0: return X;
+                    case 1: return Y;
+                    default: throw new IndexOutOfRangeException();
+                }
+            }
+            set 
+            {
+                switch (index)
+                {
+                    case 0: X = value; break;
+                    case 1: Y = value; break;
+                    default: throw new IndexOutOfRangeException();
+                }
+            }
+        }
+
+
         public static Point2<T> Zero => new Point2<T>((dynamic)0, (dynamic)0);
         public static Point2<T> One => new Point2<T>((dynamic)1, (dynamic)1);
 

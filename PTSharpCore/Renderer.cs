@@ -15,6 +15,7 @@ namespace PTSharpCore
         public Buffer PBuffer;
         public int SamplesPerPixel;
         public bool StratifiedSampling;
+        public bool HaltonSampling;
         public int AdaptiveSamples;
         double AdaptiveThreshold;
         double AdaptiveExponent;
@@ -33,7 +34,7 @@ namespace PTSharpCore
             r.Camera = camera;
             r.Sampler = sampler;
             r.PBuffer = new Buffer(w, h);
-            r.SamplesPerPixel = 2;
+            r.SamplesPerPixel = 128;
             r.AdaptiveSamples = 0;
             r.StratifiedSampling = false;
             r.AdaptiveThreshold = 1;
@@ -97,6 +98,32 @@ namespace PTSharpCore
                                 }
                             }
 
+                        }
+                        if (HaltonSampling)
+                        {
+                            Bounds2<int> sampleBounds = new Bounds2<int>(Point2<int>.Zero, new Point2<int>(w, h));
+                            Halton halton = new Halton(sampleBounds);
+
+                            halton.CurrentPixel = new Point2<int>(x, y);
+
+                            for (int p = 0; p < spp; p++)
+                            {
+                                ulong index = halton.GetIndexForSample((ulong)p);
+
+                                // Sample the X and Y dimensions
+                                double sampleX = halton.SampleDimension(index, 0);
+                                double sampleY = halton.SampleDimension(index, 1);
+
+                                Colour c = new Colour(0, 0, 0);
+                                c += sampler.Sample(scene, camera.CastRay(x, y, w, h, sampleX, sampleY, rand), rand);
+                                buf.AddSample(x, y, c);
+
+                                // Set the pixel color
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                            }
                         }
                         else
                         {
@@ -201,7 +228,7 @@ namespace PTSharpCore
                     }
                 });
             }
-            else
+            if (HaltonSampling)
             {
                 int tile_size = 256;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
@@ -211,6 +238,91 @@ namespace PTSharpCore
                 var colorSettingScheduler = new WorkStealingScheduler(Environment.ProcessorCount);
 
                 // Define the granularity of work distribution (e.g., sub-tiles)
+                int sub_tile_size = 32;
+
+                for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
+                {
+                    int tile_x = tile_index % num_tiles_x;
+                    int tile_y = tile_index / num_tiles_x;
+                    int x_start = tile_x * tile_size;
+                    int y_start = tile_y * tile_size;
+                    int x_end = Math.Min(x_start + tile_size, w);
+                    int y_end = Math.Min(y_start + tile_size, h);
+
+                    // Divide each tile into smaller sub-tiles for finer-grained parallelism
+                    for (int sub_tile_y = 0; sub_tile_y < tile_size; sub_tile_y += sub_tile_size)
+                    {
+                        for (int sub_tile_x = 0; sub_tile_x < tile_size; sub_tile_x += sub_tile_size)
+                        {
+                            int sub_x_start = x_start + sub_tile_x;
+                            int sub_y_start = y_start + sub_tile_y;
+                            int sub_x_end = Math.Min(sub_x_start + sub_tile_size, x_end);
+                            int sub_y_end = Math.Min(sub_y_start + sub_tile_size, y_end);
+
+                            // Schedule rendering of each sub-tile as a separate task
+                            Task.Factory.StartNew(() =>
+                            {
+                                // Rendering logic for the sub-tile
+                                for (int y = sub_y_start; y < sub_y_end; y++)
+                                {
+                                    for (int x = sub_x_start; x < sub_x_end; x++)
+                                    {
+                                        Bounds2<int> sampleBounds = new Bounds2<int>(Point2<int>.Zero, new Point2<int>(w, h));
+                                        Halton halton = new Halton(sampleBounds);
+                                        halton.CurrentPixel = new Point2<int>(x, y);
+
+                                        for (int p = 0; p < spp; p++)
+                                        {
+                                            ulong index = halton.GetIndexForSample((ulong)p);
+
+                                            // Sample the X and Y dimensions
+                                            double sampleX = halton.SampleDimension(index, 0);
+                                            double sampleY = halton.SampleDimension(index, 1);
+
+                                            Colour c = new Colour(0, 0, 0);
+                                            c += sampler.Sample(scene, camera.CastRay(x, y, w, h, sampleX, sampleY, rand), rand);
+                                            buf.AddSample(x, y, c);
+                                        }
+                                    }
+                                }
+                            }, CancellationToken.None, TaskCreationOptions.None, renderingScheduler)
+                            .ContinueWith(_ =>
+                            {
+                                // Setting color values in parallel to avoid contention
+                                Task.Factory.StartNew(() =>
+                                {
+                                    for (int y = sub_y_start; y < sub_y_end; y++)
+                                    {
+                                        for (int x = sub_x_start; x < sub_x_end; x++)
+                                        {
+                                            // Set the pixel color
+                                            var offset = (y * w + x) * 4; // BGR
+                                            Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                            Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                            Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+                                        }
+                                    }
+                                }, CancellationToken.None, TaskCreationOptions.None, colorSettingScheduler);
+                            });
+                        }
+                    }
+                }
+
+                // Dispose the schedulers after rendering completes
+                renderingScheduler.Dispose();
+                colorSettingScheduler.Dispose();
+            }
+
+            else
+            {
+                int tile_size = 256;
+                int num_tiles_x = (w + tile_size - 1) / tile_size;
+                int num_tiles_y = (h + tile_size - 1) / tile_size;
+
+                var renderingScheduler = new WorkStealingScheduler(Environment.ProcessorCount);
+                var colorSettingScheduler = new WorkStealingScheduler(Environment.ProcessorCount);
+
+                // Define the granularity of work distribution
                 int sub_tile_size = 32;
 
                 for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
