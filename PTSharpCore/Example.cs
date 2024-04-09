@@ -1,9 +1,11 @@
 using glTFLoader.Schema;
 using ILGPU.Backends.PointerViews;
 using ILGPU.Runtime.Cuda;
+using ILGPU.Runtime.OpenCL;
 using MathNet.Numerics.Financial;
 using PTSharpCore;
 using Silk.NET.Vulkan;
+using SkiaSharp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -754,14 +756,21 @@ namespace PTSharpCore
         public void volume()
         {
             string[] imglist = Directory.GetFiles(Directory.GetCurrentDirectory()+"\\images", "*.*", SearchOption.AllDirectories);
-            List<Bitmap> bmplist = new List<Bitmap>();
+            List<SKBitmap> bmplist = new List<SKBitmap>();
+            
             foreach (string file in imglist)
             {
                 Console.WriteLine(file);
-                bmplist.Add(new Bitmap(file));
+                using (FileStream stream = File.OpenRead(file))
+                {
+                    SKBitmap skBitmap = SkiaSharp.SKBitmap.Decode(stream);
+                    bmplist.Add(skBitmap);
+                }
             }
+
             Scene scene = new Scene();
             scene.Color = Colour.White;
+            
             Colour[] colors = new Colour[]
             {
                 // HexColor(0xFFF8E3),
@@ -771,6 +780,7 @@ namespace PTSharpCore
                 Colour.HexColor(0xFFE11A),
                 Colour.HexColor(0xFD7400),
             };
+
             const double start = 0.2F;
             const double size = 0.01F;
             const double step = 0.1F;

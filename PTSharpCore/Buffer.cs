@@ -1,3 +1,4 @@
+using SkiaSharp;
 using System;
 using System.Collections.Concurrent;
 using System.Drawing;
@@ -99,9 +100,9 @@ namespace PTSharpCore
 
         public Colour StandardDeviation(int x, int y) => Pixels[(x, y)].StandardDeviation();
 
-        public Bitmap Image(Channel channel)
+        public SKBitmap Image(Channel channel)
         {
-            Bitmap bmp = new Bitmap(W, H);
+            SKBitmap bmp = new SKBitmap(W, H);
             
             double maxSamples=0;
             
@@ -134,7 +135,12 @@ namespace PTSharpCore
                             pixelColor = new Colour(p, p, p);
                             break;
                     }
-                    bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(Colour.getIntFromColor(pixelColor.r, pixelColor.g, pixelColor.b)));
+                    bmp.SetPixel(x, y, new SKColor(
+                        (byte)Math.Clamp(pixelColor.r * 255, 0, 255),
+                        (byte)Math.Clamp(pixelColor.g * 255, 0, 255),
+                        (byte)Math.Clamp(pixelColor.b * 255, 0, 255),
+                        255  // Alpha value, assuming fully opaque
+                    ));
                 }
             }
             return bmp;

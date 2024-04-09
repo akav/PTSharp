@@ -1,3 +1,4 @@
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -49,32 +50,28 @@ namespace PTSharpCore
             return Data[x + y * W + z * W * H];
         }
         
-        internal static Volume NewVolume(Box box, Bitmap[] images, double sliceSpacing, VolumeWindow[] windows)
+        internal static Volume NewVolume(Box box, SKBitmap[] images, double sliceSpacing, VolumeWindow[] windows)
         {
-            GraphicsUnit unit = GraphicsUnit.Pixel;
-            RectangleF boundsF = images[0].GetBounds(ref unit);
-            Rectangle bounds = new Rectangle((int)boundsF.Left, (int)boundsF.Top, (int)boundsF.Width, (int)boundsF.Height);
-            int w = (int)boundsF.Height;
-            int h = (int)boundsF.Width;
+            int w = images[0].Width;
+            int h = images[0].Height;
             int d = images.Length;
-            double zs = (sliceSpacing * (double)d) / (double)w;
+            double zs = sliceSpacing * d / w;
             double[] data = new double[w * h * d];
-            int zval = 0;
 
-            foreach (var image in images)
-            { 
-                for(int y = 0; y < h; y++)
+            for (int z = 0; z < d; z++)
+            {
+                for (int y = 0; y < h; y++)
                 {
-                    for(int x = 0; x < w; x++)
+                    for (int x = 0; x < w; x++)
                     {
-                        var r = image.GetPixel(x, y).R;
-                        double f = (double)r / 65535;
+                        SkiaSharp.SKColor pixelColor = images[z].GetPixel(x, y);
+                        double f = (double)pixelColor.Red / 255; // Assuming the color values are 0-255 range
 
-                        data[x + y * w + zval * w * h] = f;
+                        data[x + y * w + z * w * h] = f;
                     }
                 }
-                zval++;
             }
+
             return new Volume(w, h, d, zs, data, windows, box);
         }
         
