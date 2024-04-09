@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using SkiaSharp;
+using System.IO;
 
 namespace PTSharpCore
 {
@@ -50,9 +52,26 @@ namespace PTSharpCore
 
         void writeImage(String path, Buffer buf, Channel channel)
         {
-            System.Drawing.Bitmap finalrender = buf.Image(channel);
-            finalrender.Save(path);
-            Console.WriteLine("Wrote image to location:" + path);
+            SkiaSharp.SKBitmap finalrender = buf.Image(channel);
+
+            // Create SKImage from SKBitmap
+            using (SKImage img = SKImage.FromBitmap(finalrender))
+            {
+                // Encode and save the image
+                using (Stream stream = File.OpenWrite(path))
+                {
+                    try
+                    {
+                        img.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
+                        Console.WriteLine("Wrote image to location: " + path);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Failed to write image to location: " + path);
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
         }
 
         public void Render()
@@ -457,12 +476,12 @@ namespace PTSharpCore
             return overallDeviation;
         }
 
-        public System.Drawing.Bitmap IterativeRender(String pathTemplate, int iter)
+        public SKBitmap IterativeRender(String pathTemplate, int iter)
         {
             iterations = iter;
-            System.Drawing.Bitmap finalrender = null;
+            SkiaSharp.SKBitmap finalrender = null;
 
-            for (int i = 1; i < iterations; i++)
+            for (int i = 1; i <= iterations; i++)
             {
                 Console.WriteLine("Iterations " + i + " of " + iterations);
                 if (NumCPU.Equals(1))
@@ -473,11 +492,18 @@ namespace PTSharpCore
                 {
                     RenderParallel();
                 }
-                this.pathTemplate = pathTemplate;
+
+                string currentPath = string.Format(pathTemplate, i); // Update the path for each iteration
                 finalrender = PBuffer.Image(Channel.ColorChannel);
-                finalrender.Save(pathTemplate);
+
+                // Save the image for each iteration with the updated path
+                using (var stream = File.OpenWrite(currentPath))
+                {
+                    finalrender.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100).SaveTo(stream);
+                }
             }
-            return PBuffer.Image(Channel.ColorChannel);
+
+            return finalrender;
         }
 
         internal void FrameRender(String path, int iterations)

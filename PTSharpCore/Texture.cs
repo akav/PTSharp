@@ -2,9 +2,9 @@ using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Runtime.InteropServices;
 
 namespace PTSharpCore
@@ -131,7 +131,8 @@ namespace PTSharpCore
         internal static ITexture LoadTexture(String path)
         {
             Console.WriteLine("IMG: "+path);
-            Bitmap image = Util.LoadImage(path);
+            SKBitmap image = Util.LoadImage(path);
+            
             if (image == null)
             {
                 Console.WriteLine("IMG load: FAIL");
@@ -143,26 +144,23 @@ namespace PTSharpCore
             return NewTexture(image);
         }
 
-        static ITexture NewTexture(Bitmap image)
+        static ITexture NewTexture(SKBitmap image)
         {
-            GraphicsUnit unit = GraphicsUnit.Pixel;
-            System.Drawing.RectangleF boundsF = image.GetBounds(ref unit);
-            System.Drawing.Rectangle bounds = new((int)boundsF.Left, (int)boundsF.Top, (int)boundsF.Width, (int)boundsF.Height);
-
-            int yMax = (int)boundsF.Height;
-            int xMax = (int)boundsF.Width;
+            int xMax = image.Width;
+            int yMax = image.Height;
 
             Colour[] imgdata = new Colour[xMax * yMax];
-            
+
             for (int y = 0; y < yMax; y++)
             {
                 for (int x = 0; x < xMax; x++)
                 {
                     int index = y * xMax + x;
-                    System.Drawing.Color pixelcolor = image.GetPixel(x, y);
-                    imgdata[index] = new Colour((double)(pixelcolor.R)  / 255, (double)(pixelcolor.G) / 255, (double)(pixelcolor.B) / 255).Pow(2.2F); 
+                    SKColor pixelcolor = image.GetPixel(x, y);
+                    imgdata[index] = new Colour((double)(pixelcolor.Red) / 255, (double)(pixelcolor.Green) / 255, (double)(pixelcolor.Blue) / 255).Pow(2.2F);
                 }
             }
+
             return new ColorTexture(xMax, yMax, imgdata);
         }
         

@@ -1,6 +1,8 @@
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 
 namespace PTSharpCore
 {
@@ -53,12 +55,12 @@ namespace PTSharpCore
             mesh.FitInside(new Box(new Vector(), new Vector(2, 4, 10)), new Vector( 0, 0, 0 ));
 	        return mesh;
         }
-        public static Bitmap LoadImage(String path)
+        public static SKBitmap LoadImage(String path)
         {
             try
             {
-                Bitmap image1 = new Bitmap(path); 
-                return image1;
+                SKBitmap bitmap = SKBitmap.Decode(path);
+                return bitmap;
             }
             catch (System.IO.FileNotFoundException)
             {
@@ -68,12 +70,17 @@ namespace PTSharpCore
             }
         }
         
-        void SavePNG(String path, Bitmap bitmap)
+        void SavePNG(String path, SKBitmap bitmap)
         {
             try
             {
-                if(bitmap != null)
-                bitmap.Save(path);
+                if (bitmap != null)
+                {
+                    using (var stream = File.OpenWrite(path))
+                    {
+                        bitmap.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
+                    }
+                }
             }
             catch (System.IO.FileNotFoundException)
             {
