@@ -8,6 +8,7 @@ Getting Started:
 
 Status:
 - Multithreading is stable
-- Added viewport using Silk .NET  
+- Added viewport using Silk .NET
+- Replaced System.Drawing.Common with SkiaSharp
 
 My thanks go out to Michael Fogleman for his wonderful work.
