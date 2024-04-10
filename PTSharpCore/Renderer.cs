@@ -52,7 +52,7 @@ namespace PTSharpCore
 
         void writeImage(String path, Buffer buf, Channel channel)
         {
-            SkiaSharp.SKBitmap finalrender = buf.Image(channel);
+            SKBitmap finalrender = buf.Image(channel);
 
             // Create SKImage from SKBitmap
             using (SKImage img = SKImage.FromBitmap(finalrender))
@@ -73,7 +73,7 @@ namespace PTSharpCore
                 }
             }
         }
-
+        
         public void Render()
         {
             Scene scene = Scene;
@@ -119,29 +119,55 @@ namespace PTSharpCore
                         }
                         else
                         {
+                            // Render the sub-tile at the current coordinates, using the current resolution
+                            Colour c = new Colour(0, 0, 0);
+
                             for (int p = 0; p < spp; p++)
                             {
-                                Colour c = new Colour(0, 0, 0);
-                                c += sampler.Sample(scene, camera.CastRay(x, y, w, h, rand.NextDouble(), rand.NextDouble(), rand), rand);
-                                buf.AddSample(x, y, c);
+                                // Generate random offsets within the pixel
+                                double xOffset = Random.Shared.NextDouble();
+                                double yOffset = Random.Shared.NextDouble();
+
+                                // Use jittered offsets to generate rays
+                                double fu = (x + xOffset) / w;
+                                double fv = (y + yOffset) / h;
+
+                                c += sampler.Sample(scene, camera.CastRay(x, y, w, h, fu, fv, rand), rand);
                             }
+
+                            // Average the color over the number of samples
+                            c /= spp;
+                            buf.AddSample(x, y, c);
+
+                            // Set the pixel color
+                            var offset = (y * w + x) * 4; // BGR
+                            Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                            Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                            Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
 
                         }
                         // Adaptive Sampling
                         if (AdaptiveSamples > 0)
                         {
-                            double v = buf.StandardDeviation(x, y).MaxComponent();
-                            v = Util.Clamp(v / AdaptiveThreshold, 0, 1);
+                            var v = buf.StandardDeviation(x, y).MaxComponent();
+                            v = Math.Clamp(v / AdaptiveThreshold, 0, 1);
                             v = Math.Pow(v, AdaptiveExponent);
-                            int samples = (int)(v * AdaptiveSamples);
+                            int samples = AdaptiveSamples * (int)(v);
+
                             for (int d = 0; d < samples; d++)
                             {
-
+                                Colour sample = Colour.Black;
                                 var fu = rand.NextDouble();
                                 var fv = rand.NextDouble();
                                 Ray ray = camera.CastRay(x, y, w, h, fu, fv, rand);
-                                Colour sample = sampler.Sample(scene, ray, rand);
+                                sample += sampler.Sample(scene, ray, rand);
                                 buf.AddSample(x, y, sample);
+
+                                // Set the pixel color
+                                var offset = (y * w + x) * 4; // BGR
+                                Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                                Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                                Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
                             }
                         }
 
@@ -167,7 +193,7 @@ namespace PTSharpCore
             Console.WriteLine("time elapsed:" + sw.Elapsed);
             sw.Stop();
         }
-      
+
         public void RenderParallel()
         {
             Scene scene = Scene;
@@ -191,20 +217,22 @@ namespace PTSharpCore
             int totalPixels = h * w;
             double invWidth = 1.0f / w;
             double invHeight = 1.0f / h;
-
-            // Create a cancellation token for Parallel.For loop control
-            CancellationTokenSource cts = new CancellationTokenSource();
-
+                        
             // ParallelOptions for Parallel.For
-            ParallelOptions po = new ParallelOptions();
-            po.CancellationToken = cts.Token;
-            po.MaxDegreeOfParallelism = Environment.ProcessorCount;
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken cancellationToken = cancellationTokenSource.Token;
 
-            Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, po.MaxDegreeOfParallelism);
+            ParallelOptions parallelOptions = new ParallelOptions
+            {
+                CancellationToken = cancellationToken,
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            };
+
+            Console.WriteLine("{0} x {1}, {2} spp, {3} core(s)", w, h, spp, parallelOptions.MaxDegreeOfParallelism);
 
             if (StratifiedSampling)
             {
-                Parallel.For(0, w * h, po, (i, loopState) =>
+                Parallel.For(0, w * h, parallelOptions, (i, loopState) =>
                 {
                     int y = i / w, x = i % w;
                     for (int u = 0; u < sppRoot; u++)
@@ -217,6 +245,84 @@ namespace PTSharpCore
                             var sample = sampler.Sample(scene, ray, rand);
                             buf.AddSample(x, y, sample);
                         }
+                    }
+                });
+            }
+            
+            if (AdaptiveSamples > 0)
+            {
+                Console.WriteLine("Adaptive sampling set to {0} samples", AdaptiveSamples);
+
+                // Define global variables for accumulating variance and sample counts
+                ConcurrentDictionary<int, double> pixelVariances = new ConcurrentDictionary<int, double>(); // Stores variance for each pixel
+                ConcurrentDictionary<int, int> pixelSampleCounts = new ConcurrentDictionary<int, int>(); // Stores sample count for each pixel
+                                
+                // Replace the variance calculation with an optimal approach using parallel aggregation
+                Parallel.For(0, w * h, parallelOptions, (i, loopState) =>
+                {
+                    int y = i / w, x = i % w;
+
+                    // Calculate the sum of color components
+                    double sumR = 0, sumG = 0, sumB = 0;
+                    int count = 0;
+
+                    for (int j = 0; j < AdaptiveSamples; j++)
+                    {
+                        var fu = Random.Shared.NextDouble();
+                        var fv = Random.Shared.NextDouble();
+                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
+                        Colour sample = sampler.Sample(scene, ray, Random.Shared);
+                        buf.AddSample(x, y, sample);
+
+                        // Accumulate the color components
+                        sumR += sample.r;
+                        sumG += sample.g;
+                        sumB += sample.b;
+                        count++;
+                    }
+
+                    // Calculate the average color
+                    double avgR = sumR / count;
+                    double avgG = sumG / count;
+                    double avgB = sumB / count;
+
+                    // Calculate the variance
+                    double variance = 0;
+
+                    for (int j = 0; j < AdaptiveSamples; j++)
+                    {
+                        var fu = Random.Shared.NextDouble();
+                        var fv = Random.Shared.NextDouble();
+                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
+                        Colour sample = sampler.Sample(scene, ray, Random.Shared);
+
+                        // Calculate the squared difference from the average color
+                        double diffR = sample.r - avgR;
+                        double diffG = sample.g - avgG;
+                        double diffB = sample.b - avgB;
+                        variance += diffR * diffR + diffG * diffG + diffB * diffB;
+                    }
+
+                    // Set the pixel color
+                    var offset = (y * w + x) * 4; // BGR
+                    Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                    Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                    Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+
+                    // Normalize the variance
+                    variance /= count;
+
+                    // Update accumulated variance and sample count
+                    int index = y * w + x;
+                    if (!pixelVariances.ContainsKey(index))
+                    {
+                        pixelVariances[index] = variance;
+                        pixelSampleCounts[index] = count;
+                    }
+                    else
+                    {
+                        pixelVariances[index] = (pixelVariances[index] + variance) / 2; // Update variance with running average
+                        pixelSampleCounts[index] += count; // Accumulate sample count
                     }
                 });
             }
@@ -307,56 +413,14 @@ namespace PTSharpCore
                 renderingScheduler.Dispose();
                 colorSettingScheduler.Dispose();
             }                   
-
-            // Main rendering loop
-            if (AdaptiveSamples > 0)
-            {
-                // Define global variables for accumulating variance and sample counts
-                ConcurrentDictionary<int, double> pixelVariances = new ConcurrentDictionary<int, double>(); // Stores variance for each pixel
-                ConcurrentDictionary<int, int> pixelSampleCounts = new ConcurrentDictionary<int, int>(); // Stores sample count for each pixel
-
-                Parallel.For(0, w * h, po, (i, loopState) => {
-                    int y = i / w, x = i % w;
-
-                    // Calculate variance
-                    double variance = buf.StandardDeviation(x, y).MaxComponent();
-                    variance = Util.Clamp(variance / AdaptiveThreshold, 0, 1);
-                    variance = Math.Pow(variance, AdaptiveExponent);
-
-                    // Determine number of samples based on accumulated variance
-                    int samples = (int)(variance * AdaptiveSamples);
-
-                    // Update accumulated variance and sample count
-                    int index = y * w + x;
-                    if (!pixelVariances.ContainsKey(index))
-                    {
-                        pixelVariances[index] = variance;
-                        pixelSampleCounts[index] = samples;
-                    }
-                    else
-                    {
-                        pixelVariances[index] = (pixelVariances[index] + variance) / 2; // Update variance with running average
-                        pixelSampleCounts[index] += samples; // Accumulate sample count
-                    }
-
-                    // Perform sampling
-                    for (int s = 0; s < samples; s++)
-                    {
-                        var fu = Random.Shared.NextDouble();
-                        var fv = Random.Shared.NextDouble();
-                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
-                        Colour sample = sampler.Sample(scene, ray, Random.Shared);
-                        buf.AddSample(x, y, sample);
-                    }
-                });
-            }
+                        
 
             if (FireflySamples > 0)
             {
                 // Concurrent dictionary to track skipped pixels
                 ConcurrentDictionary<(int, int), bool> skippedPixels = new ConcurrentDictionary<(int, int), bool>();
 
-                Parallel.For(0, w * h, po, (i, loopState) =>
+                Parallel.For(0, w * h, parallelOptions, (i, loopState) =>
                 {
                     int y = i / w, x = i % w;
                     if (buf.StandardDeviation(x, y).MaxComponent() > FireflyThreshold)

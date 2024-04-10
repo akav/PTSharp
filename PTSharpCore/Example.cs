@@ -1,20 +1,7 @@
-using glTFLoader.Schema;
-using ILGPU.Backends.PointerViews;
-using ILGPU.Runtime.Cuda;
-using ILGPU.Runtime.OpenCL;
-using MathNet.Numerics.Financial;
-using PTSharpCore;
-using Silk.NET.Vulkan;
 using SkiaSharp;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
 using System.IO;
-using System.Numerics;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace PTSharpCore
 {
@@ -149,7 +136,8 @@ namespace PTSharpCore
             DefaultSampler sampler = DefaultSampler.NewSampler(8, 10);
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
             Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
-            renderer.FireflySamples = 128;
+            renderer.AdaptiveSamples = 32;
+            renderer.FireflySamples = 256;
             renderer.IterativeRender("example1.png", 500);
         }
 
@@ -173,7 +161,6 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(0, 4, -8), new Vector(0, 0, -2), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
-            renderer.FireflySamples = 32;
             renderer.IterativeRender("example2.png", 1000);
         }
 
@@ -202,7 +189,6 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            renderer.FireflySamples = 128;
             renderer.IterativeRender("example3.png", 1000);
         }
 

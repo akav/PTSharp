@@ -97,7 +97,7 @@ namespace PTSharpCore
                 );
 
             // Start rendering
-            Task.Factory.StartNew(() => Example.example3(Width, Height));
+            Task.Factory.StartNew(() => Example.example2(Width, Height));
         }
 
         private static void OnClose()
