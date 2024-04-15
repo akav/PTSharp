@@ -2,11 +2,120 @@ using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 
 namespace PTSharpCore
 {
     class Example
     {
+        static double[] Normalize(double[] values, double a, double b)
+        {
+            var result = new double[values.Length];
+            var lo = values.Min();
+            var hi = values.Max();
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                var p = (values[i] - lo) / (hi - lo);
+                result[i] = a + p * (b - a);
+            }
+
+            return result;
+        }
+
+        static double[] LowPass(double[] values, double alpha)
+        {
+            var result = new double[values.Length];
+            double y = 0;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                y -= alpha * (y - values[i]);
+                result[i] = y;
+            }
+
+            return result;
+        }
+
+        static double[] LowPassNoise(int n, double alpha, int iterations)
+        {
+            var result = new double[n];
+            for (int i = 0; i < result.Length; i++)
+            {
+                result[i] = Random.Shared.NextDouble() * 2 - 1;
+            }
+            for (int i = 0; i < iterations; i++)
+            {
+                result = LowPass(result, alpha);
+            }
+            result = Normalize(result, -1, 1);
+            return result;
+        }
+
+        static void Frame(string path, double t, int width, int height)
+        {
+            var materials = new Material[]
+            {
+                Material.GlossyMaterial(Material.GenerateRandomColor(), 1.3, Util.Radians(20)),
+                Material.GlossyMaterial(Material.GenerateRandomColor(), 1.3, Util.Radians(20)),
+                Material.GlossyMaterial(Material.GenerateRandomColor(), 1.3, Util.Radians(20)),
+            };
+
+            var eye = new Vector(4, 2, 8);
+            var center = Vector.Zero;
+            var up = new Vector(0, 0, 1);
+            var scene = new Scene();
+
+            for (int a = 0; a < 80; a++)
+            {
+                var material = materials[Random.Shared.Next(materials.Length)];
+                var n = 400;
+                var xs = LowPassNoise(n, 0.25, 4);
+                var ys = LowPassNoise(n, 0.25, 4);
+                var zs = LowPassNoise(n, 0.25, 4);
+                var position = Vector.Zero;
+                var positions = new Vector[n];
+
+                for (int i = 0; i < n; i++)
+                {
+                    positions[i] = position;
+                    var v = new Vector((float)xs[i], (float)ys[i], (float)zs[i]) / new Vector(xs[i], ys[i], zs[i]).Length();
+                    position += v * 0.1f;
+                }
+
+                for (int i = 0; i < n - 1; i++)
+                {
+                    var aVec = positions[i];
+                    var bVec = positions[i + 1];
+                    var p = aVec + (bVec - aVec) * (float)t;
+                    var sphere = Sphere.NewSphere(p, 0.1f, material);
+                    scene.Add(sphere);
+                }
+            }
+
+            scene.Add(Sphere.NewSphere(new Vector(4, 4, 20), 2, Material.LightMaterial(Colour.HexColor(0xFFFFFF), 30)));
+            var fovy = 40.0f;
+            var camera = Camera.LookAt(eye, center, up, fovy);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            sampler.SpecularMode = SpecularMode.SpecularModeFirst;
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.FireflySamples = 128;
+            renderer.IterativeRender(path, 100);
+        }
+
+        public static void beads(int width, int height)
+        {
+            for (int i = 0; i < 30; i++)
+            {
+                var t = (double)i / 30;
+                var path = $"beads{i:D3}.png";
+                Console.WriteLine(path);
+                Frame(path, t, width, height);
+            }
+        }
+
+
         static Vector offset(double stdev)
         {
             var a = Random.Shared.NextDouble() * 2 * Math.PI;
