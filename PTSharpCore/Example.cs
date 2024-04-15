@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using static ILGPU.IR.MethodCollections;
 
 namespace PTSharpCore
@@ -410,6 +411,50 @@ namespace PTSharpCore
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("example3.png", 1000);
+        }
+
+        public static void colorwave(int width, int height)
+        {
+            var scene = new Scene();
+            var material = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1));
+            scene.Add(Cube.NewCube(new Vector(-1000, -1, -1000), new Vector(1000, 0, 1000), material));
+
+            Parallel.For(-200, 201, x =>
+            {
+                double posX = x / 10.0;
+                for (double z = -20; z <= 20; z += 0.1)
+                {
+                    if ((Math.Floor(posX) + Math.Floor(z)) % 2 == 0)
+                    {
+                        continue;
+                    }
+
+                    var s = 0.05; // Decrease the size of the cube for denser pattern
+                    var min = new Vector(posX - s, 0, z - s); // Set y-coordinate to 0
+                    var max = new Vector(posX + s, Random.Shared.NextDouble() * 4, z + s); // Increase amplitude to 4
+
+                    // Calculate wave color based on position with increased amplitude
+                    var waveColor = Colour.FromRGB(
+                        (Math.Sin(posX * 0.2) + 1) * 0.5,  // Increase amplitude of sine wave
+                        (Math.Sin(z * 0.2) + 1) * 0.5,      // Increase amplitude of sine wave
+                        0.5);                                // Blue component (constant)
+
+                    // Create material with wave color
+                    var materialWithColor = Material.DiffuseMaterial(waveColor);
+
+                    lock (scene)
+                    {
+                        scene.Add(Cube.NewCube(min, max, materialWithColor));
+                    }
+                }
+            });
+
+            scene.Add(Cube.NewCube(new Vector(-5, 10, -5), new Vector(5, 11, 5), Material.LightMaterial(Colour.White, 5)));
+
+            var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.IterativeRender("wave_example3.png", 1000);
         }
 
         public static void simplesphere(int width, int height)

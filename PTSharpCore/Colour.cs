@@ -102,6 +102,16 @@ namespace PTSharpCore
         }
         public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
+        public static Colour FromRGB(double red, double green, double blue)
+        {
+            // Clamp color components to the range [0, 1]
+            red = Math.Max(0, Math.Min(1, red));
+            green = Math.Max(0, Math.Min(1, green));
+            blue = Math.Max(0, Math.Min(1, blue));
+
+            return new Colour(red, green, blue);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public static Colour HexColor(int x)
