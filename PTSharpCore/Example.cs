@@ -4,11 +4,119 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using static ILGPU.IR.MethodCollections;
 
 namespace PTSharpCore
 {
     class Example
     {
+        public static List<Triangle> Block(Vector p, Material material, List<int> tiles)
+        {
+            const int N = 16;
+            const double A = 1.0 / 2048;
+            const double B = 1.0 / N - A;            
+
+            List<Vector> VP = new List<Vector>
+            {
+                new Vector(-0.5, -0.5, 0.5),
+                new Vector(0.5, -0.5, 0.5),
+                new Vector(-0.5, 0.5, 0.5),
+                new Vector(0.5, 0.5, 0.5),
+                new Vector(-0.5, 0.5, -0.5),
+                new Vector(0.5, 0.5, -0.5),
+                new Vector(-0.5, -0.5, -0.5),
+                new Vector(0.5, -0.5, -0.5)
+            };
+
+            List<Vector> VT = new List<Vector>
+            {
+                new Vector(A, A, 0),
+                new Vector(B, A, 0),
+                new Vector(A, B, 0),
+                new Vector(B, B, 0)
+            };
+
+            List<Tuple<Vector[], Vector[]>> Triangles = new List<Tuple<Vector[], Vector[]>>
+            {
+                Tuple.Create(new Vector[] { VP[0], VP[1], VP[2] }, new Vector[] { VT[0], VT[1], VT[2] }),
+                Tuple.Create(new Vector[] { VP[2], VP[1], VP[3] }, new Vector[] { VT[2], VT[1], VT[3] }),
+                Tuple.Create(new Vector[] { VP[2], VP[3], VP[4] }, new Vector[] { VT[0], VT[1], VT[2] }),
+                Tuple.Create(new Vector[] { VP[4], VP[3], VP[5] }, new Vector[] { VT[2], VT[1], VT[3] }),
+                Tuple.Create(new Vector[] { VP[4], VP[5], VP[6] }, new Vector[] { VT[3], VT[2], VT[1] }),
+                Tuple.Create(new Vector[] { VP[6], VP[5], VP[7] }, new Vector[] { VT[1], VT[2], VT[0] }),
+                Tuple.Create(new Vector[] { VP[6], VP[7], VP[0] }, new Vector[] { VT[0], VT[1], VT[2] }),
+                Tuple.Create(new Vector[] { VP[0], VP[7], VP[1] }, new Vector[] { VT[2], VT[1], VT[3] }),
+                Tuple.Create(new Vector[] { VP[1], VP[7], VP[3] }, new Vector[] { VT[0], VT[1], VT[2] }),
+                Tuple.Create(new Vector[] { VP[3], VP[7], VP[5] }, new Vector[] { VT[2], VT[1], VT[3] }),
+                Tuple.Create(new Vector[] { VP[6], VP[0], VP[4] }, new Vector[] { VT[0], VT[1], VT[2] }),
+                Tuple.Create(new Vector[] { VP[4], VP[0], VP[2] }, new Vector[] { VT[2], VT[1], VT[3] })
+            };
+
+            List<Triangle> result = new List<Triangle>();
+            
+            for (int i = 0; i < Triangles.Count; i++)
+            {
+                var t = Triangles[i];
+                var tile = tiles[i / 2];
+                var m = new Vector((float)(tile % N) / N, (float)(tile / N) / N, 0);
+                var v1 = t.Item1[0] + p;
+                var v2 = t.Item1[1] + p;
+                var v3 = t.Item1[2] + p;
+                var t1 = t.Item2[0] + m;
+                var t2 = t.Item2[1] + m;
+                var t3 = t.Item2[2] + m;
+                result.Add(Triangle.NewTriangle(v1, v2, v3, t1, t2, t3, material));
+            }
+            return result;
+        }
+
+        public static void craft(int width, int height)
+        {
+            // Note: Texture used for craft example is available in the examples folder
+            // https://github.com/fogleman/pt/blob/master/examples/texture.png
+            Scene scene = new Scene();
+            scene.Color = Colour.White;
+            ITexture texture;
+
+            List<int> Dirt = new List<int> { 0, 0, 0, 0, 0, 0 };
+            List<int> Grass = new List<int> { 16, 32, 16, 0, 16, 16 };
+
+            try
+            {
+                texture = ColorTexture.LoadTexture("textures/texture.png");
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Error loading texture. Check textures folder exists.", e);
+            }
+            
+            Material material = Material.GlossyMaterial(Colour.HexColor(0xFCFAE1), 1.1, Util.Radians(20));
+            material.Texture = texture;
+            
+            List<Triangle> triangles = new List<Triangle>();
+            
+            for (int x = -10; x <= 10; x++)
+            {
+                for (int z = -10; z <= 10; z++)
+                {
+                    int h = Random.Shared.Next(4);
+                    for (int y = 0; y <= h; y++)
+                    {
+                        Vector p = new Vector(x, y, z);
+                        List<int> tiles = y == h ? Grass : Dirt;
+                        triangles.AddRange(Block(p, material, tiles));
+                    }
+                }
+            }
+
+            Mesh mesh = Mesh.NewMesh(triangles.ToArray());
+            scene.Add(mesh);
+            Camera camera = Camera.LookAt(new Vector(-13, 11, -7), new Vector(0, 0, 0), new Vector(0, 1, 0), 45);
+            Sampler sampler = DefaultSampler.NewSampler(4, 4);
+            Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.IterativeRender("craft.png", 1000);
+        }
+
         static double[] Normalize(double[] values, double a, double b)
         {
             var result = new double[values.Length];
@@ -109,7 +217,7 @@ namespace PTSharpCore
             for (int i = 0; i < 30; i++)
             {
                 var t = (double)i / 30;
-                var path = $"beads{i:D3}.png";
+                var path = "beads.png";
                 Console.WriteLine(path);
                 Frame(path, t, width, height);
             }

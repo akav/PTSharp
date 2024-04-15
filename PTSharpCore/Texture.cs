@@ -128,6 +128,7 @@ namespace PTSharpCore
                 return img;
             }
         }
+
         internal static ITexture LoadTexture(String path)
         {
             Console.WriteLine("IMG: "+path);

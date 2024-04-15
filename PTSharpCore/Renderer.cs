@@ -412,8 +412,7 @@ namespace PTSharpCore
                 // Dispose the schedulers after rendering completes
                 renderingScheduler.Dispose();
                 colorSettingScheduler.Dispose();
-            }                   
-                        
+            }           
 
             if (FireflySamples > 0)
             {
