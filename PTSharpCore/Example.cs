@@ -1,6 +1,9 @@
+using glTFLoader.Schema;
+using Silk.NET.SDL;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -1094,5 +1097,52 @@ namespace PTSharpCore
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("gopher.png", 1000);
         }    
+
+        public static void veach(int width, int height)
+        {
+            // Note: Resources for this example available in the examples folder
+            // https://github.com/fogleman/pt/blob/master/examples/
+            var scene = new Scene();
+            Material material;
+            Mesh mesh;
+
+            material = Material.DiffuseMaterial(Colour.White);
+            mesh = OBJ.Load("veach_scene/backdrop.obj", material);
+            scene.Add(mesh);
+
+            material = Material.MetallicMaterial(Colour.White, Util.Radians(20), 0);
+            mesh = OBJ.Load("veach_scene/bar0.obj", material);
+            scene.Add(mesh);
+
+            material = Material.MetallicMaterial(Colour.White, Util.Radians(15), 0);
+            mesh = OBJ.Load("veach_scene/bar1.obj", material);
+            scene.Add(mesh);
+
+            material = Material.MetallicMaterial(Colour.White, Util.Radians(10), 0);
+            mesh = OBJ.Load("veach_scene/bar2.obj", material);
+            scene.Add(mesh);
+
+            material = Material.MetallicMaterial(Colour.White, Util.Radians(5), 0);
+            mesh = OBJ.Load("veach_scene/bar3.obj", material);
+            scene.Add(mesh);
+
+            material = Material.MetallicMaterial(Colour.White, Util.Radians(0), 0);
+            mesh = OBJ.Load("veach_scene/bar4.obj", material);
+            scene.Add(mesh);
+
+            scene.Add(Sphere.NewSphere(new Vector(3.75, 4.281, 0), 1.8 / 2, Material.LightMaterial(Colour.White, 3)));
+            scene.Add(Sphere.NewSphere(new Vector(1.25, 4.281, 0), 0.6 / 2, Material.LightMaterial(Colour.White, 9)));
+            scene.Add(Sphere.NewSphere(new Vector(-1.25, 4.281, 0), 0.2 / 2, Material.LightMaterial(Colour.White, 27)));
+            scene.Add(Sphere.NewSphere(new Vector(-3.75, 4.281, 0), 0.066 / 2, Material.LightMaterial(Colour.White, 81.803)));
+            scene.Add(Sphere.NewSphere(new Vector(0, 10, 4), 1, Material.LightMaterial(Colour.White, 50)));
+
+            var camera = Camera.LookAt(new Vector(0, 5, 12), new Vector(0, 1, 0), new Vector(0, 1, 0), 50);
+            var sampler = DefaultSampler.NewSampler(4, 8);
+            sampler.SpecularMode = SpecularMode.SpecularModeAll;
+            sampler.LightMode = LightMode.LightModeAll;
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.FireflySamples = 128;
+            renderer.IterativeRender("veach.png", 100);
+        }
     }
 }

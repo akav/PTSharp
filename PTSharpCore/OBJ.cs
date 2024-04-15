@@ -164,15 +164,18 @@ namespace PTSharpCore
             return Mesh.NewMesh(triangles.ToArray());
         }
 
-        public static void LoadMTL(string path, Material parent) //, Dictionary<string, Material> materials)
+        public static void LoadMTL(string path, Material parent)
         {
-            Console.WriteLine("Loading MTL:" + path);
+            Console.WriteLine("Loading MTL: " + path);
             var parentCopy = parent;
             var material = parentCopy;
 
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException("Unable to open \"" + path + "\", does not exist.");
+                Console.WriteLine("MTL file not found, using standard diffuse material.");
+                parent.Color = new Colour(0.7, 0.7, 0.7); 
+                parent.Emittance = 0; 
+                return;
             }
 
             using (StreamReader streamReader = new StreamReader(path))
@@ -185,7 +188,6 @@ namespace PTSharpCore
                         case "newmtl":
                             parentCopy = parent;
                             material = parentCopy;
-                            //materials[words[0].Split(' ').ToString()] = material;
                             matList[words[1]] = material;
                             break;
                         case "Ke":
@@ -200,13 +202,13 @@ namespace PTSharpCore
                             material.Color = new Colour(float.Parse(words[1]), float.Parse(words[2]), float.Parse(words[3]));
                             break;
                         case "map_Kd":
-                            Console.WriteLine("map_Kd: " + Directory.GetCurrentDirectory() + "\\" + words[1]);
-                            var kdmap = Directory.GetCurrentDirectory() + "\\" + words[1];
+                            Console.WriteLine("map_Kd: " + Path.Combine(Directory.GetCurrentDirectory(), words[1]));
+                            var kdmap = Path.Combine(Directory.GetCurrentDirectory(), words[1]);
                             material.Texture = ColorTexture.GetTexture(kdmap);
                             break;
                         case "map_bump":
-                            Console.WriteLine("map_bump: " + Directory.GetCurrentDirectory() + "\\" + words[3]);
-                            var bumpmap = Directory.GetCurrentDirectory() + "\\" + words[3];
+                            Console.WriteLine("map_bump: " + Path.Combine(Directory.GetCurrentDirectory(), words[3]));
+                            var bumpmap = Path.Combine(Directory.GetCurrentDirectory(), words[3]);
                             material.NormalTexture = ColorTexture.GetTexture(bumpmap).Pow(1 / 2.2);
                             break;
                         default:
