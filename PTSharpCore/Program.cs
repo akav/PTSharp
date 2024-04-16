@@ -99,7 +99,7 @@ namespace PTSharpCore
                 );
 
             // Start rendering
-            Task.Factory.StartNew(() => Example.ellipsoid(Width, Height));
+            Task.Factory.StartNew(() => Example.colorwave(Width, Height));
         }
 
         private static void OnClose()

@@ -100,6 +100,17 @@ namespace PTSharpCore
             // Calculate the luminance using the sRGB luminance coefficients
             return 0.2126 * this.r + 0.7152 * this.g + 0.0722 * this.b;
         }
+
+        public static Colour FromRGB(double red, double green, double blue)
+        {
+            // Clamp color components to the range [0, 1]
+            red = Math.Max(0, Math.Min(1, red));
+            green = Math.Max(0, Math.Min(1, green));
+            blue = Math.Max(0, Math.Min(1, blue));
+
+            return new Colour(red, green, blue);
+        }
+
         public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
