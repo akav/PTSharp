@@ -1,11 +1,10 @@
-using STLDotNet6.Formats.StereoLithography;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
+using STLDotNet6.Formats.StereoLithography;
 
 
 namespace PTSharpCore

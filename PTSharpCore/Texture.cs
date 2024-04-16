@@ -1,15 +1,10 @@
 using Silk.NET.OpenGL;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace PTSharpCore
 {
-
     public class Texture : IDisposable
     {
         private uint _handle;
@@ -17,32 +12,39 @@ namespace PTSharpCore
 
         public unsafe Texture(GL gl, string path)
         {
-            //Loading an image using imagesharp.
-            using (Image<Rgba32> img = SixLabors.ImageSharp.Image.Load<Rgba32>(path))
+            using (SKBitmap bitmap = SKBitmap.Decode(path))
             {
-                //We need to flip our image as image sharps coordinates has origin (0, 0) in the top-left corner,
-                //whereas openGL has origin in the bottom-left corner.
-                img.Mutate(x => x.Flip(FlipMode.Vertical));
+                // Create a new bitmap with the same dimensions
+                SKBitmap flippedBitmap = new SKBitmap(bitmap.Width, bitmap.Height);
 
-                // Converting the image data to a byte array
-                byte[] imageData = new byte[img.Width * img.Height * 4];
-                int index = 0;
-                for (int y = 0; y < img.Height; y++)
+                // Loop through each pixel and copy it to the new bitmap in the flipped orientation
+                for (int y = 0; y < bitmap.Height; y++)
                 {
-                    for (int x = 0; x < img.Width; x++)
+                    for (int x = 0; x < bitmap.Width; x++)
                     {
-                        Rgba32 pixel = img[x, y];
-                        imageData[index++] = pixel.R;
-                        imageData[index++] = pixel.G;
-                        imageData[index++] = pixel.B;
-                        imageData[index++] = pixel.A;
+                        flippedBitmap.SetPixel(x, bitmap.Height - y - 1, bitmap.GetPixel(x, y));
+                    }
+                }
+
+                // Converting the flipped bitmap data to a byte array
+                byte[] imageData = new byte[bitmap.Width * bitmap.Height * 4];
+                int index = 0;
+                for (int y = 0; y < flippedBitmap.Height; y++)
+                {
+                    for (int x = 0; x < flippedBitmap.Width; x++)
+                    {
+                        SKColor pixel = flippedBitmap.GetPixel(x, y);
+                        imageData[index++] = pixel.Red;
+                        imageData[index++] = pixel.Green;
+                        imageData[index++] = pixel.Blue;
+                        imageData[index++] = pixel.Alpha;
                     }
                 }
 
                 fixed (void* data = imageData)
                 {
-                    //Loading the actual image.
-                    Load(gl, data, (uint)img.Width, (uint)img.Height);
+                    // Loading the actual image.
+                    Load(gl, data, (uint)bitmap.Width, (uint)bitmap.Height);
                 }
             }
         }

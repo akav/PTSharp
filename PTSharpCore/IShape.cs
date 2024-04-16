@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace PTSharpCore
+﻿namespace PTSharpCore
 {
     public interface IShape
     {

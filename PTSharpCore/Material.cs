@@ -1,7 +1,5 @@
-﻿using MathNet.Numerics;
-using MathNet.Numerics.Distributions;
+﻿using MathNet.Numerics.Distributions;
 using System;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace PTSharpCore

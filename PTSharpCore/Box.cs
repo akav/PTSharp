@@ -1,6 +1,4 @@
-using PTSharpCore;
 using System;
-using System.Threading;
 
 namespace PTSharpCore
 {

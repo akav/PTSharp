@@ -1,6 +1,4 @@
-using MathNet.Numerics.Optimization;
 using System;
-using System.Threading;
 
 namespace PTSharpCore
 {

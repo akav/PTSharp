@@ -1,9 +1,5 @@
-using ILGPU.Algorithms.Random;
-using Microsoft.VisualBasic;
 using System;
 using System.Numerics;
-using System.Threading;
-using static ILGPU.IR.Analyses.Uniforms;
 
 namespace PTSharpCore
 {

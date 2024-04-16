@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PTSharpCore
+﻿namespace PTSharpCore
 {
     // Referenced from merwaan/pbrt
     // https://github.com/merwaaan/pbrt/blob/master/pbrt/core/Filter.cs

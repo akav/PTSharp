@@ -1,14 +1,9 @@
-using glTFLoader.Schema;
-using Silk.NET.SDL;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Threading.Tasks;
-using static ILGPU.IR.MethodCollections;
 
 namespace PTSharpCore
 {

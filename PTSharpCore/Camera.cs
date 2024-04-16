@@ -1,8 +1,4 @@
-using MathNet.Numerics.Random;
-using MathNet.Numerics.RootFinding;
-using Silk.NET.Input;
 using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 

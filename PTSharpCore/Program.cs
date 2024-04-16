@@ -1,11 +1,9 @@
-﻿using MathNet.Numerics;
-using System;
+﻿using System;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL.Extensions.ImGui;
-using ILGPU.IR.Values;
 using Window = Silk.NET.Windowing.Window;
 using System.Threading.Tasks;
 
