@@ -99,6 +99,15 @@ namespace PTSharpCore
             // Calculate the luminance using the sRGB luminance coefficients
             return 0.2126 * this.r + 0.7152 * this.g + 0.0722 * this.b;
         }
+
+        public static Colour RandomColor()
+        {
+            var random = new Random();
+            var r = random.NextDouble();
+            var g = random.NextDouble();
+            var b = random.NextDouble();
+            return Colour.FromRGB(r, g, b);
+        }
         public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
         public static Colour FromRGB(double red, double green, double blue)

@@ -54,6 +54,7 @@ namespace PTSharpCore
             mesh.FitInside(new Box(new Vector(), new Vector(2, 4, 10)), new Vector( 0, 0, 0 ));
 	        return mesh;
         }
+
         public static SKBitmap LoadImage(String path)
         {
             try

@@ -1,5 +1,8 @@
+using glTFLoader.Schema;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,59 +18,65 @@ namespace PTSharpCore
         public int rays = 0;
         public Colour BackgroundColor;
 
-        public IShape[] Shapes;
-        public IShape[] Lights;
+        //public IShape[] Shapes;
+        public ConcurrentDictionary<IShape, (Matrix Transform, Material Material)> Shapes;
+        public List<IShape> Lights;
+        //public IShape[] Lights;
 
         public Scene() 
         {
-            Shapes = Array.Empty<IShape>(); 
-            Lights = Array.Empty<IShape>(); 
+            Shapes = new();
+            //Shapes = Array.Empty<IShape>(); 
+            //Lights = Array.Empty<IShape>(); 
+            Lights = new();
             Color = new Colour();
             BackgroundColor = new Colour(0.1, 0.1, 0.1);
         }
 
-        internal void Add(IShape p)
+        public void AddInstance(IShape geometry, Matrix transform, Material material)
         {
-            Array.Resize(ref Shapes, Shapes.GetLength(0) + 1);
-            Shapes[Shapes.GetLength(0) - 1] = p;
-            if (p.MaterialAt(new Vector()).Emittance > 0)
+            // Create a new instance of the geometry with its transformation matrix and material
+            var instanceGeometry = new TransformedShape(geometry, transform, transform.Inverse());
+
+            // Add the geometry instance to the lookup table
+            Shapes.TryAdd(geometry, (transform, material));
+
+            // Check if the material is a light source and add it to the Lights list if needed
+            if (material.Emittance > 0)
             {
-                Array.Resize(ref Lights, Lights.GetLength(0) + 1);
-                Lights[Lights.GetLength(0) - 1] = p;
+                Lights.Add(geometry);
             }
+
+            Compile();
         }
 
-        internal void AddRange(IEnumerable<IShape> shapes)
+        internal void Add(IShape p)
         {
-            // Resize the internal arrays to accommodate the new shapes
-            int newShapesCount = Shapes.Length + shapes.Count();
-            int newLightsCount = Lights.Length;
-
-            Array.Resize(ref Shapes, newShapesCount);
-
-            // Add each shape to the scene
-            int index = Shapes.Length - shapes.Count();
-            foreach (var shape in shapes)
+            // Add the geometry instance to the lookup table
+            Shapes.TryAdd(p, (Matrix.Identity, p.MaterialAt(new())));
+            
+            if (p.MaterialAt(new Vector()).Emittance > 0)
             {
-                Shapes[index++] = shape;
-
-                // Check if the added shape is a light source
-                if (shape.MaterialAt(new Vector()).Emittance > 0)
-                {
-                    // If so, resize the Lights array and add the shape to it
-                    Array.Resize(ref Lights, ++newLightsCount);
-                    Lights[newLightsCount - 1] = shape;
-                }
+                Lights.Add(p);
             }
-
-            // Compile the shapes and update the acceleration structure if necessary
-            Compile();
         }
 
         public void Compile()
         {
-            // Parallel compilation of shapes
-            Parallel.ForEach(Shapes, shape =>
+            // Create a list to hold all shapes, including instances
+            var allShapes = new List<IShape>();
+
+            // Add all shapes from the Shapes dictionary
+            foreach (var kvp in Shapes)
+            {
+                allShapes.Add(kvp.Key);
+            }
+
+            // Add all lights from the Lights list
+            allShapes.AddRange(Lights);
+
+            // Parallel compilation of all shapes
+            Parallel.ForEach(allShapes, shape =>
             {
                 shape.Compile();
             });
@@ -80,7 +89,7 @@ namespace PTSharpCore
                 {
                     if (tree == null) // Double-checking to prevent race conditions
                     {
-                        tree = Tree.NewTree(Shapes);
+                        tree = Tree.NewTree(allShapes.ToArray());
                     }
                 }
             }

@@ -237,7 +237,7 @@ namespace PTSharpCore
             var box = shape.BoundingBox();
             foreach(var other in scene.Shapes)
             {
-                if (box.Intersects(other.BoundingBox()))
+                if (box.Intersects(other.Key.BoundingBox()))
                 {
                     return true;
                 }
@@ -408,6 +408,53 @@ namespace PTSharpCore
             renderer.IterativeRender("example3.png", 1000);
         }
 
+        public static void example3_instance(int width, int height)
+        {
+            var scene = new Scene();
+
+            // Define ground plane
+            var groundMaterial = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1));
+            var groundMin = new Vector(-1000, -1, -1000);
+            var groundMax = new Vector(1000, 0, 1000);
+            var groundTransform = Matrix.Identity;
+            scene.AddInstance(Cube.NewCube(groundMin, groundMax, groundMaterial), groundTransform, groundMaterial);
+
+            // Define cube material
+            var cubeMaterial = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1));
+
+            // Add cubes to the scene
+            for (int x = -20; x <= 20; x++)
+            {
+                for (int z = -20; z <= 20; z++)
+                {
+                    if ((x + z) % 2 != 0)
+                    {
+                        var s = 0.1;
+                        var min = new Vector(x - s, 0, z - s);
+                        var max = new Vector(x + s, 2, z + s);
+                        var transform = new Matrix().Translate(new(x, 0, z)); // Translation matrix for positioning the cube
+                        scene.AddInstance(Cube.NewCube(min, max, cubeMaterial), transform, cubeMaterial);
+                    }
+                }
+            }
+
+            // Add light source cube
+            var lightMaterial = Material.LightMaterial(Colour.White, 5);
+            var lightMin = new Vector(-5, 10, -5);
+            var lightMax = new Vector(5, 11, 5);
+            var lightTransform = Matrix.Identity;
+            scene.AddInstance(Cube.NewCube(lightMin, lightMax, lightMaterial), lightTransform, lightMaterial);
+
+            // Set up camera, sampler, and renderer
+            var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+
+            // Render the scene
+            renderer.IterativeRender("example3_instance.png", 1000);
+        }
+
+
         public static void colorwave(int width, int height)
         {
             var scene = new Scene();
@@ -451,6 +498,103 @@ namespace PTSharpCore
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("wave_example3.png", 1000);
         }
+
+        public static void fractalStream(int width, int height)
+        {
+            var scene = new Scene();
+            var groundMaterial = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1)); // Light yellow ground material
+            scene.Add(Cube.NewCube(new Vector(-1000, -1, -1000), new Vector(1000, 0, 1000), groundMaterial)); // Ground plane
+
+            // Define parameters for the fractal stream
+            int numSpheres = 2000;
+            double streamRadius = 50.0;
+            double maxDepth = 20.0;
+
+            var random = new Random();
+
+            // Generate spheres for the fractal stream
+            for (int i = 0; i < numSpheres; i++)
+            {
+                // Randomly determine position and color for each sphere
+                double x = random.NextDouble() * streamRadius * 2 - streamRadius;
+                double z = random.NextDouble() * streamRadius * 2 - streamRadius;
+                double y = random.NextDouble() * maxDepth;
+                var position = new Vector(x, y, z);
+                var color = Colour.RandomColor();
+
+                // Create sphere with random position and color
+                var sphereMaterial = Material.DiffuseMaterial(color);
+                var sphere = Sphere.NewSphere(position, 1.0, sphereMaterial);
+                scene.Add(sphere);
+            }
+
+            // Add more light sources for enhanced visibility
+            scene.Add(Cube.NewCube(new Vector(-5, 10, -5), new Vector(5, 11, 5), Material.LightMaterial(Colour.White, 5)));
+            scene.Add(Cube.NewCube(new Vector(5, 10, 5), new Vector(-5, 11, -5), Material.LightMaterial(Colour.White, 5)));
+            scene.Add(Cube.NewCube(new Vector(-50, 20, -50), new Vector(50, 21, 50), Material.LightMaterial(Colour.White, 5)));
+
+            // Set up camera with a wider view
+            var camera = Camera.LookAt(new Vector(50, 20, 50), new Vector(0, 10, 0), new Vector(0, 1, 0), 45);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+
+            // Render the scene
+            renderer.IterativeRender("fractal_stream_demo.png", 1000);
+        }
+
+        public static void cosineWave(int width, int height)
+        {
+            var scene = new Scene();
+            var groundMaterial = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1)); // Light yellow ground material
+            scene.Add(Cube.NewCube(new Vector(-1000, -1, -1000), new Vector(1000, 0, 1000), groundMaterial)); // Ground plane
+
+            var waveLengthX = 10.0; // Adjust the wavelength along the x-axis
+            var amplitude = 4.0; // Adjust the amplitude of the wave
+
+            // Create the cosine wave pattern
+            Parallel.For(-200, 201, x =>
+            {
+                double posX = x / 10.0;
+                for (double z = -20; z <= 20; z += 0.1)
+                {
+                    if ((Math.Floor(posX) + Math.Floor(z)) % 2 == 0)
+                    {
+                        continue;
+                    }
+
+                    var s = 0.05; // Decrease the size of the cube for denser pattern
+                    var y = Math.Cos(posX * Math.PI / waveLengthX) * amplitude; // Calculate y-coordinate using cosine function
+                    var min = new Vector(posX - s, 0, z - s); // Set y-coordinate to 0
+                    var max = new Vector(posX + s, y, z + s); // Use calculated y-coordinate
+
+                    // Calculate wave color based on position with increased amplitude
+                    var waveColor = Colour.FromRGB(
+                        (Math.Cos(posX * 0.2) + 1) * 0.5,  // Increase amplitude of cosine wave
+                        (Math.Cos(z * 0.2) + 1) * 0.5,      // Increase amplitude of cosine wave
+                        0.5);                                // Blue component (constant)
+
+                    // Create material with wave color
+                    var materialWithColor = Material.DiffuseMaterial(waveColor);
+
+                    lock (scene)
+                    {
+                        scene.Add(Cube.NewCube(min, max, materialWithColor));
+                    }
+                }
+            });
+
+            // Add a light source
+            scene.Add(Cube.NewCube(new Vector(-5, 10, -5), new Vector(5, 11, 5), Material.LightMaterial(Colour.White, 5)));
+
+            // Set up camera, sampler, and renderer
+            var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+
+            // Render the scene
+            renderer.IterativeRender("cosine_wave_demo.png", 1000);
+        }
+
 
         public static void simplesphere(int width, int height)
         {
@@ -856,7 +1000,7 @@ namespace PTSharpCore
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.FireflySamples = 64;
             renderer.IterativeRender("toybrick.png", 1000);
-        }
+        }        
 
         internal static void cylinder2(int width, int height)
         {

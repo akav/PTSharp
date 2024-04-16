@@ -190,7 +190,7 @@ namespace PTSharpCore
 
         Colour sampleLights(Scene scene, Ray n, Random rand)
         {
-            var nLights = scene.Lights.Length;
+            var nLights = scene.Lights.Count;
 
             if (nLights == 0)
                 return Colour.Black;
