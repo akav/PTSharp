@@ -10,5 +10,6 @@ Status:
 - Multithreading is stable
 - Added viewport using Silk .NET
 - Replaced System.Drawing.Common with SkiaSharp
+- Initial support for Intel OIDN on Windows
 
 My thanks go out to Michael Fogleman for his wonderful work.
