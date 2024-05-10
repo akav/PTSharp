@@ -101,6 +101,15 @@ namespace PTSharpCore
         }
         public static Colour NewColor(int r, int g, int b) => new Colour((double)r / 65535, (double)g / 65535, (double)b / 65535);
 
+        public static Colour RandomColor()
+        {
+            var random = new Random();
+            var r = random.NextDouble();
+            var g = random.NextDouble();
+            var b = random.NextDouble();
+            return Colour.FromRGB(r, g, b);
+        }
+
         public static Colour FromRGB(double red, double green, double blue)
         {
             // Clamp color components to the range [0, 1]

@@ -13,7 +13,7 @@ namespace PTSharpCore
         {
             const int N = 16;
             const double A = 1.0 / 2048;
-            const double B = 1.0 / N - A;            
+            const double B = 1.0 / N - A;
 
             List<Vector> VP = new List<Vector>
             {
@@ -52,7 +52,7 @@ namespace PTSharpCore
             };
 
             List<Triangle> result = new List<Triangle>();
-            
+
             for (int i = 0; i < Triangles.Count; i++)
             {
                 var t = Triangles[i];
@@ -88,12 +88,12 @@ namespace PTSharpCore
             {
                 throw new Exception("Error loading texture. Check textures folder exists.", e);
             }
-            
+
             Material material = Material.GlossyMaterial(Colour.HexColor(0xFCFAE1), 1.1, Util.Radians(20));
             material.Texture = texture;
-            
+
             List<Triangle> triangles = new List<Triangle>();
-            
+
             for (int x = -10; x <= 10; x++)
             {
                 for (int z = -10; z <= 10; z++)
@@ -235,7 +235,7 @@ namespace PTSharpCore
         public static bool intersects(Scene scene, IShape shape)
         {
             var box = shape.BoundingBox();
-            foreach(var other in scene.Shapes)
+            foreach (var other in scene.Shapes)
             {
                 if (box.Intersects(other.BoundingBox()))
                 {
@@ -247,32 +247,32 @@ namespace PTSharpCore
 
         public static void go(int width, int height)
         {
-            (double,double)[] blackPositions = {
-                ( 7, 3), (14, 17), ( 14, 4), (18, 4), ( 0, 7), ( 5, 8), (11, 5), (10, 7), 
-                (7, 6), ( 6, 10), (12, 6), ( 3, 2), (5, 11), ( 7, 5), ( 14, 15), ( 12, 11), 
-                ( 8, 12), ( 4, 15), ( 2, 11), ( 9, 9), ( 10, 3), ( 6, 17), ( 7, 2), ( 14, 5), 
-                ( 13, 3), ( 13, 16), ( 3, 6), ( 1, 10), ( 4, 1), ( 10, 9), ( 5, 17), ( 12, 7), 
-                ( 3, 5), ( 2, 7), ( 5, 10), ( 10, 10), ( 5, 7), ( 7, 4), ( 12, 4), ( 8, 13), ( 9, 8), 
-                ( 15, 17), ( 3, 10), ( 4, 13), ( 2, 13), ( 8, 16), ( 12, 3), ( 17, 5), ( 13, 2), 
-                ( 15, 3), ( 2, 3), (6, 5), (11, 7), ( 16, 5), (11, 8), (14, 7), (15, 6), 
-                ( 1, 7), ( 5, 9), (10, 11), ( 6, 6), (4, 18), ( 7, 14), ( 17, 3), ( 4, 9), 
-                 (10, 12), ( 6, 3), (16, 7), (14, 14), (16, 18), (3, 13), (1, 13), (2, 10), 
+            (double, double)[] blackPositions = {
+                ( 7, 3), (14, 17), ( 14, 4), (18, 4), ( 0, 7), ( 5, 8), (11, 5), (10, 7),
+                (7, 6), ( 6, 10), (12, 6), ( 3, 2), (5, 11), ( 7, 5), ( 14, 15), ( 12, 11),
+                ( 8, 12), ( 4, 15), ( 2, 11), ( 9, 9), ( 10, 3), ( 6, 17), ( 7, 2), ( 14, 5),
+                ( 13, 3), ( 13, 16), ( 3, 6), ( 1, 10), ( 4, 1), ( 10, 9), ( 5, 17), ( 12, 7),
+                ( 3, 5), ( 2, 7), ( 5, 10), ( 10, 10), ( 5, 7), ( 7, 4), ( 12, 4), ( 8, 13), ( 9, 8),
+                ( 15, 17), ( 3, 10), ( 4, 13), ( 2, 13), ( 8, 16), ( 12, 3), ( 17, 5), ( 13, 2),
+                ( 15, 3), ( 2, 3), (6, 5), (11, 7), ( 16, 5), (11, 8), (14, 7), (15, 6),
+                ( 1, 7), ( 5, 9), (10, 11), ( 6, 6), (4, 18), ( 7, 14), ( 17, 3), ( 4, 9),
+                 (10, 12), ( 6, 3), (16, 7), (14, 14), (16, 18), (3, 13), (1, 13), (2, 10),
                  (7, 9), (13, 1), (12, 15), (4, 3), (5, 2), (10, 2)
             };
 
             (double, double)[] whitePositions = {
-                (16, 6), (16, 9), (13, 4), (1, 6), (0, 10), (3, 7), 
-                (1, 11), (8, 5), (6, 7), (5, 5), (15, 11), (13, 7), 
-                (18, 9), (2, 6), (7, 10), (15, 14), (13, 10), (17, 18), 
-                (7, 15), (5, 14), (3, 18), (15, 16), (14, 8), (12, 8), 
-                (7, 13), (1, 15), (8, 9), (6, 14), (12, 2), (17, 6), 
-                (18, 5), (17, 11), (9, 7), (6, 4), (5, 4), (6, 11), 
-                (11, 9), (13, 6), (18, 6), (0, 8), (8, 3), (4, 6), 
-                (9, 2), (4, 17), (14, 12), (13, 9), (18, 11), (3, 15), 
-                (4, 8), (2, 8), (12, 9), (16, 17), (8, 10), (9, 11), (17, 7), 
-                (16, 11), (14, 10), (3, 9), (1, 9), (8, 7), (2, 14), (9, 6), (5, 3), 
-                (14, 16), (5, 16), (16, 8), (13, 5), (8, 4), (4, 7), (5, 6), (11, 2), (12, 5), 
-                (15, 8), (2, 9), (9, 15), (8, 1), (4, 4), (16, 15), (12, 10), (13, 11), (2, 16), 
+                (16, 6), (16, 9), (13, 4), (1, 6), (0, 10), (3, 7),
+                (1, 11), (8, 5), (6, 7), (5, 5), (15, 11), (13, 7),
+                (18, 9), (2, 6), (7, 10), (15, 14), (13, 10), (17, 18),
+                (7, 15), (5, 14), (3, 18), (15, 16), (14, 8), (12, 8),
+                (7, 13), (1, 15), (8, 9), (6, 14), (12, 2), (17, 6),
+                (18, 5), (17, 11), (9, 7), (6, 4), (5, 4), (6, 11),
+                (11, 9), (13, 6), (18, 6), (0, 8), (8, 3), (4, 6),
+                (9, 2), (4, 17), (14, 12), (13, 9), (18, 11), (3, 15),
+                (4, 8), (2, 8), (12, 9), (16, 17), (8, 10), (9, 11), (17, 7),
+                (16, 11), (14, 10), (3, 9), (1, 9), (8, 7), (2, 14), (9, 6), (5, 3),
+                (14, 16), (5, 16), (16, 8), (13, 5), (8, 4), (4, 7), (5, 6), (11, 2), (12, 5),
+                (15, 8), (2, 9), (9, 15), (8, 1), (4, 4), (16, 15), (12, 10), (13, 11), (2, 16),
                 (4, 14), (5, 15), (10, 1), (6, 8), (6, 12), (17, 9), (8, 8)
             };
 
@@ -282,7 +282,7 @@ namespace PTSharpCore
             var black = Material.GlossyMaterial(Colour.HexColor(0x111111), 1.5, Util.Radians(45));
             var white = Material.GlossyMaterial(Colour.HexColor(0xFFFFFF), 1.6, Util.Radians(20));
 
-            foreach(var p in blackPositions)
+            foreach (var p in blackPositions)
             {
                 for (; ; )
                 {
@@ -290,7 +290,7 @@ namespace PTSharpCore
                     m = m.Translate(offset(0.02));
                     var shape = TransformedShape.NewTransformedShape(Sphere.NewSphere(new Vector(), 1, black), m);
 
-                    if(intersects(scene, shape))
+                    if (intersects(scene, shape))
                     {
                         continue;
                     }
@@ -299,7 +299,7 @@ namespace PTSharpCore
                 }
             }
 
-        	foreach(var p in whitePositions)
+            foreach (var p in whitePositions)
             {
                 while (true)
                 {
@@ -307,25 +307,25 @@ namespace PTSharpCore
                     m = m.Translate(offset(0.02));
 
                     var shape = TransformedShape.NewTransformedShape(Sphere.NewSphere(new Vector(), 1, white), m);
-			    
-                    if(intersects(scene, shape))
+
+                    if (intersects(scene, shape))
                     {
                         continue;
                     }
                     scene.Add(shape);
 
                     break;
-                    
+
                 }
             }
-	
-            for(int i = 0; i< 19; i++)
+
+            for (int i = 0; i < 19; i++)
             {
                 var x = (double)i - 9.5;
                 var m = 0.015;
                 scene.Add(Cube.NewCube(new Vector(x - m, -1, -9.5), new Vector(x + m, -0.195, 8.5), black));
                 scene.Add(Cube.NewCube(new Vector(-9.5, -1, x - m), new Vector(8.5, -0.195, x + m), black));
-	        }
+            }
 
             var material = Material.GlossyMaterial(Colour.HexColor(0xEFECCA), 1.2, Util.Radians(30));
             //material.Texture = ColorTexture.GetTexture("examples/wood.jpg");
@@ -363,13 +363,13 @@ namespace PTSharpCore
             var material = Material.GlossyMaterial(Colour.HexColor(0xEFC94C), 3, Util.Radians(30));
             var whiteMat = Material.GlossyMaterial(Colour.White, 3, Util.Radians(30));
 
-            for (int x = 0; x < 40; x++) 
+            for (int x = 0; x < 40; x++)
             {
-                for(int z = 0; z < 40; z++)
+                for (int z = 0; z < 40; z++)
                 {
                     var center = new Vector((double)x - 19.5, 0, (double)z - 19.5);
                     scene.Add(Sphere.NewSphere(center, 0.4, material));
-        
+
                 }
             }
             scene.Add(Cube.NewCube(new Vector(-100, -1, -100), new Vector(100, 0, 100), whiteMat));
@@ -377,7 +377,11 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(0, 4, -8), new Vector(0, 0, -2), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, Width, Height, true);
-            renderer.IterativeRender("example2.png", 1000);
+            // Set to true for denoising but make sure to download the Intel Open Image Denoiser library
+            // and set the path to the folder containing OIDN DLLs
+            renderer.Denoise = true;
+            renderer.SamplesPerPixel = 4;
+            renderer.IterativeRender("example2.png", 20);
         }
 
         public static void example3(int width, int height)
@@ -386,15 +390,15 @@ namespace PTSharpCore
             var material = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1));
             scene.Add(Cube.NewCube(new Vector(-1000, -1, -1000), new Vector(1000, 0, 1000), material));
 
-            for(int x = -20; x <= 20; x++)
+            for (int x = -20; x <= 20; x++)
             {
-                for(int z = -20; z <= 20; z++)
+                for (int z = -20; z <= 20; z++)
                 {
-                    if ((x + z)% 2 == 0)
+                    if ((x + z) % 2 == 0)
                     {
                         continue;
-        
-                    }   
+
+                    }
                     var s = 0.1;
                     var min = new Vector((double)x - s, 0, (double)z - s);
                     var max = new Vector((double)x + s, 2, (double)z + s);
@@ -405,7 +409,408 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            // Set to true for denoising but make sure to download the Intel Open Image Denoiser library
+            // and set the path to the folder containing OIDN DLLs
+            renderer.Denoise = false; 
             renderer.IterativeRender("example3.png", 1000);
+        }
+
+        static Colour GetColor(string name)
+        {
+            switch (name)
+            {
+                case "1":
+                case "2":
+                case "3":
+                    return new Colour(0.1f, 0.1f, 0.1f);
+                case "H":
+                    return Colour.HexColor(0xECF0F1);
+                case "C":
+                    return Colour.HexColor(0x222222);
+                case "N":
+                    return Colour.HexColor(0x3498DB);
+                case "O":
+                    return Colour.HexColor(0xE74C3C);
+                case "P":
+                    return Colour.HexColor(0xFF9800);
+                case "S":
+                    return Colour.HexColor(0xFFD34E);
+                case "Co":
+                    return Colour.HexColor(0xD0D0D0);
+                default:
+                    Console.WriteLine(name);
+                    return Colour.White;
+            }
+        }
+
+        static Material GetMaterial(string name)
+        {
+            switch (name)
+            {
+                case "1":
+                case "2":
+                case "3":
+                    return Material.GlossyMaterial(GetColor(name), 1.1f, Util.Radians(30));
+                default:
+                    return Material.GlossyMaterial(GetColor(name), 1.3f, Util.Radians(30));
+            }
+        }
+
+        struct Atom
+        {
+            public Atom(double x, double y, double z, string symbol)
+            {
+                X = x;
+                Y = y;
+                Z = z;
+                Symbol = symbol;
+            }
+
+            public double X { get; set; }
+            public double Y { get; set; }
+            public double Z { get; set; }
+            public string Symbol { get; set; }
+        }
+
+        struct MolSphere
+        {
+            public Vector Center { get; set; }
+            public double Radius { get; set; }
+            public string Symbol { get; set; }
+
+            public MolSphere(Vector center, double radius, string symbol)
+            {
+                Center = center;
+                Radius = radius;
+                Symbol = symbol;
+            }
+        }
+
+        struct MolCylinder
+        {
+            public Vector A { get; set; }
+            public Vector B { get; set; }
+            public double Radius { get; set; }
+            public int Type { get; set; }
+
+            public MolCylinder(Vector a, Vector b, double radius, int type)
+            {
+                A = a;
+                B = b;
+                Radius = radius;
+                Type = type;
+            }
+        }
+
+        struct Bond
+        {
+            private int a;
+            private int b;
+            private int t;
+
+            public Bond(int a, int b, int t) : this()
+            {
+                this.a = a;
+                this.b = b;
+                this.t = t;
+            }
+
+            public int I { get; set; }
+            public int J { get; set; }
+            public int Type { get; set; }
+        }
+
+        struct Molecule
+        {
+
+
+            public static Atom[] Atoms { get; set; }
+            public static Bond[] Bonds { get; set; }
+
+            public Molecule(Atom[] atoms, Bond[] bonds)
+            {
+                Atoms = atoms;
+                Bonds = bonds;
+            }
+
+            public static (Molecule, string) ParseFile(string path)
+            {
+                try
+                {
+                    string data = File.ReadAllText(path);
+                    return (ParseString(data), null);
+                }
+                catch (Exception e)
+                {
+                    return (new Molecule(), e.Message);
+                }
+            }
+
+            public static Molecule ParseString(string data)
+            {
+                string[] lines = data.Split('\n');
+                int natoms = int.Parse(lines[3].Substring(0, 3));
+                int nbonds = int.Parse(lines[3].Substring(3, 3));
+
+                Atom[] atoms = new Atom[natoms];
+                for (int i = 0; i < natoms; i++)
+                {
+                    string[] fields = lines[i + 4].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    double x = double.Parse(fields[0]);
+                    double y = double.Parse(fields[1]);
+                    double z = double.Parse(fields[2]);
+                    string symbol = fields[3];
+                    atoms[i] = new Atom(x, y, z, symbol);
+                }
+
+                Bond[] bonds = new Bond[nbonds];
+                for (int i = 0; i < nbonds; i++)
+                {
+                    string line = lines[i + 4 + natoms];
+                    int a = int.Parse(line.Substring(0, 3)) - 1;
+                    int b = int.Parse(line.Substring(3, 3)) - 1;
+                    int t = int.Parse(line.Substring(6, 3));
+                    bonds[i] = new Bond(a, b, t);
+                }
+
+                return new Molecule(atoms, bonds);
+            }
+
+            public (MolSphere[], MolCylinder[]) Solids()
+            {
+                MolSphere[] spheres = new MolSphere[Atoms.Length];
+                MolCylinder[] cylinders = new MolCylinder[Bonds.Length];
+
+                for (int i = 0; i < Atoms.Length; i++)
+                {
+                    var atom = Atoms[i];
+                    Vector center = new Vector(atom.X, atom.Y, atom.Z);
+                    double radius = AtomicRadii[atom.Symbol] / 100.0;
+                    spheres[i] = new MolSphere(center, radius, atom.Symbol);
+                }
+
+                for (int i = 0; i < Bonds.Length; i++)
+                {
+                    var bond = Bonds[i];
+                    MolSphere s0 = spheres[bond.I];
+                    MolSphere s1 = spheres[bond.J];
+                    double radius = bond.Type / 16.0;
+                    cylinders[i] = new MolCylinder(s0.Center, s1.Center, radius, bond.Type);
+                }
+
+                return (spheres, cylinders);
+            }
+
+            public Camera Camera()
+            {
+                List<Vector> points = new List<Vector>();
+                foreach (var atom in Atoms)
+                {
+                    points.Add(new Vector(atom.X, atom.Y, atom.Z));
+                }
+                return MakeCamera(points.ToArray());
+            }
+
+            public static Camera MakeCamera(Vector[] points)
+            {
+                Vector up = new Vector(0, 0, 1);
+
+                Vector center = Vector.Zero;
+                foreach (var point in points)
+                {
+                    center += point;
+                }
+                center /= points.Length;
+
+                Vector eye = Vector.Zero;
+                double best = 1e9;
+                for (int i = 0; i < 1000; i++)
+                {
+                    Vector v = Vector.RandomUnitVector(Random.Shared).MulScalar(50);
+                    double score = CameraScore(points, v);
+                    if (score < best)
+                    {
+                        best = score;
+                        eye = v;
+                    }
+                }
+
+                double fovy = 0;
+                Vector c = (center - eye).Normalize();
+                foreach (var point in points)
+                {
+                    Vector d = (point - eye).Normalize();
+                    double a = ToDegrees(Math.Acos(Vector.Dot(d, c)) * 2 * 1.2);
+                    fovy = Math.Max(fovy, a);
+                }
+
+                return PTSharpCore.Camera.LookAt(eye, center, up, fovy);
+            }
+
+            public static double CameraScore(Vector[] points, Vector eye)
+            {
+                double result = 0;
+                foreach (var p1 in points)
+                {
+                    Vector d1 = (p1 - eye).Normalize();
+                    foreach (var p2 in points)
+                    {
+                        Vector d2 = (p2 - eye).Normalize();
+                        double a = Vector.Dot(d1, d2);
+                        result += a * a;
+                    }
+                }
+                return result;
+            }
+
+            public static double ToDegrees(double radians)
+            {
+                return radians * 180 / Math.PI;
+            }
+        }
+
+        public static Dictionary<string, int> AtomicRadii = new Dictionary<string, int>()
+        {
+            {"H", 53},
+            {"He", 31},
+            {"Li", 167},
+            {"Be", 112},
+            {"B", 87},
+            {"C", 67},
+            {"N", 56},
+            {"O", 48},
+            {"F", 42},
+            {"Ne", 38},
+            {"Na", 190},
+            {"Mg", 145},
+            {"Al", 118},
+            {"Si", 111},
+            {"P", 98},
+            {"S", 88},
+            {"Cl", 79},
+            {"Ar", 71},
+            {"K", 243},
+            {"Ca", 194},
+            {"Sc", 184},
+            {"Ti", 176},
+            {"V", 171},
+            {"Cr", 166},
+            {"Mn", 161},
+            {"Fe", 156},
+            {"Co", 152},
+            {"Ni", 149},
+            {"Cu", 145},
+            {"Zn", 142},
+            {"Ga", 136},
+            {"Ge", 125},
+            {"As", 114},
+            {"Se", 103},
+            {"Br", 94},
+            {"Kr", 88},
+            {"Rb", 265},
+            {"Sr", 219},
+            {"Y", 212},
+            {"Zr", 206},
+            {"Nb", 198},
+            {"Mo", 190},
+            {"Tc", 183},
+            {"Ru", 178},
+            {"Rh", 173},
+            {"Pd", 169},
+            {"Ag", 165},
+            {"Cd", 161},
+            {"In", 156},
+            {"Sn", 145},
+            {"Sb", 133},
+            {"Te", 123},
+            {"I", 115},
+            {"Xe", 108},
+            {"Cs", 298},
+            {"Ba", 253},
+            {"Pr", 247},
+            {"Nd", 206},
+            {"Pm", 205},
+            {"Sm", 238},
+            {"Eu", 231},
+            {"Gd", 233},
+            {"Tb", 225},
+            {"Dy", 228},
+            {"Er", 226},
+            {"Tm", 222},
+            {"Yb", 222},
+            {"Lu", 217},
+            {"Hf", 208},
+            {"Ta", 200},
+            {"W", 193},
+            {"Re", 188},
+            {"Os", 185},
+            {"Ir", 180},
+            {"Pt", 177},
+            {"Au", 174},
+            {"Hg", 171},
+            {"Tl", 156},
+            {"Pb", 154},
+            {"Bi", 143},
+            {"Po", 135},
+            {"Rn", 120}
+        };
+
+        public static void mol(string path, int width, int height)
+        {
+            Scene scene = new Scene();
+
+            var molecule = Molecule.ParseFile(path).Item1;
+
+            (var spheres, var cylinders) = molecule.Solids();
+
+            foreach (var s in spheres)
+            {
+                var center_ = new Vector(s.Center.X, s.Center.Y, s.Center.Z);
+                var radius_ = s.Radius * 0.66f;
+                var material_ = GetMaterial(s.Symbol);
+                scene.Add(Sphere.NewSphere(center_, radius_, material_));
+            }
+
+            foreach (var cyl in cylinders)
+            {
+                var v0 = new Vector(cyl.A.X, cyl.A.Y, cyl.A.Z);
+                var v1 = new Vector(cyl.B.X, cyl.B.Y, cyl.B.Z);
+                var radius = cyl.Radius;
+                var material = GetMaterial(cyl.Type.ToString());
+                scene.Add(Cylinder.NewTransformedCylinder(v0, v1, radius, material));
+            }
+
+            // camera
+            var cam = molecule.Camera();
+            var eye = new Vector(cam.p.X, cam.p.Y, cam.p.Z);
+            var center = new Vector(cam.v.X, cam.v.Y, cam.v.Z); // Assuming 'v' represents the direction camera is facing
+            var up = new Vector(cam.u.X, cam.u.Y, cam.u.Z);
+
+            center.Z -= 4;
+            Console.WriteLine(eye);
+            Console.WriteLine(center);
+            Console.WriteLine(up);
+
+            // light coordinate system
+            var m = new Matrix().LookAtMatrix(eye, center, up).Translate(center.Sub(eye));
+            var d = 50.0;
+            var a = new Vector(-1, 0.5, -1);
+            var b = new Vector(1, -0.25, -1);
+            var c = new Vector(-1, -0.25, 1);
+            a = m.MulPosition(a.Normalize().MulScalar(d));
+            b = m.MulPosition(b.Normalize().MulScalar(d));
+            c = m.MulPosition(c.Normalize().MulScalar(d));
+
+            var light = Material.LightMaterial(Colour.White, 1000);
+            scene.Add(Sphere.NewSphere(a, 2, light));
+            scene.Add(Sphere.NewSphere(b, 1, light));
+            scene.Add(Sphere.NewSphere(c, 1, light));
+
+            var camera = Camera.LookAt(eye, center, up, cam.fovy / 1.7f);
+            var sampler = DefaultSampler.NewSampler(16, 8);
+            sampler.SetSpecularMode(SpecularMode.SpecularModeAll);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.IterativeRender("mol.png", 1000);
         }
 
         public static void colorwave(int width, int height)
@@ -450,6 +855,51 @@ namespace PTSharpCore
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("wave_example3.png", 1000);
+        }
+
+        public static void colorwave_denoised(int width, int height)
+        {
+            var scene = new Scene();
+            var material = Material.DiffuseMaterial(Colour.HexColor(0xFCFAE1));
+            scene.Add(Cube.NewCube(new Vector(-1000, -1, -1000), new Vector(1000, 0, 1000), material));
+
+            Parallel.For(-200, 201, x =>
+            {
+                double posX = x / 10.0;
+                for (double z = -20; z <= 20; z += 0.1)
+                {
+                    if ((Math.Floor(posX) + Math.Floor(z)) % 2 == 0)
+                    {
+                        continue;
+                    }
+
+                    var s = 0.05; // Decrease the size of the cube for denser pattern
+                    var min = new Vector(posX - s, 0, z - s); // Set y-coordinate to 0
+                    var max = new Vector(posX + s, Random.Shared.NextDouble() * 4, z + s); // Increase amplitude to 4
+
+                    // Calculate wave color based on position with increased amplitude
+                    var waveColor = Colour.FromRGB(
+                        (Math.Sin(posX * 0.2) + 1) * 0.5,  // Increase amplitude of sine wave
+                        (Math.Sin(z * 0.2) + 1) * 0.5,      // Increase amplitude of sine wave
+                        0.5);                                // Blue component (constant)
+
+                    // Create material with wave color
+                    var materialWithColor = Material.DiffuseMaterial(waveColor);
+
+                    lock (scene)
+                    {
+                        scene.Add(Cube.NewCube(min, max, materialWithColor));
+                    }
+                }
+            });
+
+            scene.Add(Cube.NewCube(new Vector(-5, 10, -5), new Vector(5, 11, 5), Material.LightMaterial(Colour.White, 5)));
+
+            var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.Denoise = true;
+            renderer.IterativeRender("wave_example3.png", 10);
         }
 
         public static void simplesphere(int width, int height)
@@ -551,22 +1001,22 @@ namespace PTSharpCore
 
         public static void dragon(int width, int height)
         {
-           var scene = new Scene();
-           var material = Material.GlossyMaterial(Colour.HexColor(0xB7CA79), 1.5F, Util.Radians(20));
-           var mesh = OBJ.Load("models/dragon.obj", material);
-           mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5, 0, 0.5));
-           scene.Add(mesh);
-           var floor = Material.GlossyMaterial(Colour.HexColor(0xD8CAA8), 1.2F, Util.Radians(5));
-           scene.Add(Cube.NewCube(new Vector(-50, -50, -50), new Vector(50, 0, 50), floor));
-           var light = Material.LightMaterial(Colour.White, 75);
-           scene.Add(Sphere.NewSphere(new Vector(-1, 10, 4), 1, light));
-           var mouth = Material.LightMaterial(Colour.HexColor(0xFFFAD5), 500);
-           scene.Add(Sphere.NewSphere(new Vector(-0.05F, 1, -0.5F), 0.03F, mouth));
-           var camera = Camera.LookAt(new Vector(-3, 2, -1), new Vector(0, 0.6F, -0.1F), new Vector(0, 1, 0), 35);
-           camera.SetFocus(new Vector(0, 1, -0.5F), 0.03F);
-           var sampler = DefaultSampler.NewSampler(4, 4);
-           var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-           renderer.IterativeRender("dragon.png", 100);
+            var scene = new Scene();
+            var material = Material.GlossyMaterial(Colour.HexColor(0xB7CA79), 1.5F, Util.Radians(20));
+            var mesh = OBJ.Load("models/dragon.obj", material);
+            mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5, 0, 0.5));
+            scene.Add(mesh);
+            var floor = Material.GlossyMaterial(Colour.HexColor(0xD8CAA8), 1.2F, Util.Radians(5));
+            scene.Add(Cube.NewCube(new Vector(-50, -50, -50), new Vector(50, 0, 50), floor));
+            var light = Material.LightMaterial(Colour.White, 75);
+            scene.Add(Sphere.NewSphere(new Vector(-1, 10, 4), 1, light));
+            var mouth = Material.LightMaterial(Colour.HexColor(0xFFFAD5), 500);
+            scene.Add(Sphere.NewSphere(new Vector(-0.05F, 1, -0.5F), 0.03F, mouth));
+            var camera = Camera.LookAt(new Vector(-3, 2, -1), new Vector(0, 0.6F, -0.1F), new Vector(0, 1, 0), 35);
+            camera.SetFocus(new Vector(0, 1, -0.5F), 0.03F);
+            var sampler = DefaultSampler.NewSampler(4, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.IterativeRender("dragon.png", 100);
         }
 
         public static void cube(int width, int height)
@@ -599,7 +1049,7 @@ namespace PTSharpCore
             Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("cube.png", 1000);
         }
-      
+
         public static void runway(int width, int height_)
         {
             const int radius = 2;
@@ -773,7 +1223,7 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(0, 1.5F, 2), new Vector(0, 0.5F, 0), new Vector(0, 1, 0), 35);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            renderer.IterativeRender("love.png", 1000); 
+            renderer.IterativeRender("love.png", 1000);
         }
 
         public static void materialspheres(int width, int height)
@@ -935,7 +1385,7 @@ namespace PTSharpCore
             sampler.SpecularMode = SpecularMode.SpecularModeFirst;
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.FireflySamples = 64;
-            renderer.IterativeRender("teapot.png", 1000); 
+            renderer.IterativeRender("teapot.png", 1000);
         }
 
         public static void hits(int width, int height)
@@ -1001,9 +1451,9 @@ namespace PTSharpCore
 
         public void volume()
         {
-            string[] imglist = Directory.GetFiles(Directory.GetCurrentDirectory()+"\\images", "*.*", SearchOption.AllDirectories);
+            string[] imglist = Directory.GetFiles(Directory.GetCurrentDirectory() + "\\images", "*.*", SearchOption.AllDirectories);
             List<SKBitmap> bmplist = new List<SKBitmap>();
-            
+
             foreach (string file in imglist)
             {
                 Console.WriteLine(file);
@@ -1016,7 +1466,7 @@ namespace PTSharpCore
 
             Scene scene = new Scene();
             scene.Color = Colour.White;
-            
+
             Colour[] colors = new Colour[]
             {
                 // HexColor(0xFFF8E3),
@@ -1082,7 +1532,7 @@ namespace PTSharpCore
             var renderer = Renderer.NewRenderer(scene, camera, sampler, 960, 540, true);
             renderer.IterativeRender("veachscene.png", 1000);
         }
-        
+
         public static void maze(int width, int height)
         {
             var rand = Random.Shared;
@@ -1092,17 +1542,17 @@ namespace PTSharpCore
             scene.Add(Cube.NewCube(new Vector(-10000, -10000, -10000), new Vector(10000, 10000, 0), floor));
             var n = 24;
 
-            for (int x = -n; x <= n; x++) 
+            for (int x = -n; x <= n; x++)
             {
                 for (int y = -n; y <= n; y++)
                 {
 
-                    if (Random.Shared.NextDouble() > 0.8) 
+                    if (Random.Shared.NextDouble() > 0.8)
                     {
                         var min = new Vector((double)x - 0.5F, (double)y - 0.5F, 0);
                         var max = new Vector((double)x + 0.5F, (double)y + 0.5F, 1);
                         var cube = Cube.NewCube(min, max, material);
-                        scene.Add(cube);        
+                        scene.Add(cube);
                     }
                 }
             }
@@ -1127,16 +1577,16 @@ namespace PTSharpCore
 
             var mesh = OBJ.Load("models/gopher.obj", gopher);
             scene.Add(mesh);
-            mesh.Transform(new Matrix().Rotate(new Vector(0,1,0), Util.Radians(-10)));
+            mesh.Transform(new Matrix().Rotate(new Vector(0, 1, 0), Util.Radians(-10)));
             mesh.SmoothNormals();
             mesh.FitInside(new Box(new Vector(-1, 0, -1), new Vector(1, 2, 1)), new Vector(0.5, 0, 0.5));
             scene.Add(mesh);
-            
+
             var camera = Camera.LookAt(new Vector(4, 1, 0), new Vector(0, 0.9, 0), new Vector(0, 1, 0), 40);
             var sampler = DefaultSampler.NewSampler(16, 16);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.IterativeRender("gopher.png", 1000);
-        }    
+        }
 
         public static void veach(int width, int height)
         {

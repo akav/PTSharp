@@ -1,11 +1,14 @@
-using MathNet.Numerics.Random;
 using System;
+using SkiaSharp;
+using System.IO;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
-using SkiaSharp;
-using System.IO;
+using System.Runtime.InteropServices;
+using MathNet.Numerics.Random;
+using static PTSharpCore.OIDN;
+using System.Security.Cryptography;
 
 namespace PTSharpCore
 {
@@ -14,7 +17,7 @@ namespace PTSharpCore
         Scene Scene;
         Camera Camera;
         Sampler Sampler;
-        public Buffer PBuffer;
+        public static Buffer PBuffer;
         public int SamplesPerPixel;
         public bool StratifiedSampling;
         public int AdaptiveSamples;
@@ -25,6 +28,7 @@ namespace PTSharpCore
         int NumCPU;
         public static int iterations;
         public string pathTemplate;
+        public bool Denoise { get; internal set; }
 
         Renderer() { }
 
@@ -34,7 +38,7 @@ namespace PTSharpCore
             r.Scene = scene;
             r.Camera = camera;
             r.Sampler = sampler;
-            r.PBuffer = new Buffer(w, h);
+            PBuffer = new Buffer(w, h);
             r.SamplesPerPixel = 2;
             r.AdaptiveSamples = 0;
             r.StratifiedSampling = false;
@@ -42,6 +46,7 @@ namespace PTSharpCore
             r.AdaptiveExponent = 1;
             r.FireflySamples = 0;
             r.FireflyThreshold = 1;
+            r.Denoise = false;
 
             if (multithreaded)
                 r.NumCPU = Environment.ProcessorCount;
@@ -54,10 +59,8 @@ namespace PTSharpCore
         {
             SKBitmap finalrender = buf.Image(channel);
 
-            // Create SKImage from SKBitmap
             using (SKImage img = SKImage.FromBitmap(finalrender))
             {
-                // Encode and save the image
                 using (Stream stream = File.OpenWrite(path))
                 {
                     try
@@ -73,7 +76,7 @@ namespace PTSharpCore
                 }
             }
         }
-        
+
         public void Render()
         {
             Scene scene = Scene;
@@ -193,7 +196,6 @@ namespace PTSharpCore
             Console.WriteLine("time elapsed:" + sw.Elapsed);
             sw.Stop();
         }
-
         public void RenderParallel()
         {
             Scene scene = Scene;
@@ -210,15 +212,11 @@ namespace PTSharpCore
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            // Random Number Generator from on Math.Numerics
             var rand = Random.Shared;
-
-            // Frame resolution
             int totalPixels = h * w;
             double invWidth = 1.0f / w;
             double invHeight = 1.0f / h;
-                        
-            // ParallelOptions for Parallel.For
+
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             CancellationToken cancellationToken = cancellationTokenSource.Token;
 
@@ -232,75 +230,19 @@ namespace PTSharpCore
 
             if (StratifiedSampling)
             {
-                Parallel.For(0, w * h, parallelOptions, (i, loopState) =>
+                Parallel.For(0, w * h, parallelOptions, index =>
                 {
-                    int y = i / w, x = i % w;
+                    int y = index / w, x = index % w;
                     for (int u = 0; u < sppRoot; u++)
                     {
                         for (int v = 0; v < sppRoot; v++)
                         {
-                            var fu = (u + 0.5) / sppRoot;
-                            var fv = (v + 0.5) / sppRoot;
+                            var fu = ((double)u + 0.5) / (double)sppRoot;
+                            var fv = ((double)v + 0.5) / (double)sppRoot;
                             var ray = camera.CastRay(x, y, w, h, fu, fv, rand);
                             var sample = sampler.Sample(scene, ray, rand);
                             buf.AddSample(x, y, sample);
                         }
-                    }
-                });
-            }
-            
-            if (AdaptiveSamples > 0)
-            {
-                Console.WriteLine("Adaptive sampling set to {0} samples", AdaptiveSamples);
-
-                // Define global variables for accumulating variance and sample counts
-                ConcurrentDictionary<int, double> pixelVariances = new ConcurrentDictionary<int, double>(); // Stores variance for each pixel
-                ConcurrentDictionary<int, int> pixelSampleCounts = new ConcurrentDictionary<int, int>(); // Stores sample count for each pixel
-                                
-                // Replace the variance calculation with an optimal approach using parallel aggregation
-                Parallel.For(0, w * h, parallelOptions, (i, loopState) =>
-                {
-                    int y = i / w, x = i % w;
-
-                    // Calculate the sum of color components
-                    double sumR = 0, sumG = 0, sumB = 0;
-                    int count = 0;
-
-                    for (int j = 0; j < AdaptiveSamples; j++)
-                    {
-                        var fu = Random.Shared.NextDouble();
-                        var fv = Random.Shared.NextDouble();
-                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
-                        Colour sample = sampler.Sample(scene, ray, Random.Shared);
-                        buf.AddSample(x, y, sample);
-
-                        // Accumulate the color components
-                        sumR += sample.r;
-                        sumG += sample.g;
-                        sumB += sample.b;
-                        count++;
-                    }
-
-                    // Calculate the average color
-                    double avgR = sumR / count;
-                    double avgG = sumG / count;
-                    double avgB = sumB / count;
-
-                    // Calculate the variance
-                    double variance = 0;
-
-                    for (int j = 0; j < AdaptiveSamples; j++)
-                    {
-                        var fu = Random.Shared.NextDouble();
-                        var fv = Random.Shared.NextDouble();
-                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
-                        Colour sample = sampler.Sample(scene, ray, Random.Shared);
-
-                        // Calculate the squared difference from the average color
-                        double diffR = sample.r - avgR;
-                        double diffG = sample.g - avgG;
-                        double diffB = sample.b - avgB;
-                        variance += diffR * diffR + diffG * diffG + diffB * diffB;
                     }
 
                     // Set the pixel color
@@ -308,22 +250,6 @@ namespace PTSharpCore
                     Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
                     Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
                     Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
-
-                    // Normalize the variance
-                    variance /= count;
-
-                    // Update accumulated variance and sample count
-                    int index = y * w + x;
-                    if (!pixelVariances.ContainsKey(index))
-                    {
-                        pixelVariances[index] = variance;
-                        pixelSampleCounts[index] = count;
-                    }
-                    else
-                    {
-                        pixelVariances[index] = (pixelVariances[index] + variance) / 2; // Update variance with running average
-                        pixelSampleCounts[index] += count; // Accumulate sample count
-                    }
                 });
             }
             else
@@ -331,11 +257,8 @@ namespace PTSharpCore
                 int tile_size = 256;
                 int num_tiles_x = (w + tile_size - 1) / tile_size;
                 int num_tiles_y = (h + tile_size - 1) / tile_size;
-
                 var renderingScheduler = new WorkStealingScheduler(Environment.ProcessorCount);
                 var colorSettingScheduler = new WorkStealingScheduler(Environment.ProcessorCount);
-
-                // Define the granularity of work distribution (e.g., sub-tiles)
                 int sub_tile_size = 32;
 
                 for (int tile_index = 0; tile_index < num_tiles_x * num_tiles_y; tile_index++)
@@ -412,7 +335,85 @@ namespace PTSharpCore
                 // Dispose the schedulers after rendering completes
                 renderingScheduler.Dispose();
                 colorSettingScheduler.Dispose();
-            }           
+            }
+
+            if (AdaptiveSamples > 0)
+            {
+                Console.WriteLine("Adaptive sampling set to {0} samples", AdaptiveSamples);
+
+                // Define global variables for accumulating variance and sample counts
+                ConcurrentDictionary<int, double> pixelVariances = new ConcurrentDictionary<int, double>(); // Stores variance for each pixel
+                ConcurrentDictionary<int, int> pixelSampleCounts = new ConcurrentDictionary<int, int>(); // Stores sample count for each pixel
+
+                // Replace the variance calculation with an optimal approach using parallel aggregation
+                Parallel.For(0, w * h, parallelOptions, (i, loopState) =>
+                {
+                    int y = i / w, x = i % w;
+
+                    // Calculate the sum of color components
+                    double sumR = 0, sumG = 0, sumB = 0;
+                    int count = 0;
+
+                    for (int j = 0; j < AdaptiveSamples; j++)
+                    {
+                        var fu = Random.Shared.NextDouble();
+                        var fv = Random.Shared.NextDouble();
+                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
+                        Colour sample = sampler.Sample(scene, ray, Random.Shared);
+                        buf.AddSample(x, y, sample);
+
+                        // Accumulate the color components
+                        sumR += sample.r;
+                        sumG += sample.g;
+                        sumB += sample.b;
+                        count++;
+                    }
+
+                    // Calculate the average color
+                    double avgR = sumR / count;
+                    double avgG = sumG / count;
+                    double avgB = sumB / count;
+
+                    // Calculate the variance
+                    double variance = 0;
+
+                    for (int j = 0; j < AdaptiveSamples; j++)
+                    {
+                        var fu = Random.Shared.NextDouble();
+                        var fv = Random.Shared.NextDouble();
+                        Ray ray = camera.CastRay(x, y, w, h, fu, fv, Random.Shared);
+                        Colour sample = sampler.Sample(scene, ray, Random.Shared);
+
+                        // Calculate the squared difference from the average color
+                        double diffR = sample.r - avgR;
+                        double diffG = sample.g - avgG;
+                        double diffB = sample.b - avgB;
+                        variance += diffR * diffR + diffG * diffG + diffB * diffB;
+                    }
+
+                    // Set the pixel color
+                    var offset = (y * w + x) * 4; // BGR
+                    Program.bitmap[offset + 0] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).r, 0.0, 0.999));
+                    Program.bitmap[offset + 1] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).g, 0.0, 0.999));
+                    Program.bitmap[offset + 2] = (byte)(256 * Math.Clamp(buf.Pixels[(x, y)].Color().Pow(1.0 / 2.2).b, 0.0, 0.999));
+
+                    // Normalize the variance
+                    variance /= count;
+
+                    // Update accumulated variance and sample count
+                    int index = y * w + x;
+                    if (!pixelVariances.ContainsKey(index))
+                    {
+                        pixelVariances[index] = variance;
+                        pixelSampleCounts[index] = count;
+                    }
+                    else
+                    {
+                        pixelVariances[index] = (pixelVariances[index] + variance) / 2; // Update variance with running average
+                        pixelSampleCounts[index] += count; // Accumulate sample count
+                    }
+                });
+            }
 
             if (FireflySamples > 0)
             {
@@ -433,7 +434,7 @@ namespace PTSharpCore
                                 // Check if the sample is a firefly
                                 if (IsFirefly(sample, x, y, ref buf))
                                 {
-                                    // If it's a firefly, mark the pixel and break the loop
+                                    // If firefly, mark the pixel and break the loop
                                     skippedPixels.TryAdd((x, y), true);
                                     break;
                                 }
@@ -472,10 +473,6 @@ namespace PTSharpCore
 
         public bool IsFirefly(Colour sample, int x, int y, ref Buffer buf)
         {
-            // Define your criteria for identifying fireflies
-            // Here's an example of a more sophisticated criterion:
-            // Fireflies are pixels with high brightness and high deviation from the local neighborhood
-
             double brightnessThreshold = 0.9; // Adjust as needed
             double brightness = sample.r * 0.2126 + sample.g * 0.7152 + sample.b * 0.0722; // Calculate brightness
 
@@ -539,14 +536,179 @@ namespace PTSharpCore
             return overallDeviation;
         }
 
+        public static float[] SKImageToFloatArray(SKBitmap image)
+        {
+            using (var imagePixmap = image.PeekPixels())
+            {
+                var info = imagePixmap.Info;
+
+                // Calculate the number of pixels
+                int pixelCount = info.Width * info.Height;
+
+                byte[] pixels = new byte[info.BytesSize];
+                Marshal.Copy(imagePixmap.GetPixels(), pixels, 0, pixels.Length);
+
+                // Convert byte values to float values in the range [0, 1]
+                float[] normalizedPixels = new float[pixelCount * 3]; // Assuming RGB format
+                for (int i = 0, j = 0; i < pixels.Length; i += 4, j += 3)
+                {
+                    normalizedPixels[j] = pixels[i] / 255.0f;       // Red
+                    normalizedPixels[j + 1] = pixels[i + 1] / 255.0f; // Green
+                    normalizedPixels[j + 2] = pixels[i + 2] / 255.0f; // Blue
+                }
+
+                return normalizedPixels;
+            }
+        }
+
+        public static SKBitmap FloatArrayToSKBitmap(float[] data, int width, int height)
+        {
+            var imageInfo = new SKImageInfo(width, height);
+
+            // Ensure that the float array has the correct size for RGBA format
+            if (data.Length != width * height * 3) // Assuming RGB format with 3 components per pixel
+            {
+                throw new ArgumentException("Invalid float array size for the specified width and height.", nameof(data));
+            }
+
+            var bitmap = new SKBitmap(imageInfo);
+
+            // Convert float array to byte array
+            byte[] pixelData = new byte[width * height * 4]; // RGBA format
+            for (int i = 0, j = 0; i < data.Length; i += 3, j += 4)
+            {
+                pixelData[j] = (byte)(data[i] * 255);           // Red
+                pixelData[j + 1] = (byte)(data[i + 1] * 255);   // Green
+                pixelData[j + 2] = (byte)(data[i + 2] * 255);   // Blue
+                pixelData[j + 3] = 255;                         // Alpha
+            }
+
+            // Pin byte array in memory
+            GCHandle handle = GCHandle.Alloc(pixelData, GCHandleType.Pinned);
+            try
+            {
+                // Copy pixel data to SKBitmap
+                IntPtr ptr = handle.AddrOfPinnedObject();
+                using (var pixmap = new SKPixmap(imageInfo, ptr, (int)imageInfo.RowBytes))
+                {
+                    if (!bitmap.InstallPixels(pixmap))
+                    {
+                        throw new InvalidOperationException("Failed to install pixels from SKPixmap to SKBitmap.");
+                    }
+                }
+            }
+            finally
+            {
+                // Release pinned memory
+                handle.Free();
+            }
+
+            return bitmap;
+        }
+
+        public float[] DenoiseRGB(float[] inputRGB, float[] albedoRGB, float[] normalRGB, int width, int height)
+        {
+            try
+            {
+                // Create a denoiser instance
+                var denoiser = new Denoiser(OIDN.OIDNDeviceType.OIDN_DEVICE_TYPE_DEFAULT, Environment.ProcessorCount);
+
+                // Calculate the size of the color buffer for float3 data
+                int colorBufSize = width * height * 3 * sizeof(float);
+                IntPtr colorBuf = oidnNewBuffer(denoiser.oidnDevice, colorBufSize);
+
+                // Obtain the pointer to the beginning of the color buffer
+                IntPtr colorDataPtr = oidnGetBufferData(colorBuf);
+
+                // Create a separate buffer for the output image
+                IntPtr outputBuf = oidnNewBuffer(denoiser.oidnDevice, colorBufSize);
+
+                // Create an OIDN Ray Tracing (RT) filter for denoising
+                IntPtr filter = oidnNewFilter(denoiser.oidnDevice, "RT");
+
+                int pixelStride = 3 * sizeof(float); // Assuming RGB format
+
+                try
+                {
+                    // Copy input data to the color buffer
+                    Marshal.Copy(inputRGB, 0, colorDataPtr, inputRGB.Length);
+
+                    // Set input and output images for denoising filter
+                    oidnSetFilterImage(filter, "color", colorBuf, OIDNImageFormat.OIDN_FORMAT_FLOAT3,
+                        width, height, 0, pixelStride, width * pixelStride);
+                    oidnSetFilterImage(filter, "output", outputBuf, OIDNImageFormat.OIDN_FORMAT_FLOAT3,
+                        width, height, 0, pixelStride, width * pixelStride);
+                    oidnSetFilterBool(filter, "srgb", true);
+                    oidnSetFilterFloat(filter, "inputScale", float.NaN);
+                    oidnCommitFilter(filter);
+
+                    // Execute denoising
+                    oidnExecuteFilter(filter);
+
+                    // Check for errors
+                    if (oidnGetDeviceError(denoiser.oidnDevice, out var errorMessage) != OIDNError.OIDN_ERROR_NONE)
+                        Console.WriteLine("Error: {0}", errorMessage);
+
+                    // Determine the size of the denoised output buffer
+                    int outputBufSize = width * height * 3;
+
+                    // Create a float array to hold the denoised output data
+                    float[] outputRGB = new float[outputBufSize];
+
+                    // Obtain the pointer to the beginning of the color buffer
+                    IntPtr outputDataPtr = oidnGetBufferData(outputBuf);
+
+                    // Copy denoised data from the output buffer to the float array
+                    Marshal.Copy(outputDataPtr, outputRGB, 0, outputBufSize);
+
+                    return outputRGB;
+                }
+                finally
+                {
+                    // Release allocated memory for buffers
+                    oidnReleaseBuffer(colorBuf);
+                    oidnReleaseBuffer(outputBuf);
+
+                    // Release OIDN filter device
+                    oidnReleaseFilter(filter);
+
+                    // Release OIDN device
+                    oidnReleaseDevice(denoiser.oidnDevice);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during denoising: {ex.Message}");
+                throw;
+            }
+        }
+
+        public SKBitmap DenoiseImage(SKBitmap color, SKBitmap albedo, SKBitmap normal)
+        {
+            // Convert SKBitmaps to float arrays
+            float[] colorData = SKImageToFloatArray(color);
+            float[] albedoData = SKImageToFloatArray(albedo);
+            float[] normalData = SKImageToFloatArray(normal);
+
+            // Denoise RGB data
+            float[] denoisedData = DenoiseRGB(colorData, albedoData, normalData, color.Width, color.Height);
+
+            // Convert denoised float array back to an SKBitmap
+            SKBitmap denoisedBitmap = FloatArrayToSKBitmap(denoisedData, color.Width, color.Height);
+
+            return denoisedBitmap;
+        }
+
         public SKBitmap IterativeRender(String pathTemplate, int iter)
         {
             iterations = iter;
-            SkiaSharp.SKBitmap finalrender = null;
+            SKBitmap colourChannel = null;
+            SKBitmap albedoChannel = null;
+            SKBitmap normalChannel = null;
 
             for (int i = 1; i <= iterations; i++)
             {
-                Console.WriteLine("Iterations " + i + " of " + iterations);
+                Console.WriteLine("Iteration " + i + " of " + iterations);
                 if (NumCPU.Equals(1))
                 {
                     Render();
@@ -557,16 +719,49 @@ namespace PTSharpCore
                 }
 
                 string currentPath = string.Format(pathTemplate, i); // Update the path for each iteration
-                finalrender = PBuffer.Image(Channel.ColorChannel);
 
-                // Save the image for each iteration with the updated path
-                using (var stream = File.OpenWrite(currentPath))
+                colourChannel = PBuffer.Image(Channel.ColorChannel);
+
+                // Save the colour channel
+                using (var colorstream = File.OpenWrite(currentPath))
                 {
-                    finalrender.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100).SaveTo(stream);
+                    colourChannel.Encode(SKEncodedImageFormat.Png, 100).SaveTo(colorstream);
                 }
-            }
 
-            return finalrender;
+                // Experimental: OIDN 
+                if (Denoise)
+                {
+                    albedoChannel = PBuffer.Image(Channel.AlbedoChannel);
+
+                    // Save the Albedo channel
+                    using (var albedostream = File.OpenWrite("albedo_channel.png"))
+                    {
+                        albedoChannel.Encode(SKEncodedImageFormat.Png, 100).SaveTo(albedostream);
+                        Console.WriteLine("Albedo channel saved");
+                    }
+
+                    normalChannel = PBuffer.Image(Channel.NormalChannel);
+
+                    // Save the Normal Channel
+                    using (var normalstream = File.OpenWrite("normal_channel.png"))
+                    {
+                        normalChannel.Encode(SKEncodedImageFormat.Png, 100).SaveTo(normalstream);
+                        Console.WriteLine("Normal channel saved");
+                    }
+
+                    // Denoise the image using OIDN
+                    colourChannel = DenoiseImage(colourChannel, albedoChannel, normalChannel);
+
+                    // Save the denoised image
+                    using (var denoisedstream = File.OpenWrite("denoised_output.png"))
+                    {
+                        colourChannel.Encode(SKEncodedImageFormat.Png, 100).SaveTo(denoisedstream);
+                        Console.WriteLine("Denoised output saved");
+                    }
+                }
+            }           
+
+            return colourChannel;
         }
 
         internal void FrameRender(String path, int iterations)
