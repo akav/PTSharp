@@ -409,8 +409,8 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            // Set to true for denoising but make sure to download the Intel Open Image Denoiser library
-            // and set the path to the folder containing OIDN DLLs
+            // Set to true for denoising but make sure to download the Intel Open Image Denoise library
+            // and set the path to the folder containing 
             renderer.Denoise = false; 
             renderer.IterativeRender("example3.png", 1000);
         }
