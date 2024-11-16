@@ -29,6 +29,17 @@ namespace PTSharpCore
             this.Material = Material;
         }
 
+        internal Triangle(Vector v1, Vector v2, Vector v3, Vector n1, Vector n2, Vector n3, Material Material)
+        {
+            V1 = v1;
+            V2 = v2;
+            V3 = v3;
+            N1 = n1;
+            N2 = n2;
+            N3 = n3;
+            this.Material = Material;
+        }
+
         internal static Triangle NewTriangle(Vector v1, Vector v2, Vector v3, Vector t1, Vector t2, Vector t3, Material material)
         {
             Triangle t = new Triangle();
@@ -40,6 +51,22 @@ namespace PTSharpCore
             t.T3 = t3;
             t.Material = material;
             t.FixNormals();
+            return t;
+        }
+
+        internal static Triangle NewTriangle(Vector v1, Vector v2, Vector v3, Vector n1, Vector n2, Vector n3, Vector t1, Vector t2, Vector t3, Material material)
+        {
+            Triangle t = new Triangle();
+            t.V1 = v1;
+            t.V2 = v2;
+            t.V3 = v3;
+            t.N1 = n1;
+            t.N2 = n2;
+            t.N3 = n3;
+            t.T1 = t1;
+            t.T2 = t2;
+            t.T3 = t3;
+            t.Material = material;
             return t;
         }
 

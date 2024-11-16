@@ -9,25 +9,22 @@ using System.Threading.Tasks;
 
 namespace PTSharpCore
 {
-    class Program
+    class Program : IDisposable
     {
-        public static ImGuiController controller = null;
-        public static IInputContext inputContext = null;
-        private static IWindow window;
-        private static GL Gl;
-        private static BufferObject<float> Vbo;
-        private static BufferObject<uint> Ebo;
-        private static VertexArrayObject<float, uint> Vao;
-
-        //Create a texture object.
-        private static Texture Texture;
-        private static Shader Shader;
+        private static ImGuiController _controller;
+        private static IInputContext _inputContext;
+        private static IWindow _window;
+        private static GL _gl;
+        private static BufferObject<float> _vbo;
+        private static BufferObject<uint> _ebo;
+        private static VertexArrayObject<float, uint> _vao;
+        private static Texture _texture;
+        private static Shader _shader;
 
         public static int Width = 1920;
         public static int Height = 1080;
-
-        public static byte[] bitmap = new byte[Width * Height * 4];
-        public static int id;
+        public static byte[] Bitmap = new byte[Width * Height * 4];
+        public static int Id;
         public static int WindowId;
         public static int ThreadCount = Environment.ProcessorCount;
         public const int TileSize = 32;
@@ -54,89 +51,103 @@ namespace PTSharpCore
             var options = WindowOptions.Default;
             options.Size = new Vector2D<int>(Width, Height);
             options.Title = "PTSharp Viewport";
-            window = Window.Create(options);
-            id = WindowId++;
-            var x = (Width * id) % Width;
-            var y = (Width * id) / Height * 100;
-            var Location = new System.Drawing.Point(x, y);
-            window.Load += OnLoad;
-            window.Render += OnRender;
-            window.Closing += OnClose;
-            window.Run();            
+            _window = Window.Create(options);
+            Id = WindowId++;
+            var x = (Width * Id) % Width;
+            var y = (Width * Id) / Height * 100;
+            var location = new System.Drawing.Point(x, y);
+            _window.Load += OnLoad;
+            _window.Render += OnRender;
+            _window.Closing += OnClose;
+            _window.Run();
         }
 
-        private static void KeyDown(IKeyboard arg1, Key arg2, int arg3)
+        private static void KeyDown(IKeyboard keyboard, Key key, int arg3)
         {
-            if (arg2 == Key.Escape)
+            if (key == Key.Escape)
             {
-                window.Close();
+                _window.Close();
             }
         }
 
         private unsafe static void OnLoad()
         {
-            IInputContext input = window.CreateInput();
-            for (int i = 0; i < input.Keyboards.Count; i++)
+            try
             {
-                input.Keyboards[i].KeyDown += KeyDown;
+                _inputContext = _window.CreateInput();
+                foreach (var keyboard in _inputContext.Keyboards)
+                {
+                    keyboard.KeyDown += KeyDown;
+                }
+
+                _gl = GL.GetApi(_window);
+                _ebo = new BufferObject<uint>(_gl, Indices, BufferTargetARB.ElementArrayBuffer);
+                _vbo = new BufferObject<float>(_gl, Vertices, BufferTargetARB.ArrayBuffer);
+                _vao = new VertexArrayObject<float, uint>(_gl, _vbo, _ebo);
+                _vao.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 5, 0);
+                _vao.VertexAttributePointer(1, 2, VertexAttribPointerType.Float, 5, 3);
+                _shader = new Shader(_gl, "shader.vert", "shader.frag");
+                _controller = new ImGuiController(
+                        _gl = _window.CreateOpenGL(),
+                        _window,
+                        _inputContext
+                    );
+
+                // Start rendering
+                Task.Factory.StartNew(() => Example.example3(Width, Height));
             }
-
-            Gl = GL.GetApi(window);
-            Ebo = new BufferObject<uint>(Gl, Indices, BufferTargetARB.ElementArrayBuffer);
-            Vbo = new BufferObject<float>(Gl, Vertices, BufferTargetARB.ArrayBuffer);
-            Vao = new VertexArrayObject<float, uint>(Gl, Vbo, Ebo);
-            Vao.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 5, 0);
-            Vao.VertexAttributePointer(1, 2, VertexAttribPointerType.Float, 5, 3);
-            Shader = new Shader(Gl, "shader.vert", "shader.frag");
-            controller = new ImGuiController(
-                    Gl = window.CreateOpenGL(), // load OpenGL
-                    window, // pass in our window
-                    input // reuse the existing input context
-                );
-
-            // Start rendering
-            Task.Factory.StartNew(() => Example.example3(Width, Height));
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during OnLoad: {ex.Message}");
+            }
         }
 
         private static void OnClose()
         {
-            // Dispose our controller first
-            controller?.Dispose();
-
-            // Dispose the input context
-            inputContext?.Dispose();
-
-            Vbo.Dispose();
-            Ebo.Dispose();
-            Vao.Dispose();
-            Shader.Dispose();
-            
-            //Remember to dispose the texture.
-            Texture.Dispose();
+            DisposeResources();
         }
 
         private static unsafe void OnRender(double obj)
         {
-            controller.Update((float)2);            
-            Gl.Clear((uint)ClearBufferMask.ColorBufferBit);
-            Vao.Bind();
-            Shader.Use();
+            try
+            {
+                _controller.Update((float)2);
+                _gl.Clear((uint)ClearBufferMask.ColorBufferBit);
+                _vao.Bind();
+                _shader.Use();
 
-            //Loading a texture.
-            Texture = new Texture(Gl, bitmap, (uint)Width, (uint)Height);
+                // Loading a texture.
+                _texture = new Texture(_gl, Bitmap, (uint)Width, (uint)Height);
 
-            //Bind a texture and and set the uTexture0 to use texture0.
-            Texture.Bind(TextureUnit.Texture0);
-            Shader.SetUniform("uTexture0", 0);
-            Gl.DrawElements(PrimitiveType.Triangles, (uint)Indices.Length, DrawElementsType.UnsignedInt, null);
-            Texture.Dispose();
+                // Bind a texture and set the uTexture0 to use texture0.
+                _texture.Bind(TextureUnit.Texture0);
+                _shader.SetUniform("uTexture0", 0);
+                _gl.DrawElements(PrimitiveType.Triangles, (uint)Indices.Length, DrawElementsType.UnsignedInt, null);
+                _texture.Dispose();
 
-            // This is where you'll do all of your ImGUi rendering
-            // Here, we're just showing the ImGui built-in demo window.
-            // ImGuiNET.ImGui.ShowDemoWindow();
+                // Make sure ImGui renders too!
+                _controller.Render();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during OnRender: {ex.Message}");
+            }
+        }
 
-            // Make sure ImGui renders too!
-            controller.Render();
+        private static void DisposeResources()
+        {
+            _controller?.Dispose();
+            _inputContext?.Dispose();
+            _vbo?.Dispose();
+            _ebo?.Dispose();
+            _vao?.Dispose();
+            _shader?.Dispose();
+            _texture?.Dispose();
+        }
+
+        public void Dispose()
+        {
+            DisposeResources();
         }
     }
 }

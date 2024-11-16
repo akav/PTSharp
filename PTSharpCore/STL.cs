@@ -4,49 +4,30 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using STLDotNet6.Formats.StereoLithography;
-
+using System.Text;
 
 namespace PTSharpCore
 {
-
     class STL
     {
         // Binary STL reader is based on the article by Frank Niemeyer 
         // http://frankniemeyer.blogspot.gr/2014/05/binary-stl-io-using-nativeinteropstream.html
-        // Requires NativeInterop from Nuget
-        // https://www.nuget.org/packages/NativeInterop/
-
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        struct STLVector
-        {
-            public double x;
-            public double y;
-            public double z;
-
-            public STLVector(double x, double y, double z)
-            {
-                this.x = x;
-                this.y = y;
-                this.z = z;
-            }
-        }
-
+        
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         struct STLTriangle
         {
             // 4 * 3 * 4 byte + 2 byte = 50 byte
-            public STLVector Normal;
-            public STLVector A;
-            public STLVector B;
-            public STLVector C;
+            public Vector Normal;
+            public Vector A;
+            public Vector B;
+            public Vector C;
             public ushort AttributeByteCount;
 
             public STLTriangle(
-                STLVector normalVec,
-                STLVector vertex1,
-                STLVector vertex2,
-                STLVector vertex3,
+                Vector normalVec,
+                Vector vertex1,
+                Vector vertex2,
+                Vector vertex3,
                 ushort attr = 0)
             {
                 Normal = normalVec;
@@ -57,235 +38,189 @@ namespace PTSharpCore
             }
         }
 
-        STLTriangle[] mesh = new STLTriangle[] {
-
-            new STLTriangle(new STLVector(0, 0, 0),
-                    new STLVector(0, 0, 0),
-                    new STLVector(0, 1, 0),
-                    new STLVector(1, 0, 0)),
-            new STLTriangle(new STLVector(0, 0, 0),
-                    new STLVector(0, 0, 0),
-                    new STLVector(0, 0, 1),
-                    new STLVector(0, 1, 0)),
-            new STLTriangle(new STLVector(0, 0, 0),
-                    new STLVector(0, 0, 0),
-                    new STLVector(0, 0, 1),
-                    new STLVector(1, 0, 0)),
-            new STLTriangle(new STLVector(0, 0, 0),
-                    new STLVector(0, 1, 0),
-                    new STLVector(0, 0, 1),
-                    new STLVector(1, 0, 0)),
-        };
-
-        public static Mesh Load(String filePath, Material material)
+        public static Mesh Load(string filePath, Material material)
         {
-
-            byte[] buffer = new byte[80];
-            FileInfo fi = new(filePath);
-            BinaryReader reader;
-            long size;
-
-            if (File.Exists(filePath))
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
-                Console.WriteLine("Loading STL:" + filePath);
-                size = fi.Length;
-                bool isReadOnly = fi.IsReadOnly;
-
-                using (reader = new BinaryReader(File.Open(filePath, FileMode.Open)))
+                if (IsBinaryStl(stream))
                 {
-                    buffer = reader.ReadBytes(80);
-                    reader.ReadBytes(4);
-                    int filelength = (int)reader.BaseStream.Length;
-                    string code = reader.ReadByte().ToString() + reader.ReadByte().ToString();
-                    reader.BaseStream.Close();
-
-                    Console.WriteLine("Code = " + code);
-                    if (code.Equals("00") || code.Equals("10181") || code.Equals("8689") || code.Equals("19593"))
-                    {
-                        return LoadSTLB(filePath, material);
-                    }
-                    else
-                    {
-                        return LoadSTLA(filePath, material);
-                    }
+                    return ReadBinaryStl(filePath, material);
                 }
-            }
-            else
-            {
-                Console.WriteLine("Specified file could not be opened...");
-                return new();
+                else
+                {
+                    return ReadTextStl(filePath, material);
+                }
             }
         }
 
-        public static Mesh LoadSTLA(String filename, Material material)
+        static bool IsBinaryStl(FileStream stream)
         {
-            string line = null;
-            int counter = 0;
+            const int HeaderSize = 80;
+            if (stream.Length < HeaderSize + 4) return false;
 
-            // Creating storage structures for storing facets, vertex and normals
-            List<Vector> facetnormal = new List<Vector>();
-            List<Vector> vertexes = new List<Vector>();
-            List<Triangle> triangles = new List<Triangle>();
-            Vector[] varray;
-            Match match = null;
+            byte[] header = new byte[HeaderSize];
+            stream.ReadExactly(header, 0, HeaderSize);
+            stream.Seek(0, SeekOrigin.Begin);
 
+            // Check if the file starts with "solid", a marker for ASCII STL
+            string headerString = Encoding.ASCII.GetString(header);
+            if (headerString.TrimStart().StartsWith("solid", StringComparison.OrdinalIgnoreCase))
+            {
+                // Confirm if it’s ASCII by scanning for newline characters
+                byte[] content = new byte[256];
+                stream.ReadExactly(content);
+                stream.Seek(0, SeekOrigin.Begin);
+                string contentString = Encoding.ASCII.GetString(content);
+                return !contentString.Contains("facet");
+            }
+
+            return true;
+        }
+
+        public static Mesh ReadTextStl(string filename, Material material)
+        {
             const string regex = @"\s*(facet normal|vertex)\s+(?<X>[^\s]+)\s+(?<Y>[^\s]+)\s+(?<Z>[^\s]+)";
-            const NumberStyles numberStyle = (NumberStyles.AllowExponent | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
-            StreamReader file = new StreamReader(filename);
+            const NumberStyles numberStyle = NumberStyles.AllowExponent | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign;
 
-            // Reading text filled STL file   
+            List<Vector> facetNormals = new List<Vector>();
+            List<Vector> vertices = new List<Vector>();
+            List<Triangle> triangles = new List<Triangle>();
+
             try
             {
-                // Checking to see if the file header has proper structure and that the file does contain something
-                if ((line = file.ReadLine()) != null && line.Contains("solid"))
+                using (StreamReader file = new StreamReader(filename))
                 {
-                    counter++;
-                    //While there are lines to be read in the file
-                    while ((line = file.ReadLine()) != null && !line.Contains("endsolid"))
+                    // Check the header for "solid" to ensure it's an STL file
+                    string line = file.ReadLine();
+                    if (line == null || !line.Contains("solid"))
                     {
-                        counter++;
-                        if (line.Contains("normal"))
-                        {
-                            match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
-                            //Reading facet
-                            //Console.WriteLine("Read facet on line " + counter);
-                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
-                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
-                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
+                        throw new InvalidDataException("Invalid STL file: Missing 'solid' header.");
+                    }
 
-                            Vector f = new Vector(x, y, z);
-                            //Console.WriteLine("Added facet (x,y,z)"+ " "+x+" "+y+" "+z);
-                            facetnormal.Add(f);
+                    while ((line = file.ReadLine()) != null)
+                    {
+                        line = line.Trim();
+
+                        // Parse facet normal
+                        if (line.StartsWith("facet normal", StringComparison.OrdinalIgnoreCase))
+                        {
+                            facetNormals.Add(ParseVector(line, regex, numberStyle));
                         }
-
-                        line = file.ReadLine();
-                        counter++;
-
-                        // Checking if we are in the outer loop line
-                        if (line.Contains("outer loop"))
+                        // Parse vertices
+                        else if (line.StartsWith("vertex", StringComparison.OrdinalIgnoreCase))
                         {
-                            //Console.WriteLine("Outer loop");
-                            line = file.ReadLine();
-                            counter++;
+                            vertices.Add(ParseVector(line, regex, numberStyle));
                         }
-
-                        if (line.Contains("vertex"))
+                        // Handle endfacet
+                        else if (line.StartsWith("endfacet", StringComparison.OrdinalIgnoreCase))
                         {
-                            match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
-                            //Console.WriteLine("Read vertex on line " + counter);
-                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
-                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
-                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
-
-                            Vector v = new Vector(x, y, z);
-                            //Console.WriteLine("Added vertex 1 (x,y,z)" + " " + x + " " + y + " " + z);
-                            vertexes.Add(v);
-                        }
-
-                        line = file.ReadLine();
-                        counter++;
-
-                        if (line.Contains("vertex"))
-                        {
-                            match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
-                            //Console.WriteLine("Read vertex on line " + counter);
-                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
-                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
-                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
-
-                            Vector v = new Vector(x, y, z);
-                            //Console.WriteLine("Added vertex 2 (x,y,z)" + " " + x + " " + y + " " + z);
-                            vertexes.Add(v);
-                            line = file.ReadLine();
-                            counter++;
-                        }
-
-                        if (line.Contains("vertex"))
-                        {
-                            match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
-                            //Console.WriteLine("Read vertex on line " + counter);
-                            double.TryParse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture, out double x);
-                            double.TryParse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture, out double y);
-                            double.TryParse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture, out double z);
-
-                            Vector v = new Vector(x, y, z);
-                            //Console.WriteLine("Added vertex 3 (x,y,z)" + " " + x + " " + y + " " + z);
-                            vertexes.Add(v);
-                            line = file.ReadLine();
-                            counter++;
-                        }
-
-                        if (line.Contains("endloop"))
-                        {
-                            //Console.WriteLine("End loop");
-                            line = file.ReadLine();
-                            counter++;
-                        }
-
-                        if (line.Contains("endfacet"))
-                        {
-                            //Console.WriteLine("End facet");
-                            line = file.ReadLine();
-                            counter++;
-
-                            if (line.Contains("endsolid"))
+                            if (vertices.Count >= 3)
                             {
-                                varray = vertexes.ToArray();
-                                for (int i = 0; i < varray.Length; i += 3)
-                                {
-                                    Triangle t = new Triangle(varray[i + 0], varray[i + 1], varray[i + 2], material);
-                                    t.FixNormals();
-                                    triangles.Add(t);
-                                }
-                                break;
+                                // Add a triangle for every three vertices
+                                var triangle = new Triangle(vertices[0], vertices[1], vertices[2], material);
+                                triangle.FixNormals();
+                                triangles.Add(triangle);
+                                vertices.Clear(); // Clear vertices for the next facet
                             }
                         }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("The file could not be read:");
-                Console.WriteLine(e.Message);
-                return new();
-            }
-            file.Close();
-            return Mesh.NewMesh(triangles.ToArray());
-        }
-
-        public static Mesh LoadSTLB(String filename, Material material)
-        {
-            List<Triangle> tlist = new List<Triangle>();
-
-            try
-            {
-                STLDocument stlBinary; 
-
-                using (Stream stream = File.Open(filename, FileMode.Open))
-                {
-                    using (BinaryReader reader = new BinaryReader(stream))
-                    {
+                        // Handle endsolid
+                        else if (line.StartsWith("endsolid", StringComparison.OrdinalIgnoreCase))
                         {
-                            stlBinary = STLDocument.Read(reader);
+                            break; // Exit the loop
                         }
                     }
-                }
-
-                foreach (var facet in stlBinary.Facets)
-                {
-                    Triangle t = new Triangle(new Vector(facet.Vertices[0].X, facet.Vertices[0].Y, facet.Vertices[0].Z),
-                                              new Vector(facet.Vertices[1].X, facet.Vertices[1].Y, facet.Vertices[1].Z),
-                                              new Vector(facet.Vertices[2].X, facet.Vertices[2].Y, facet.Vertices[2].Z), material);
-                    t.FixNormals();
-                    tlist.Add(t);
                 }
             }
             catch (Exception ex)
             {
-                ex.ToString();
+                Console.WriteLine($"Failed to read STL file: {ex.Message}");
+                return new Mesh(); // Return an empty mesh on failure
             }
 
-            return Mesh.NewMesh(tlist.ToArray());
+            return Mesh.NewMesh(triangles.ToArray());
+        }
+
+        // Helper method to parse a vector from a line using a regex
+        private static Vector ParseVector(string line, string regex, NumberStyles numberStyle)
+        {
+            Match match = Regex.Match(line, regex, RegexOptions.IgnoreCase);
+            if (!match.Success)
+            {
+                throw new InvalidDataException($"Invalid line format: {line}");
+            }
+
+            double x = double.Parse(match.Groups["X"].Value, numberStyle, CultureInfo.InvariantCulture);
+            double y = double.Parse(match.Groups["Y"].Value, numberStyle, CultureInfo.InvariantCulture);
+            double z = double.Parse(match.Groups["Z"].Value, numberStyle, CultureInfo.InvariantCulture);
+
+            return new Vector(x, y, z);
+        }
+
+
+        public static Mesh ReadBinaryStl(String filePath, Material material)
+        {
+            List<Triangle> tList = new List<Triangle>();
+
+            try
+            {
+                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                {
+                    const int HeaderSize = 80;
+                    const int FacetSize = 50; // Normal (3 floats) + 3 vertices (9 floats) + 2 bytes
+                    
+
+                    stream.Seek(HeaderSize, SeekOrigin.Begin);
+
+                    // Read the number of facets
+                    byte[] facetCountBytes = new byte[4];
+                    stream.ReadExactly(facetCountBytes, 0, 4);
+                    int facetCount = BitConverter.ToInt32(facetCountBytes, 0);
+
+                    for (int i = 0; i < facetCount; i++)
+                    {
+                        byte[] facetBytes = new byte[FacetSize];
+                        stream.ReadExactly(facetBytes, 0, FacetSize);
+
+                        Vector a = new Vector(
+                            BitConverter.ToSingle(facetBytes, 12),
+                            BitConverter.ToSingle(facetBytes, 16),
+                            BitConverter.ToSingle(facetBytes, 20)
+                        );
+
+                        Vector b = new Vector(
+                            BitConverter.ToSingle(facetBytes, 24),
+                            BitConverter.ToSingle(facetBytes, 28),
+                            BitConverter.ToSingle(facetBytes, 32)
+                        );
+
+                        Vector c = new Vector(
+                            BitConverter.ToSingle(facetBytes, 36),
+                            BitConverter.ToSingle(facetBytes, 40),
+                            BitConverter.ToSingle(facetBytes, 44)
+                        );
+
+                        Vector normal = new Vector(
+                            BitConverter.ToSingle(facetBytes, 0),
+                            BitConverter.ToSingle(facetBytes, 4),
+                            BitConverter.ToSingle(facetBytes, 8)
+                        );
+
+                        ushort attributeByteCount = BitConverter.ToUInt16(facetBytes, 48);
+
+                        Triangle t = new Triangle(a, b, c, material);
+                        t.FixNormals();
+
+                        tList.Add(t);
+
+                    }                    
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading binary STL file: " + ex.Message);
+            }
+
+            return Mesh.NewMesh(tList.ToArray());
         }
     }
 }

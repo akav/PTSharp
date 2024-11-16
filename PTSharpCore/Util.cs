@@ -41,7 +41,7 @@ namespace PTSharpCore
 
         public static Mesh CreateCubeMesh(Material material)
         {
-            var mesh = STL.LoadSTLB("models/cube.stl", material);
+            var mesh = STL.Load("models/cube.stl", material);
             mesh.FitInside(new Box(new Vector(0, 0, 0), new Vector(1, 1, 1)), new Vector(0.5, 0.5, 0.5));
             return mesh;
         }
