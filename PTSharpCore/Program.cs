@@ -91,7 +91,7 @@ namespace PTSharpCore
             controller = new ImGuiController(
                     Gl = window.CreateOpenGL(), // load OpenGL
                     window, // pass in our window
-                    inputContext = window.CreateInput() // create an input context
+                    input // reuse the existing input context
                 );
 
             // Start rendering
