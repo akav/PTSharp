@@ -409,6 +409,8 @@ namespace PTSharpCore
             var camera = Camera.LookAt(new Vector(20, 10, 0), new Vector(8, 0, 0), new Vector(0, 1, 0), 45);
             var sampler = DefaultSampler.NewSampler(4, 4);
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.AdaptiveSamples = 32;
+            renderer.FireflySamples = 64;
             // Set to true for denoising but make sure to download the Intel Open Image Denoise library
             // and set the path to the folder containing 
             renderer.Denoise = false; 
@@ -902,34 +904,7 @@ namespace PTSharpCore
             renderer.IterativeRender("wave_example3.png", 10);
         }
 
-        public static void simplesphere(int width, int height)
-        {
-            var scene = new Scene();
-            // create a material
-            var material = Material.DiffuseMaterial(Colour.White);
-
-            // add the floor (a plane)
-            var plane = Plane.NewPlane(new Vector(0, 0, 0), new Vector(0, 0, 1), material);
-            scene.Add(plane);
-
-            // add the ball (a sphere)
-            var sphere = Sphere.NewSphere(new Vector(0, 0, 1), 1.0F, material);
-            scene.Add(sphere);
-
-            // add a spherical light source
-            var light = Sphere.NewSphere(new Vector(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
-            scene.Add(light);
-
-            // position the camera
-            var camera = Camera.LookAt(new Vector(3, 3, 3), new Vector(0, 0, 0.5F), new Vector(0, 0, 1), 50);
-
-            // render the scene with progressive refinement
-            var sampler = DefaultSampler.NewSampler(16, 4);
-            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
-            renderer.AdaptiveSamples = 128;
-            renderer.FireflySamples = 32;
-            renderer.IterativeRender("simplesphere.png", 100);
-        }
+        
 
         public static void simplecylinder(int width, int height)
         {
@@ -1633,6 +1608,92 @@ namespace PTSharpCore
             var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
             renderer.FireflySamples = 128;
             renderer.IterativeRender("veach.png", 100);
+        }
+
+
+
+        public static void SphereSample(int width, int height)
+        {
+            // Create scene and add objects and lights
+            Scene scene = new Scene();
+
+            // Create materials
+            Material redDiffuseSurface = Material.DiffuseMaterial(Colour.HexColor(0xFF0000));
+            Material greenDiffuseSurface = Material.DiffuseMaterial(Colour.HexColor(0x00FF00));
+            Material blueDiffuseSurface = Material.DiffuseMaterial(Colour.HexColor(0x0000FF));
+            Material yellowDiffuseSurface = Material.DiffuseMaterial(Colour.HexColor(0xFFFF00));
+
+            // Create objects
+            List<IShape> objects = new List<IShape>
+            {
+                // Spheres
+                Sphere.NewSphere(new Vector(0, 0.5, 0), 0.5, redDiffuseSurface),
+                Sphere.NewSphere(new Vector(1.5, 0.5, 0), 0.5, greenDiffuseSurface),
+                Sphere.NewSphere(new Vector(-1.5, 0.5, 0), 0.5, blueDiffuseSurface),
+                Sphere.NewSphere(new Vector(0, 0.5, 1.5), 0.5, yellowDiffuseSurface),
+
+                // Floor
+                //Plane.NewPlane(new Vector(0, 0, 0), new Vector(0, 1, 0), Material.DiffuseMaterial(Colour.HexColor(0xCCCCCC)))
+                Plane.NewPlane(new Vector(0, 0, -1f), new Vector(0, 0, 1), Material.DiffuseMaterial(new Colour(0.8f,0.8f,0.8f)))
+
+            };
+
+            // Create lights
+            List<IShape> lights = new List<IShape>
+            {
+                Sphere.NewSphere(new Vector(0, 3.0f, 1.5f), 0.5f, Material.LightMaterial(Colour.White, 8))
+            };
+
+            
+            scene.AddRange(objects);
+            scene.AddRange(lights);
+
+            // Create camera positioned to clearly view the spheres
+            Vector cameraPosition = new Vector(3, 3, 3);
+            Vector lookAtPoint = new Vector(0, 0, 0.5); // Look at center sphere
+            double fov = 50.0;
+
+            // Debug camera position and lookAt
+            Console.WriteLine($"Creating camera: Position={cameraPosition}, LookAt={lookAtPoint}");
+
+            //Camera camera = Camera.LookAt(cameraPosition, lookAtPoint, Vector.Up, fov);
+            var camera = Camera.LookAt(new Vector(3, 3, 3), new Vector(0, 0, 0.5F), new Vector(0, 0, 1), 50);
+
+
+            Sampler sampler = DefaultSampler.NewSampler(4, 4);
+            Renderer renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.AdaptiveSamples = 128;
+            //renderer.FireflySamples = 32;
+            renderer.IterativeRender("SphereSample.png", 100);
+        }
+
+        public static void simplesphere(int width, int height)
+        {
+            var scene = new Scene();
+            // create a material
+            var material = Material.DiffuseMaterial(Colour.White);
+
+            // add the floor (a plane)
+            var plane = Plane.NewPlane(new Vector(0, 0, 0), new Vector(0, 0, 1), material);
+            scene.Add(plane);
+
+            // add the ball (a sphere)
+            var sphere = Sphere.NewSphere(new Vector(0, 0, 1), 1.0F, material);
+            scene.Add(sphere);
+
+            // add a spherical light source
+            var light = Sphere.NewSphere(new Vector(0, 0, 5.0F), 1.0F, Material.LightMaterial(Colour.White, 8));
+            scene.Add(light);
+
+            // position the camera
+            var camera = Camera.LookAt(new Vector(3, 3, 3), new Vector(0, 0, 0.5F), new Vector(0, 0, 1), 50);
+
+            // render the scene with progressive refinement
+            var sampler = DefaultSampler.NewSampler(16, 4);
+            var renderer = Renderer.NewRenderer(scene, camera, sampler, width, height, true);
+            renderer.AdaptiveSamples = 128;
+            renderer.FireflySamples = 32;
+            renderer.IterativeRender("simplesphere.png", 100);
         }
     }
 }

@@ -39,29 +39,10 @@ namespace PTSharpCore
 
         internal void AddRange(IEnumerable<IShape> shapes)
         {
-            // Resize the internal arrays to accommodate the new shapes
-            int newShapesCount = Shapes.Length + shapes.Count();
-            int newLightsCount = Lights.Length;
-
-            Array.Resize(ref Shapes, newShapesCount);
-
-            // Add each shape to the scene
-            int index = Shapes.Length - shapes.Count();
             foreach (var shape in shapes)
             {
-                Shapes[index++] = shape;
-
-                // Check if the added shape is a light source
-                if (shape.MaterialAt(new Vector()).Emittance > 0)
-                {
-                    // If so, resize the Lights array and add the shape to it
-                    Array.Resize(ref Lights, ++newLightsCount);
-                    Lights[newLightsCount - 1] = shape;
-                }
+                Add(shape);
             }
-
-            // Compile the shapes and update the acceleration structure if necessary
-            Compile();
         }
 
         public void Compile()

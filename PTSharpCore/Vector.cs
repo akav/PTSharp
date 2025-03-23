@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -192,29 +193,43 @@ namespace PTSharpCore
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct Vector
     {
-        
         public static Vector ORIGIN = new Vector(0, 0, 0);
         public static Vector Zero = new Vector(0, 0, 0);
         public static Vector One = new Vector(1, 1, 1);
         public static Vector Up = new Vector(0, 1, 0);
 
-        public double X, Y, Z, W;
-        
+        private Vector3 _vector;
+        public double W;
+
+        public double X
+        {
+            get => _vector.X;
+            set => _vector.X = (float)value;
+        }
+
+        public double Y
+        {
+            get => _vector.Y;
+            set => _vector.Y = (float)value;
+        }
+
+        public double Z
+        {
+            get => _vector.Z;
+            set => _vector.Z = (float)value;
+        }
+
         public Vector(double x, double y, double z)
         {
-            this.X = x;
-            this.Y = y;
-            this.Z = z;
+            _vector = new Vector3((float)x, (float)y, (float)z);
             W = 1.0;
             Index = 0;
-
         }
+
         public Vector(double x, double y, double z, double w)
         {
-            this.X = x;
-            this.Y = y;
-            this.Z = z;
-            this.W = w;
+            _vector = new Vector3((float)x, (float)y, (float)z);
+            W = w;
             Index = 0;
         }
 
@@ -242,7 +257,7 @@ namespace PTSharpCore
         // Dot product
         public static double operator *(Vector a, Vector v)
         {
-            return (a.X * v.X) + (a.Y * v.Y) + (a.Z * v.Z);
+            return Vector3.Dot(a._vector, v._vector);
         }
 
         public static Vector operator *(double c, Vector v)
@@ -253,7 +268,8 @@ namespace PTSharpCore
         // Cross product
         public static Vector operator ^(Vector a, Vector v)
         {
-            return new Vector(a.Y * v.Z - a.Z * v.Y, a.Z * v.X - a.X * v.Z, a.X * v.Y - a.Y * v.X, a.W);
+            var cross = Vector3.Cross(a._vector, v._vector);
+            return new Vector(cross.X, cross.Y, cross.Z, a.W);
         }
 
         // Componentwise Multiply
@@ -333,11 +349,11 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double AbsDot(Vector v1, Vector v2)
         {
-            return Math.Abs(Vector.Dot(v1, v2));
+            return Math.Abs(Vector3.Dot(v1._vector, v2._vector));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double Length() => Math.Sqrt(X * X + Y * Y + Z * Z);
+        public double Length() => _vector.Length();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double LengthN(double n)
@@ -353,30 +369,27 @@ namespace PTSharpCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double Dot(Vector b)
         {
-            return X * b.X + Y * b.Y + Z * b.Z;
+            return Vector3.Dot(_vector, b._vector);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         public static double Dot(Vector a, Vector b)
         {
-            return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+            return Vector3.Dot(a._vector, b._vector);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Cross(Vector b)
         {
-            var x = this.Y * b.Z - this.Z * b.Y;
-            var y = this.Z * b.X - this.X * b.Z;
-            var z = this.X * b.Y - this.Y * b.X;
-            return new Vector(x, y, z);
+            var cross = Vector3.Cross(_vector, b._vector);
+            return new Vector(cross.X, cross.Y, cross.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector Normalize()
         {
-            var d = Length();
-            return new Vector(X / d, Y / d, Z / d);
+            var normalized = Vector3.Normalize(_vector);
+            return new Vector(normalized.X, normalized.Y, normalized.Z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -459,8 +472,6 @@ namespace PTSharpCore
             return $"({X}, {Y}, {Z})";
         }
 
-
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector MinAxis()
         {
@@ -526,9 +537,8 @@ namespace PTSharpCore
 
         public double DistanceTo(Vector other)
         {
-            //this Vector point,
             var diff = this - other;
             return Math.Sqrt(diff.Dot(diff));
         }
-    };
+    }
 }
